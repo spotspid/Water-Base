@@ -1,0 +1,160 @@
+.login-page {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--navy);
+  margin-bottom: 24px;
+}
+
+.login-logo-mark {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--sky);
+  letter-spacing: 0.5px;
+}
+
+.login-heading {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 4px;
+}
+
+.login-subheading {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+/* wrapper positions the SVG icon inside the input */
+.field-wrap {
+  position: relative;
+}
+
+.field-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
+.field-wrap input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--navy);
+  background: var(--white);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+
+  /* suppress all browser-native field decorations */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field-wrap input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+.field-wrap input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* hide browser autofill / validation / contact icons */
+.field-wrap input::-webkit-contacts-auto-fill-button,
+.field-wrap input::-webkit-credentials-auto-fill-button,
+.field-wrap input::-webkit-inner-spin-button,
+.field-wrap input::-webkit-outer-spin-button,
+.field-wrap input::-webkit-search-cancel-button,
+.field-wrap input::-webkit-textfield-decoration-container {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Firefox validation red glow */
+.field-wrap input:invalid {
+  box-shadow: none;
+}
+
+.login-error {
+  font-size: 13px;
+  color: var(--maroon);
+  background: rgba(140, 47, 47, 0.07);
+  border: 1px solid rgba(140, 47, 47, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.btn-signin {
+  margin-top: 4px;
+  padding: 11px 0;
+  background: var(--maroon);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-signin:hover:not(:disabled) {
+  background: #7a2828;
+}
+
+.btn-signin:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
