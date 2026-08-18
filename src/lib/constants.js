@@ -47,3 +47,38 @@ export const STATUS_LABELS = {
   scheduled: 'Scheduled',
   installed: 'Installed',
 }
+
+export const INVENTORY_CATEGORIES = [
+  'Softener',
+  'RO System',
+  'Filter',
+  'Media',
+  'Faucet',
+  'Fittings',
+  'Tubing',
+  'Valve',
+  'Tank',
+  'Consumable',
+  'Tools',
+  'Other',
+]
+
+// direction: 1 adds to on hand, -1 removes from on hand, 0 lets the user pick.
+// the UI never asks anyone to type a negative number.
+export const TXN_TYPES = [
+  { value: 'purchase', label: 'Purchase', direction: 1, help: 'Stock received into inventory' },
+  { value: 'return', label: 'Return', direction: 1, help: 'Stock returned to inventory' },
+  { value: 'install', label: 'Install', direction: -1, help: 'Stock consumed on a job' },
+  { value: 'damage', label: 'Damage', direction: -1, help: 'Stock written off as damaged' },
+  { value: 'adjustment', label: 'Adjustment', direction: 0, help: 'Manual count correction, either direction' },
+]
+
+export const TXN_TYPE_LABELS = {
+  purchase: 'Purchase',
+  return: 'Return',
+  install: 'Install',
+  damage: 'Damage',
+  adjustment: 'Adjustment',
+}
+
+export const DEFAULT_LOCATION = 'Unit 4030'
