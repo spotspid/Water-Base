@@ -1,0 +1,26 @@
+.auth-status {
+  font-size: 14px;
+  color: var(--gray-500);
+  padding: 12px 0 4px;
+}
+
+.auth-note {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-top: 14px;
+}
+
+.auth-back {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: none;
+  border-bottom: 1.5px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.auth-back:hover {
+  border-bottom-color: var(--teal);
+}
