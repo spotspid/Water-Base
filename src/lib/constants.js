@@ -19,14 +19,6 @@ export const SERVICE_CITIES = [
   'Ypsilanti',
 ]
 
-export const SYSTEM_TEMPLATES = [
-  { label: 'Flagship Bundle', price: 2999 },
-  { label: 'Well Water Bundle', price: 3499 },
-  { label: 'Softener Only', price: 1499 },
-  { label: 'RO Only', price: 799 },
-  { label: 'Custom', price: null },
-]
-
 export const FAUCET_FINISHES = [
   'Chrome',
   'Brushed Nickel',
@@ -34,6 +26,25 @@ export const FAUCET_FINISHES = [
   'Oil-Rubbed Bronze',
   'Polished Gold',
 ]
+
+// A template line can defer one part to the customer. pick_source names the
+// job field that carries the choice, pick_category narrows which inventory
+// items are candidates, and the match is made on inventory_items.variant.
+// Adding a source here also needs a matching branch in the SQL function
+// resolve_template_parts.
+export const PICK_SOURCES = [
+  {
+    value: 'faucet_finish',
+    label: 'Faucet Finish',
+    jobField: 'faucet_finish',
+    defaultCategory: 'Faucet',
+    help: 'Resolves to the item whose variant matches the finish chosen on the job.',
+  },
+]
+
+export const PICK_SOURCE_LABELS = {
+  faucet_finish: 'Faucet Finish',
+}
 
 export const PAYMENT_TYPES = [
   'Cash',

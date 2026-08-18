@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Jobs from './pages/Jobs'
 import NewJob from './pages/NewJob'
 import Inventory from './pages/Inventory'
+import Templates from './pages/Templates'
 import AuthCallback from './pages/AuthCallback'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
         <Route path="/jobs/new" element={<ProtectedRoute><NewJob /></ProtectedRoute>} />
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+        <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

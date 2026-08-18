@@ -24,6 +24,9 @@ export default function AppShell({ children }) {
           <NavLink to="/inventory" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Inventory
           </NavLink>
+          <NavLink to="/templates" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Templates
+          </NavLink>
         </nav>
         <button className="btn-signout" onClick={handleSignOut}>Sign out</button>
       </header>

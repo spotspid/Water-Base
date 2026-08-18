@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { SERVICE_CITIES, SYSTEM_TEMPLATES, FAUCET_FINISHES, PAYMENT_TYPES } from '../lib/constants'
+import { FAUCET_FINISHES, PAYMENT_TYPES } from '../lib/constants'
+import { attempt } from '../lib/errors'
+import { useSystemTemplates } from '../lib/useSystemTemplates'
 import AppShell from '../components/AppShell'
+import CustomerFields from '../components/CustomerFields'
+import JobDetailFields from '../components/JobDetailFields'
+import JobPartsPreview from '../components/JobPartsPreview'
 import './NewJob.css'
 
 const EMPTY_FORM = {
@@ -11,8 +16,8 @@ const EMPTY_FORM = {
   address: '',
   city: '',
   water_source: 'city',
-  system_template: 'Flagship Bundle',
-  sale_price: '2999',
+  system_template: '',
+  sale_price: '',
   payment_type: '',
   faucet_finish: '',
   status: 'sold',
@@ -29,24 +34,86 @@ export default function NewJob() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const {
+    templates,
+    loading: loadingTemplates,
+    error: templateError,
+    reload: reloadTemplates,
+  } = useSystemTemplates({ activeOnly: true })
+
+  // preselect the first template once they arrive, matching the old default
+  useEffect(() => {
+    if (templates.length === 0) return
+    setForm(f => {
+      if (f.system_template) return f
+      const first = templates[0]
+      return {
+        ...f,
+        system_template: first.label,
+        sale_price: first.default_price == null ? '' : String(first.default_price),
+      }
+    })
+  }, [templates])
+
+  const selectedTemplate = useMemo(
+    () => templates.find(t => t.label === form.system_template) || null,
+    [templates, form.system_template],
+  )
+
   function handleChange(e) {
     const { name, value } = e.target
     if (name === 'system_template') {
-      const tpl = SYSTEM_TEMPLATES.find(t => t.label === value)
+      const tpl = templates.find(t => t.label === value)
       setForm(f => ({
         ...f,
         system_template: value,
-        sale_price: tpl?.price != null ? String(tpl.price) : f.sale_price,
+        sale_price: tpl?.default_price != null ? String(tpl.default_price) : f.sale_price,
       }))
-    } else {
-      setForm(f => ({ ...f, [name]: value }))
+      return
     }
+    setForm(f => ({ ...f, [name]: value }))
+  }
+
+  function validate() {
+    if (!form.customer_name.trim()) return 'Customer name is required.'
+    if (!form.phone.trim()) return 'Phone is required.'
+    if (!form.address.trim()) return 'Address is required.'
+    if (!form.city) return 'Pick a city.'
+    if (!form.system_template) return 'Pick a system template.'
+    if (!form.payment_type) return 'Pick a payment type.'
+    if (!form.faucet_finish) return 'Pick a faucet finish.'
+    if (!form.invoice_number.trim()) return 'Invoice number is required.'
+
+    const price = Number(form.sale_price)
+    if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'
+
+    if (form.payout_amount !== '') {
+      const payout = Number(form.payout_amount)
+      if (!Number.isFinite(payout) || payout < 0) return 'Payout amount must be zero or greater.'
+    }
+
+    if (form.status === 'installed' && !selectedTemplate) {
+      return 'That template is no longer available, so parts cannot be deducted. Reload and pick another.'
+    }
+
+    return ''
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const problem = validate()
+    if (problem) {
+      setError(problem)
+      return
+    }
+
     setError('')
     setSaving(true)
+
+    // A job never enters the installed state by plain insert. It is created in
+    // its pre install state and mark_job_installed does the deduction, which is
+    // the only path that can consume inventory. A database trigger enforces it.
+    const wantsInstall = form.status === 'installed'
 
     const payload = {
       customer_name: form.customer_name.trim(),
@@ -55,26 +122,52 @@ export default function NewJob() {
       city: form.city,
       water_source: form.water_source,
       system_template: form.system_template,
-      sale_price: parseFloat(form.sale_price),
+      template_id: selectedTemplate?.id || null,
+      sale_price: Number(form.sale_price),
       payment_type: form.payment_type,
       faucet_finish: form.faucet_finish,
-      status: form.status,
+      status: wantsInstall ? 'scheduled' : form.status,
       install_date: form.install_date || null,
       installer: form.installer.trim() || null,
-      payout_amount: form.payout_amount ? parseFloat(form.payout_amount) : null,
+      payout_amount: form.payout_amount === '' ? null : Number(form.payout_amount),
       invoice_number: form.invoice_number.trim(),
       notes: form.notes.trim() || null,
     }
 
-    const { error: err } = await supabase.from('jobs').insert(payload)
+    const { data, error: insertError } = await attempt(
+      () => supabase.from('jobs').insert(payload).select('id').single(),
+      'The job could not be saved.',
+    )
+
+    if (insertError) {
+      setError(insertError)
+      setSaving(false)
+      return
+    }
+
+    if (!wantsInstall) {
+      navigate('/jobs')
+      return
+    }
+
+    const { error: installError } = await attempt(
+      () => supabase.rpc('mark_job_installed', {
+        p_job_id: data.id,
+        p_install_date: form.install_date || null,
+        p_installer: form.installer.trim() || null,
+        p_payout: form.payout_amount === '' ? null : Number(form.payout_amount),
+      }),
+      'The job was saved but its parts could not be deducted.',
+    )
 
     setSaving(false)
 
-    if (err) {
-      setError(err.message)
-    } else {
-      navigate('/jobs')
+    if (installError) {
+      setError(`${installError} The job was saved as Scheduled. Fix the problem, then install it from the jobs list.`)
+      return
     }
+
+    navigate('/jobs')
   }
 
   return (
@@ -86,51 +179,34 @@ export default function NewJob() {
 
         <form className="newjob-form" onSubmit={handleSubmit} noValidate>
 
-          <section className="form-section">
-            <h2>Customer</h2>
-            <div className="form-grid">
-              <div className="field">
-                <label htmlFor="customer_name">Customer Name</label>
-                <input id="customer_name" name="customer_name" type="text" required
-                  value={form.customer_name} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="phone">Phone</label>
-                <input id="phone" name="phone" type="tel" required
-                  value={form.phone} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field field-full">
-                <label htmlFor="address">Address</label>
-                <input id="address" name="address" type="text" required
-                  value={form.address} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="city">City</label>
-                <select id="city" name="city" required
-                  value={form.city} onChange={handleChange} disabled={saving}>
-                  <option value="">Select city...</option>
-                  {SERVICE_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="water_source">Water Source</label>
-                <select id="water_source" name="water_source" required
-                  value={form.water_source} onChange={handleChange} disabled={saving}>
-                  <option value="city">City</option>
-                  <option value="well">Well</option>
-                </select>
-              </div>
-            </div>
-          </section>
+          <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 
           <section className="form-section">
             <h2>System</h2>
+
+            {templateError && (
+              <div className="inv-error-box" role="alert">
+                <p className="inv-error-detail">{templateError}</p>
+                <button type="button" className="btn-cancel" onClick={reloadTemplates}>Try again</button>
+              </div>
+            )}
+
+            {!templateError && !loadingTemplates && templates.length === 0 && (
+              <p className="form-warning" role="status">
+                No active system templates exist. Create one on the Templates page first.
+              </p>
+            )}
+
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="system_template">System Template</label>
                 <select id="system_template" name="system_template" required
-                  value={form.system_template} onChange={handleChange} disabled={saving}>
-                  {SYSTEM_TEMPLATES.map(t => <option key={t.label} value={t.label}>{t.label}</option>)}
+                  value={form.system_template} onChange={handleChange}
+                  disabled={saving || loadingTemplates || templates.length === 0}>
+                  <option value="">
+                    {loadingTemplates ? 'Loading templates...' : 'Select system...'}
+                  </option>
+                  {templates.map(t => <option key={t.id} value={t.label}>{t.label}</option>)}
                 </select>
               </div>
               <div className="field">
@@ -145,6 +221,7 @@ export default function NewJob() {
                   <option value="">Select finish...</option>
                   {FAUCET_FINISHES.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
+                <span className="field-hint">Decides which faucet the template consumes.</span>
               </div>
               <div className="field">
                 <label htmlFor="payment_type">Payment Type</label>
@@ -155,47 +232,15 @@ export default function NewJob() {
                 </select>
               </div>
             </div>
+
+            <JobPartsPreview
+              templateId={selectedTemplate?.id || ''}
+              templateLabel={form.system_template}
+              faucetFinish={form.faucet_finish}
+            />
           </section>
 
-          <section className="form-section">
-            <h2>Job Details</h2>
-            <div className="form-grid">
-              <div className="field">
-                <label htmlFor="status">Status</label>
-                <select id="status" name="status" required
-                  value={form.status} onChange={handleChange} disabled={saving}>
-                  <option value="sold">Sold</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="installed">Installed</option>
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="invoice_number">Invoice Number</label>
-                <input id="invoice_number" name="invoice_number" type="text" required
-                  value={form.invoice_number} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="install_date">Install Date <span className="optional">(optional)</span></label>
-                <input id="install_date" name="install_date" type="date"
-                  value={form.install_date} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="installer">Installer <span className="optional">(optional)</span></label>
-                <input id="installer" name="installer" type="text"
-                  value={form.installer} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="payout_amount">Payout Amount ($) <span className="optional">(optional)</span></label>
-                <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
-                  value={form.payout_amount} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field field-full">
-                <label htmlFor="notes">Notes <span className="optional">(optional)</span></label>
-                <textarea id="notes" name="notes" rows="3"
-                  value={form.notes} onChange={handleChange} disabled={saving} />
-              </div>
-            </div>
-          </section>
+          <JobDetailFields form={form} onChange={handleChange} disabled={saving} />
 
           {error && <p className="form-error" role="alert">{error}</p>}
 
@@ -204,7 +249,8 @@ export default function NewJob() {
               onClick={() => navigate('/jobs')} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
+            <button type="submit" className="btn-primary"
+              disabled={saving || loadingTemplates || templates.length === 0}>
               {saving ? 'Saving...' : 'Save Job'}
             </button>
           </div>

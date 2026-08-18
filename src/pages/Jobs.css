@@ -116,3 +116,137 @@
   background: rgba(44, 129, 155, 0.22);
   color: #1a5c73;
 }
+
+/* ---- job margin and install controls ---- */
+
+.job-margin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.job-margin-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+}
+
+.job-margin-minus .inv-stat-label::before {
+  content: 'less ';
+}
+
+.job-margin-total {
+  background: var(--sky);
+  border-color: rgba(44, 129, 155, 0.4);
+}
+
+.job-margin-total .inv-stat-value {
+  color: #1a5c73;
+}
+
+.job-margin-bad .inv-stat-value,
+td.job-margin-bad {
+  color: var(--maroon);
+}
+
+.job-margin-pct {
+  display: inline-block;
+  margin-left: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+.job-action {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--gray-300);
+}
+
+.job-action h3,
+.job-parts h3 {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin-bottom: 12px;
+}
+
+.job-action-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--navy);
+  margin-bottom: 14px;
+}
+
+.job-action-stamp {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.job-install-grid {
+  margin-bottom: 6px;
+}
+
+.job-revert-field {
+  max-width: 280px;
+  margin-bottom: 6px;
+}
+
+.job-notice {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--sky);
+  border: 1px solid rgba(44, 129, 155, 0.35);
+  color: #1a5c73;
+  font-size: 14px;
+}
+
+.job-action-buttons {
+  margin-top: 16px;
+}
+
+.job-parts {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--gray-300);
+}
+
+.job-parts-missing td {
+  background: rgba(140, 47, 47, 0.06);
+}
+
+.job-parts-none {
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+.col-total-label {
+  text-align: right;
+  font-weight: 600;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+.jobs-table tfoot td {
+  padding: 11px 16px;
+  border-top: 1px solid var(--gray-300);
+  background: var(--gray-100);
+}
+
+@media (max-width: 720px) {
+  .job-margin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
