@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { INVENTORY_CATEGORIES, PICK_SOURCES } from '../lib/constants'
+import { PICK_SOURCES } from '../lib/constants'
+import { useSettings, withCurrent } from '../lib/settings'
 import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import { pickCandidates, pickSourceMeta } from '../lib/templates'
@@ -21,6 +22,7 @@ function initialForm(line) {
 export default function TemplateLineModal({
   template, line, items, existingLines, onClose, onSaved,
 }) {
+  const { categories } = useSettings()
   const editing = Boolean(line?.id)
   const [form, setForm] = useState(() => initialForm(line))
   const [saving, setSaving] = useState(false)
@@ -199,7 +201,7 @@ export default function TemplateLineModal({
                 <select id="pick_category" name="pick_category" value={form.pick_category}
                   onChange={handleChange} disabled={saving}>
                   <option value="">Select category...</option>
-                  {INVENTORY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {withCurrent(categories, form.pick_category).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </>

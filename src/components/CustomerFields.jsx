@@ -1,6 +1,9 @@
-import { SERVICE_CITIES } from '../lib/constants'
+import { useSettings, withCurrent } from '../lib/settings'
 
 export default function CustomerFields({ form, onChange, disabled }) {
+  const { cities, loading } = useSettings()
+  const cityOptions = withCurrent(cities, form.city)
+
   return (
     <section className="form-section">
       <h2>Customer</h2>
@@ -23,9 +26,9 @@ export default function CustomerFields({ form, onChange, disabled }) {
         <div className="field">
           <label htmlFor="city">City</label>
           <select id="city" name="city" required
-            value={form.city} onChange={onChange} disabled={disabled}>
-            <option value="">Select city...</option>
-            {SERVICE_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            value={form.city} onChange={onChange} disabled={disabled || loading}>
+            <option value="">{loading ? 'Loading cities...' : 'Select city...'}</option>
+            {cityOptions.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="field">

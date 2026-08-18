@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react'
-import { FAUCET_FINISHES } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
 import { lineDetail, lineLabel, templateCost, unsupportedFinishes } from '../lib/templates'
+import { useSettings } from '../lib/settings'
 
 export default function TemplateCard({
   template, lines, items, onEditTemplate, onAddLine, onEditLine, onDeleteLine,
 }) {
+  const { finishes } = useSettings()
   const [confirmingId, setConfirmingId] = useState('')
 
   const cost = useMemo(() => templateCost(lines, items), [lines, items])
   const gaps = useMemo(
-    () => unsupportedFinishes(lines, items, FAUCET_FINISHES),
-    [lines, items],
+    () => unsupportedFinishes(lines, items, finishes),
+    [lines, items, finishes],
   )
 
   const price = template.default_price == null ? null : Number(template.default_price)

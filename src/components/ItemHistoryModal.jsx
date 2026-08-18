@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { TXN_TYPE_LABELS } from '../lib/constants'
+import { useSettings } from '../lib/settings'
 import { formatCurrency, formatDateTime, formatSignedQty, withRunningBalance } from '../lib/inventory'
 import Modal from './Modal'
 
 export default function ItemHistoryModal({ item, onClose }) {
+  const { allTxnTypes } = useSettings()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -70,7 +71,7 @@ export default function ItemHistoryModal({ item, onClose }) {
                   <td className="col-nowrap">{formatDateTime(row.created_at)}</td>
                   <td>
                     <span className={`txn-badge txn-${row.txn_type}`}>
-                      {TXN_TYPE_LABELS[row.txn_type] || row.txn_type}
+                      {allTxnTypes.find(t => t.value === row.txn_type)?.label || row.txn_type}
                     </span>
                   </td>
                   <td className={row.quantity < 0 ? 'col-num qty-out' : 'col-num qty-in'}>

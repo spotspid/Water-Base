@@ -1,31 +1,12 @@
-export const SERVICE_CITIES = [
-  'Ann Arbor',
-  'Brighton',
-  'Canton',
-  'Chelsea',
-  'Dexter',
-  'Dundee',
-  'Howell',
-  'Livonia',
-  'Milan',
-  'Monroe',
-  'Northville',
-  'Plymouth',
-  'Saline',
-  'South Lyon',
-  'Superior Township',
-  'Tecumseh',
-  'Whitmore Lake',
-  'Ypsilanti',
-]
-
-export const FAUCET_FINISHES = [
-  'Chrome',
-  'Brushed Nickel',
-  'Matte Black',
-  'Oil-Rubbed Bronze',
-  'Polished Gold',
-]
+// Structural constants only. Anything an operator would reasonably want to
+// change now lives in the database and is edited on the Settings page:
+// inventory categories, service cities, faucet finishes, payment types,
+// transaction types, installer pay rate and the default stock location.
+//
+// What is left here is load bearing rather than operational. Job status is a
+// check constraint on the jobs table that the install functions branch on,
+// and each pick source needs a matching branch in the SQL function
+// resolve_template_parts, so both are code changes rather than settings.
 
 // A template line can defer one part to the customer. pick_source names the
 // job field that carries the choice, pick_category narrows which inventory
@@ -46,50 +27,9 @@ export const PICK_SOURCE_LABELS = {
   faucet_finish: 'Faucet Finish',
 }
 
-export const PAYMENT_TYPES = [
-  'Cash',
-  'Check',
-  'Credit Card',
-  'Financing',
-]
-
 export const STATUS_LABELS = {
   sold: 'Sold',
   scheduled: 'Scheduled',
   installed: 'Installed',
 }
 
-export const INVENTORY_CATEGORIES = [
-  'Softener',
-  'RO System',
-  'Filter',
-  'Media',
-  'Faucet',
-  'Fittings',
-  'Tubing',
-  'Valve',
-  'Tank',
-  'Consumable',
-  'Tools',
-  'Other',
-]
-
-// direction: 1 adds to on hand, -1 removes from on hand, 0 lets the user pick.
-// the UI never asks anyone to type a negative number.
-export const TXN_TYPES = [
-  { value: 'purchase', label: 'Purchase', direction: 1, help: 'Stock received into inventory' },
-  { value: 'return', label: 'Return', direction: 1, help: 'Stock returned to inventory' },
-  { value: 'install', label: 'Install', direction: -1, help: 'Stock consumed on a job' },
-  { value: 'damage', label: 'Damage', direction: -1, help: 'Stock written off as damaged' },
-  { value: 'adjustment', label: 'Adjustment', direction: 0, help: 'Manual count correction, either direction' },
-]
-
-export const TXN_TYPE_LABELS = {
-  purchase: 'Purchase',
-  return: 'Return',
-  install: 'Install',
-  damage: 'Damage',
-  adjustment: 'Adjustment',
-}
-
-export const DEFAULT_LOCATION = 'Unit 4030'

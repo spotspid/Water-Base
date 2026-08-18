@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { TXN_TYPES } from '../lib/constants'
+import { useSettings } from '../lib/settings'
 import { effectiveDirection, signedQuantity, txnTypeMeta } from '../lib/inventory'
 import Modal from './Modal'
 
 export default function LogTransactionModal({ items, presetItemId, onClose, onSaved }) {
+  const { txnTypes, defaultLocation, loading: loadingSettings } = useSettings()
   const [form, setForm] = useState({
     item_id: presetItemId || '',
-    txn_type: 'purchase',
+    txn_type: '',
     quantity: '1',
     adjust_direction: 'add',
     reference: '',
@@ -21,9 +22,16 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
     [items, form.item_id],
   )
 
-  const meta = txnTypeMeta(form.txn_type)
-  const direction = effectiveDirection(form.txn_type, form.adjust_direction)
-  const signed = signedQuantity(form.txn_type, form.quantity, form.adjust_direction)
+  // types are operator editable, so the default is whichever comes first
+  // rather than a value baked into this component
+  useEffect(() => {
+    if (txnTypes.length === 0) return
+    setForm(f => (f.txn_type ? f : { ...f, txn_type: txnTypes[0].value }))
+  }, [txnTypes])
+
+  const meta = txnTypeMeta(txnTypes, form.txn_type)
+  const direction = effectiveDirection(txnTypes, form.txn_type, form.adjust_direction)
+  const signed = signedQuantity(txnTypes, form.txn_type, form.quantity, form.adjust_direction)
   const projected = selected ? Number(selected.on_hand) + signed : null
   const goesNegative = projected !== null && projected < 0
 
@@ -34,6 +42,8 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
 
   function validate() {
     if (!form.item_id) return 'Pick an item.'
+    if (!form.txn_type) return 'Pick a transaction type.'
+    if (!meta) return 'That transaction type is no longer available. Pick another.'
     const size = Number(form.quantity)
     if (!Number.isFinite(size) || size <= 0) return 'Quantity must be greater than zero.'
     if (!Number.isInteger(size)) return 'Quantity must be a whole number.'
@@ -57,6 +67,7 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
       quantity: signed,
       txn_type: form.txn_type,
       unit_cost_at_txn: selected ? Number(selected.unit_cost) : null,
+      location: defaultLocation || null,
       reference: form.reference.trim() || null,
       note: form.note.trim() || null,
     }
@@ -99,8 +110,11 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
           <div className="field">
             <label htmlFor="txn_type">Type</label>
             <select id="txn_type" name="txn_type" value={form.txn_type}
-              onChange={handleChange} disabled={saving}>
-              {TXN_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              onChange={handleChange} disabled={saving || loadingSettings}>
+              <option value="">
+                {loadingSettings ? 'Loading types...' : 'Select type...'}
+              </option>
+              {txnTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
             {meta && <span className="field-hint">{meta.help}</span>}
           </div>
@@ -129,6 +143,12 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
               </div>
             </div>
           )}
+
+          <div className="field">
+            <label htmlFor="location">Location</label>
+            <input id="location" type="text" value={defaultLocation || 'Not set'} disabled readOnly />
+            <span className="field-hint">Set on the Settings page.</span>
+          </div>
 
           <div className="field">
             <label htmlFor="reference">Reference <span className="optional">(optional)</span></label>

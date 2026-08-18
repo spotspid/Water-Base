@@ -73,3 +73,17 @@
   background: rgba(223, 247, 252, 0.1);
   border-color: rgba(223, 247, 252, 0.7);
 }
+
+.shell-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  background: rgba(140, 47, 47, 0.1);
+  border-bottom: 1px solid rgba(140, 47, 47, 0.3);
+  color: var(--maroon);
+  font-size: 13px;
+  text-align: center;
+}

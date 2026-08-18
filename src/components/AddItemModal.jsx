@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { INVENTORY_CATEGORIES } from '../lib/constants'
+import { useSettings } from '../lib/settings'
 import Modal from './Modal'
 
 const EMPTY_FORM = {
@@ -15,6 +15,7 @@ const EMPTY_FORM = {
 }
 
 export default function AddItemModal({ onClose, onSaved }) {
+  const { categories, loading: loadingSettings } = useSettings()
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -85,9 +86,9 @@ export default function AddItemModal({ onClose, onSaved }) {
           <div className="field">
             <label htmlFor="category">Category</label>
             <select id="category" name="category" value={form.category}
-              onChange={handleChange} disabled={saving}>
-              <option value="">Select category...</option>
-              {INVENTORY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              onChange={handleChange} disabled={saving || loadingSettings}>
+              <option value="">{loadingSettings ? 'Loading categories...' : 'Select category...'}</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div className="field field-full">

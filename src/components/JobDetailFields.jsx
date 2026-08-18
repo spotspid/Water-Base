@@ -1,4 +1,4 @@
-export default function JobDetailFields({ form, onChange, disabled }) {
+export default function JobDetailFields({ form, onChange, disabled, payHint }) {
   return (
     <section className="form-section">
       <h2>Job Details</h2>
@@ -34,6 +34,7 @@ export default function JobDetailFields({ form, onChange, disabled }) {
           <label htmlFor="payout_amount">Payout Amount ($) <span className="optional">(optional)</span></label>
           <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
             value={form.payout_amount} onChange={onChange} disabled={disabled} />
+          {payHint && <span className="field-hint">{payHint}</span>}
         </div>
         <div className="field field-full">
           <label htmlFor="notes">Notes <span className="optional">(optional)</span></label>

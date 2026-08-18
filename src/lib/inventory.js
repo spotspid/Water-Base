@@ -1,13 +1,13 @@
-import { TXN_TYPES } from './constants'
-
-export function txnTypeMeta(value) {
-  return TXN_TYPES.find(t => t.value === value) || null
+// Transaction types are operator editable, so the caller passes the list it
+// loaded from settings rather than these helpers reaching for a constant.
+export function txnTypeMeta(types, value) {
+  return (types || []).find(t => t.value === value) || null
 }
 
 // the form collects a positive magnitude. direction comes from the txn type,
 // or from the explicit add/remove choice when the type is an adjustment.
-export function signedQuantity(txnType, magnitude, adjustDirection) {
-  const meta = txnTypeMeta(txnType)
+export function signedQuantity(types, txnType, magnitude, adjustDirection) {
+  const meta = txnTypeMeta(types, txnType)
   const size = Math.abs(Number(magnitude))
   if (!meta || !Number.isFinite(size) || size === 0) return 0
   const whole = Math.trunc(size)
@@ -16,8 +16,8 @@ export function signedQuantity(txnType, magnitude, adjustDirection) {
 }
 
 // resolved direction for a type, taking the adjustment toggle into account
-export function effectiveDirection(txnType, adjustDirection) {
-  const meta = txnTypeMeta(txnType)
+export function effectiveDirection(types, txnType, adjustDirection) {
+  const meta = txnTypeMeta(types, txnType)
   if (!meta) return 0
   if (meta.direction === 0) return adjustDirection === 'remove' ? -1 : 1
   return meta.direction

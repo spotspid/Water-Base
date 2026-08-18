@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { FAUCET_FINISHES, PAYMENT_TYPES } from '../lib/constants'
 import { attempt } from '../lib/errors'
+import { defaultInstallerPay, useSettings } from '../lib/settings'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
@@ -31,8 +31,17 @@ const EMPTY_FORM = {
 export default function NewJob() {
   const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY_FORM)
+  const [payoutTouched, setPayoutTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const {
+    finishes,
+    paymentTypes,
+    installerPayMode,
+    installerPayRate,
+    loading: loadingSettings,
+  } = useSettings()
 
   const {
     templates,
@@ -60,8 +69,19 @@ export default function NewJob() {
     [templates, form.system_template],
   )
 
+  const suggestedPay = defaultInstallerPay(installerPayMode, installerPayRate, form.sale_price)
+
+  // Installer pay follows the configured rate until someone types over it.
+  // A percent rate has to track the sale price, so this recomputes on change.
+  useEffect(() => {
+    if (payoutTouched || suggestedPay == null) return
+    const next = String(suggestedPay)
+    setForm(f => (f.payout_amount === next ? f : { ...f, payout_amount: next }))
+  }, [suggestedPay, payoutTouched])
+
   function handleChange(e) {
     const { name, value } = e.target
+    if (name === 'payout_amount') setPayoutTouched(true)
     if (name === 'system_template') {
       const tpl = templates.find(t => t.label === value)
       setForm(f => ({
@@ -170,6 +190,12 @@ export default function NewJob() {
     navigate('/jobs')
   }
 
+  const payHint = suggestedPay == null
+    ? 'No default pay rate is set. Configure one on the Settings page.'
+    : installerPayMode === 'percent'
+      ? `Default is ${installerPayRate}% of the sale price.`
+      : 'Default comes from the flat rate on the Settings page.'
+
   return (
     <AppShell>
       <div className="newjob-page">
@@ -217,18 +243,24 @@ export default function NewJob() {
               <div className="field">
                 <label htmlFor="faucet_finish">Faucet Finish</label>
                 <select id="faucet_finish" name="faucet_finish" required
-                  value={form.faucet_finish} onChange={handleChange} disabled={saving}>
-                  <option value="">Select finish...</option>
-                  {FAUCET_FINISHES.map(f => <option key={f} value={f}>{f}</option>)}
+                  value={form.faucet_finish} onChange={handleChange}
+                  disabled={saving || loadingSettings}>
+                  <option value="">
+                    {loadingSettings ? 'Loading finishes...' : 'Select finish...'}
+                  </option>
+                  {finishes.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
                 <span className="field-hint">Decides which faucet the template consumes.</span>
               </div>
               <div className="field">
                 <label htmlFor="payment_type">Payment Type</label>
                 <select id="payment_type" name="payment_type" required
-                  value={form.payment_type} onChange={handleChange} disabled={saving}>
-                  <option value="">Select type...</option>
-                  {PAYMENT_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                  value={form.payment_type} onChange={handleChange}
+                  disabled={saving || loadingSettings}>
+                  <option value="">
+                    {loadingSettings ? 'Loading payment types...' : 'Select type...'}
+                  </option>
+                  {paymentTypes.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             </div>
@@ -240,7 +272,12 @@ export default function NewJob() {
             />
           </section>
 
-          <JobDetailFields form={form} onChange={handleChange} disabled={saving} />
+          <JobDetailFields
+            form={form}
+            onChange={handleChange}
+            disabled={saving}
+            payHint={payHint}
+          />
 
           {error && <p className="form-error" role="alert">{error}</p>}
 
