@@ -172,6 +172,24 @@
   font-weight: 700;
 }
 
+/* reservation layer: committed is a claim, available is what is left */
+.inv-committed {
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.inv-none {
+  color: var(--gray-500);
+}
+
+.inv-available {
+  font-weight: 700;
+}
+
+.inv-available-short {
+  color: var(--maroon);
+}
+
 .inv-low {
   display: inline-block;
   margin-left: 8px;

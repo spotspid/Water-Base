@@ -31,5 +31,16 @@ export const STATUS_LABELS = {
   sold: 'Sold',
   scheduled: 'Scheduled',
   installed: 'Installed',
+  cancelled: 'Cancelled',
 }
+
+// A cancelled job is history. It holds no reservation, it consumes no parts
+// and it earns nothing, so the money totals leave it out while the pipeline
+// breakdown still counts it.
+export const CANCELLED_STATUS = 'cancelled'
+
+// The statuses that hold a live claim on inventory. A job in one of these is
+// booked but not yet installed, so its parts are committed rather than
+// consumed. This mirrors the branch in sync_job_reservations.
+export const RESERVING_STATUSES = ['sold', 'scheduled']
 

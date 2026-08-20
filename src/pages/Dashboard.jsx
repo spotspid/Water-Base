@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  inventoryUnits, inventoryValue, jobsSince, monthLabel, monthStart,
+  billableJobs, inventoryUnits, inventoryValue, jobsSince, monthLabel, monthStart,
   reorderList, statusBreakdown, summarizeJobs,
 } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
@@ -73,7 +73,7 @@ export default function Dashboard() {
   useEffect(() => { load() }, [load])
 
   const start = useMemo(() => monthStart(), [])
-  const monthJobs = useMemo(() => jobsSince(jobs, start), [jobs, start])
+  const monthJobs = useMemo(() => billableJobs(jobsSince(jobs, start)), [jobs, start])
   const monthTotals = useMemo(() => summarizeJobs(monthJobs), [monthJobs])
   const statuses = useMemo(() => statusBreakdown(jobs), [jobs])
   const reorder = useMemo(() => reorderList(stock), [stock])

@@ -6,7 +6,8 @@
 // codes raised by our own database functions, all already user readable
 const APP_CODES = new Set([
   'WB001', 'WB002', 'WB003', 'WB004', 'WB005',
-  'WB006', 'WB007', 'WB008', 'WB009',
+  'WB006', 'WB007', 'WB008', 'WB009', 'WB010',
+  'WB011', 'WB012', 'WB013', 'WB014',
 ])
 
 const MIGRATION_HINT =
@@ -20,9 +21,13 @@ export function describeError(error, fallback = 'Something went wrong. Try again
 
   if (APP_CODES.has(code)) return message || fallback
 
-  // PostgREST could not find the function or table, which almost always
-  // means the migration has not been applied to this project yet.
-  if (code === 'PGRST202' || code === 'PGRST205' || code === '42883' || code === '42P01') {
+  // PostgREST could not find the function, table or column, which almost
+  // always means the migration has not been applied to this project yet.
+  // 42703 is the one that shows up when a view is a migration behind the
+  // code reading it, as when committed and available are asked for before
+  // the reservation migration has run.
+  if (code === 'PGRST202' || code === 'PGRST205' || code === '42703'
+      || code === '42883' || code === '42P01') {
     return `This feature is not set up in the database yet. ${MIGRATION_HINT}`
   }
 

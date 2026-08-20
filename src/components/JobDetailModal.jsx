@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { STATUS_LABELS } from '../lib/constants'
+import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { attempt } from '../lib/errors'
 import { formatCurrency, formatDateTime } from '../lib/inventory'
 import JobPartsLedger from './JobPartsLedger'
@@ -13,6 +13,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   const [busy, setBusy] = useState(false)
   const [ledgerKey, setLedgerKey] = useState(0)
   const [revertTo, setRevertTo] = useState('scheduled')
+  const [confirmCancel, setConfirmCancel] = useState(false)
   const [install, setInstall] = useState({
     install_date: job.install_date || '',
     installer: job.installer || '',
@@ -20,6 +21,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   })
 
   const installed = job.status === 'installed'
+  const cancelled = job.status === CANCELLED_STATUS
+  const open = !installed && !cancelled
 
   function handleInstallChange(e) {
     const { name, value } = e.target
@@ -29,6 +32,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   function finish(message) {
     setNotice(message)
     setLedgerKey(k => k + 1)
+    setConfirmCancel(false)
     onChanged()
   }
 
@@ -89,7 +93,20 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
     }
 
     const lines = data?.lines_reversed ?? 0
-    finish(`Install reversed. ${lines} ${lines === 1 ? 'item was' : 'items were'} returned to inventory and the job is now ${STATUS_LABELS[revertTo] || revertTo}.`)
+    finish(`Install reversed. ${lines} ${lines === 1 ? 'item was' : 'items were'} returned to inventory, and the job is now ${STATUS_LABELS[revertTo] || revertTo} with its parts committed again.`)
+  }
+
+  // What a plain status change means for the reservation layer. The database
+  // trigger does the work, so this only has to say what happened.
+  function statusNotice(next) {
+    if (next === CANCELLED_STATUS) {
+      return 'Job cancelled. Every part it had committed is released and back in available. '
+        + 'Nothing moved in the ledger, because a cancelled job never consumed anything.'
+    }
+    if (cancelled) {
+      return `Job reopened as ${STATUS_LABELS[next] || next}. Its parts are committed again.`
+    }
+    return `Job moved to ${STATUS_LABELS[next] || next}.`
   }
 
   async function runPlainStatus(next) {
@@ -106,10 +123,11 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
 
     if (error) {
       setActionError(error)
+      onChanged()
       return
     }
 
-    finish(`Job moved to ${STATUS_LABELS[next] || next}.`)
+    finish(statusNotice(next))
   }
 
   const subtitle = `${job.system_template} · ${job.city} · Invoice ${job.invoice_number}`
@@ -145,12 +163,20 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         item cost later does not rewrite the margin on a job that already installed.
       </p>
 
-      {!installed && (
+      {open && (
         <JobPartsPreview
           templateId={job.template_id}
           templateLabel={job.system_template}
           faucetFinish={job.faucet_finish}
+          committed
         />
+      )}
+
+      {cancelled && (
+        <p className="inv-state">
+          This job is cancelled, so it holds no parts. Nothing is committed for it and
+          nothing was deducted. Reopen it to claim its parts again.
+        </p>
       )}
 
       <section className="job-action">
@@ -168,7 +194,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
           )}
         </p>
 
-        {!installed && (
+        {open && (
           <div className="form-grid job-install-grid">
             <div className="field">
               <label htmlFor="install_date">Install Date</label>
@@ -200,6 +226,14 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
           </div>
         )}
 
+        {confirmCancel && (
+          <p className="form-warning" role="status">
+            Cancelling releases every part this job has committed and returns it to
+            available. The job stays in the list as cancelled and stops counting toward
+            revenue and margin. Nothing is deducted or returned in the ledger.
+          </p>
+        )}
+
         {actionError && <p className="form-error" role="alert">{actionError}</p>}
         {notice && <p className="job-notice" role="status">{notice}</p>}
 
@@ -216,9 +250,32 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
               Back to Sold
             </button>
           )}
-          {!installed && (
-            <button type="button" className="btn-primary" onClick={runMarkInstalled} disabled={busy}>
-              {busy ? 'Working...' : 'Mark Installed and Deduct Parts'}
+          {open && (confirmCancel ? (
+            <>
+              <button type="button" className="btn-cancel"
+                onClick={() => setConfirmCancel(false)} disabled={busy}>
+                Keep Job
+              </button>
+              <button type="button" className="btn-danger"
+                onClick={() => runPlainStatus(CANCELLED_STATUS)} disabled={busy}>
+                {busy ? 'Working...' : 'Cancel Job and Release Parts'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn-cancel" disabled={busy}
+                onClick={() => { setNotice(''); setActionError(''); setConfirmCancel(true) }}>
+                Cancel Job
+              </button>
+              <button type="button" className="btn-primary" onClick={runMarkInstalled} disabled={busy}>
+                {busy ? 'Working...' : 'Mark Installed and Deduct Parts'}
+              </button>
+            </>
+          ))}
+          {cancelled && (
+            <button type="button" className="btn-primary"
+              onClick={() => runPlainStatus('sold')} disabled={busy}>
+              {busy ? 'Working...' : 'Reopen as Sold'}
             </button>
           )}
           {installed && (

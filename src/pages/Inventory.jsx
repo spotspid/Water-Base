@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { formatCurrency, isLowStock, sortStockRows } from '../lib/inventory'
+import { attempt } from '../lib/errors'
+import {
+  availableOf, committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
+} from '../lib/inventory'
 import AppShell from '../components/AppShell'
 import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
@@ -8,6 +11,10 @@ import ItemHistoryModal from '../components/ItemHistoryModal'
 import './Inventory.css'
 
 const ALL_CATEGORIES = 'all'
+
+const STOCK_COLUMNS =
+  'id, sku, name, category, variant, unit_cost, reorder_threshold, active, ' +
+  'on_hand, stock_value, committed, available'
 
 export default function Inventory() {
   const [rows, setRows] = useState([])
@@ -20,21 +27,19 @@ export default function Inventory() {
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    try {
-      const { data, error: err } = await supabase
-        .from('inventory_stock')
-        .select('id, sku, name, category, variant, unit_cost, reorder_threshold, active, on_hand, stock_value')
 
-      if (err) {
-        setError(err.message)
-        setRows([])
-      } else {
-        setRows(sortStockRows(data || []))
-      }
-    } catch (caught) {
-      setError(caught?.message || 'Could not reach the database. Check your connection and try again.')
+    const { data, error: err } = await attempt(
+      () => supabase.from('inventory_stock').select(STOCK_COLUMNS),
+      'Inventory could not be loaded.',
+    )
+
+    if (err) {
+      setError(err)
       setRows([])
+    } else {
+      setRows(sortStockRows(data || []))
     }
+
     setLoading(false)
   }, [])
 
@@ -56,6 +61,13 @@ export default function Inventory() {
   )
 
   const lowCount = useMemo(() => visible.filter(isLowStock).length, [visible])
+
+  const committedUnits = useMemo(
+    () => visible.reduce((sum, r) => sum + committedOf(r), 0),
+    [visible],
+  )
+
+  const shortCount = useMemo(() => visible.filter(isShort).length, [visible])
 
   function handleSaved() {
     setOpenModal(null)
@@ -90,9 +102,17 @@ export default function Inventory() {
               <span className="inv-stat-label">Items</span>
               <span className="inv-stat-value">{visible.length}</span>
             </div>
+            <div className="inv-stat">
+              <span className="inv-stat-label">Committed</span>
+              <span className="inv-stat-value">{committedUnits}</span>
+            </div>
             <div className={lowCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
               <span className="inv-stat-label">Low Stock</span>
               <span className="inv-stat-value">{lowCount}</span>
+            </div>
+            <div className={shortCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
+              <span className="inv-stat-label">Oversold</span>
+              <span className="inv-stat-value">{shortCount}</span>
             </div>
             <div className="inv-filter">
               <label htmlFor="category-filter">Category</label>
@@ -111,8 +131,9 @@ export default function Inventory() {
             <p className="inv-error-title">Inventory could not be loaded.</p>
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
-              If the inventory tables have not been created yet, apply the migration at
-              {' '}<code>supabase/migrations/20260818_create_inventory.sql</code> and reload.
+              This page reads the <code>inventory_stock</code> view, including its committed
+              and available columns. If those are missing, apply the migrations in
+              {' '}<code>supabase/migrations</code> and reload.
             </p>
             <button type="button" className="btn-cancel" onClick={load}>Try again</button>
           </div>
@@ -136,6 +157,8 @@ export default function Inventory() {
                   <th>Category</th>
                   <th>Variant</th>
                   <th className="col-num">On Hand</th>
+                  <th className="col-num">Committed</th>
+                  <th className="col-num">Available</th>
                   <th className="col-num">Unit Cost</th>
                   <th className="col-num">Stock Value</th>
                 </tr>
@@ -165,6 +188,25 @@ export default function Inventory() {
                         </span>
                       )}
                     </td>
+                    <td className="col-num">
+                      {committedOf(row) === 0
+                        ? <span className="inv-none">0</span>
+                        : <span className="inv-committed"
+                            title="Claimed by booked jobs that have not been installed">
+                            {committedOf(row)}
+                          </span>}
+                    </td>
+                    <td className="col-num">
+                      <span className={isShort(row) ? 'inv-available inv-available-short' : 'inv-available'}>
+                        {availableOf(row)}
+                      </span>
+                      {isShort(row) && (
+                        <span className="inv-low"
+                          title="More is committed to jobs than is on the shelf">
+                          Short
+                        </span>
+                      )}
+                    </td>
                     <td className="col-num">{formatCurrency(row.unit_cost)}</td>
                     <td className="col-num col-value">{formatCurrency(row.stock_value)}</td>
                   </tr>
@@ -177,7 +219,9 @@ export default function Inventory() {
         {hasData && visible.length > 0 && (
           <p className="inv-ledger-note">
             On hand is summed from the transaction ledger and is never edited directly.
-            Click a row to see its history.
+            Committed is what booked jobs have claimed but not yet consumed, and available
+            is on hand minus committed. Booking a job never moves stock. Only marking it
+            installed writes to the ledger. Click a row to see its history.
           </p>
         )}
       </div>

@@ -47,6 +47,28 @@ export function isLowStock(row) {
   return Number(row.on_hand) <= Number(row.reorder_threshold)
 }
 
+// Committed and available come from the reservation layer. They are read
+// defensively because a database that is one migration behind returns rows
+// without them, and a missing claim should read as zero claimed rather than
+// as NaN spreading through every total on the page.
+export function committedOf(row) {
+  const n = Number(row?.committed)
+  return Number.isFinite(n) ? n : 0
+}
+
+export function availableOf(row) {
+  const n = Number(row?.available)
+  if (Number.isFinite(n)) return n
+  return (Number(row?.on_hand) || 0) - committedOf(row)
+}
+
+// More is promised than is on the shelf. This is separate from low stock:
+// low stock is a reorder signal against a threshold, short is a promise the
+// current shelf cannot keep.
+export function isShort(row) {
+  return availableOf(row) < 0
+}
+
 // sort by category, then name, both case insensitive
 export function sortStockRows(rows) {
   return [...rows].sort((a, b) => {

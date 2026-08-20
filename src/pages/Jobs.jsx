@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
+import { billableJobs } from '../lib/dashboard'
 import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import AppShell from '../components/AppShell'
@@ -51,12 +52,19 @@ export default function Jobs() {
     [jobs, status],
   )
 
-  const totals = useMemo(() => visible.reduce((acc, j) => ({
+  // Cancelled jobs stay in the list and in the status filter, but never in
+  // the money. A cancelled sale that still counted as revenue would overstate
+  // every total on this bar.
+  const counted = useMemo(() => billableJobs(visible), [visible])
+
+  const cancelledCount = visible.length - counted.length
+
+  const totals = useMemo(() => counted.reduce((acc, j) => ({
     revenue: acc.revenue + (Number(j.sale_price) || 0),
     parts: acc.parts + (Number(j.parts_cost) || 0),
     pay: acc.pay + (Number(j.installer_pay) || 0),
     margin: acc.margin + (Number(j.margin) || 0),
-  }), { revenue: 0, parts: 0, pay: 0, margin: 0 }), [visible])
+  }), { revenue: 0, parts: 0, pay: 0, margin: 0 }), [counted])
 
   const openJob = useMemo(
     () => jobs.find(j => j.id === openJobId) || null,
@@ -188,8 +196,13 @@ export default function Jobs() {
         {hasData && visible.length > 0 && (
           <p className="inv-ledger-note">
             Margin is price minus parts minus installer pay. Parts come from the inventory
-            ledger at the cost stamped on each transaction. Click a job to install it or
+            ledger at the cost stamped on each transaction. A job that is sold or scheduled
+            has its parts committed but not yet deducted. Click a job to install it or
             review what it consumed.
+            {cancelledCount > 0 && (
+              <> {cancelledCount} cancelled {cancelledCount === 1 ? 'job is' : 'jobs are'} shown
+              but left out of the totals above.</>
+            )}
           </p>
         )}
       </div>

@@ -7,7 +7,13 @@ import { pickSourceLabel } from '../lib/templates'
 // Shows the parts list a job will consume, with customer pick lines already
 // resolved against the chosen finish. Used before the job exists on the new
 // job form, and again before marking an existing job installed.
-export default function JobPartsPreview({ templateId, templateLabel, faucetFinish }) {
+//
+// committed says the job already exists and is holding these parts as a
+// claim. On the new job form it is false, because nothing is claimed until
+// the job is saved.
+export default function JobPartsPreview({
+  templateId, templateLabel, faucetFinish, committed = false,
+}) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -124,6 +130,15 @@ export default function JobPartsPreview({ templateId, templateLabel, faucetFinis
             </tfoot>
           </table>
         </div>
+      )}
+
+      {!loading && !error && committed && rows.length > 0 && (
+        <p className="inv-ledger-note">
+          These parts are committed to this job now, which lowers their available count
+          without moving stock. They leave the shelf when the job is marked installed,
+          and the claim is released if it is cancelled.
+          {unresolved.length > 0 && ' A line with no matching item cannot be committed either, so it is not counted above.'}
+        </p>
       )}
     </section>
   )

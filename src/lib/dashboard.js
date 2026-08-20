@@ -1,5 +1,12 @@
-import { STATUS_LABELS } from './constants'
+import { CANCELLED_STATUS, STATUS_LABELS } from './constants'
 import { isLowStock } from './inventory'
+
+// A cancelled job never earned anything, so it is dropped before any money
+// is added up. It is deliberately left in the status breakdown, where the
+// count is the point.
+export function billableJobs(jobs) {
+  return jobs.filter(job => job.status !== CANCELLED_STATUS)
+}
 
 // The month boundary is taken in the browser's own timezone, so "this month"
 // means what it means to the person looking at the screen rather than what it
