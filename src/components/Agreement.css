@@ -1,0 +1,192 @@
+/* Agreement panel on the job detail modal, the badge on the jobs list, and the
+   template editor on the settings page. One file because the badge is shared. */
+
+.agr-panel {
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 18px 20px;
+  margin: 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agr-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.agr-head h3 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.agr-sub {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-top: 3px;
+}
+
+.agr-timeline {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.agr-detail {
+  margin-top: 6px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-word;
+}
+
+.agr-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.agr-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agr-confirm-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--maroon);
+  flex: 1 1 220px;
+}
+
+/* status badge, shared with the jobs list column */
+.agr-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.agr-neutral {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-500);
+}
+
+.agr-wait {
+  background: rgba(214, 158, 46, 0.14);
+  color: #7a5010;
+}
+
+.agr-good {
+  background: rgba(44, 129, 155, 0.18);
+  color: #1a5c73;
+}
+
+.agr-bad {
+  background: rgba(140, 47, 47, 0.1);
+  color: var(--maroon);
+}
+
+/* settings editor */
+.agr-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.agr-type {
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agr-type-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.agr-type-head h3 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.agr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--navy);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agr-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.agr-type-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.agr-type-row .field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.agr-type-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.agr-type-row input {
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  color: var(--navy);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.agr-type-row input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+.agr-type-row input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 620px) {
+  .agr-type-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

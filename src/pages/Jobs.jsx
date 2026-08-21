@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
+import { agreementLabel, agreementTone } from '../lib/agreements'
 import { billableJobs } from '../lib/dashboard'
 import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
@@ -17,7 +18,9 @@ const JOB_MARGIN_COLUMNS =
   'installer, invoice_number, faucet_finish, parts_deducted_at, parts_deduct_batch, ' +
   'sale_price, installer_pay, parts_cost, parts_count, margin, margin_pct, ' +
   'address, phone, scheduled_date, time_window, installer_id, installer_name, ' +
-  'helper_id, helper_name'
+  'helper_id, helper_name, customer_email, agreement_status, agreement_signed_url, ' +
+  'agreement_id, agreement_sent_at, agreement_completed_at, agreement_audit_log_url, ' +
+  'agreement_last_error, agreement_send_count'
 
 export default function Jobs() {
   const [jobs, setJobs] = useState([])
@@ -170,6 +173,7 @@ export default function Jobs() {
                   <th className="col-num">Pay</th>
                   <th className="col-num">Margin</th>
                   <th>Status</th>
+                  <th>Agreement</th>
                   <th>Date</th>
                 </tr>
               </thead>
@@ -203,6 +207,11 @@ export default function Jobs() {
                     <td>
                       <span className={`status-badge status-${job.status}`}>
                         {STATUS_LABELS[job.status] || job.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`agr-badge agr-${agreementTone(job)}`}>
+                        {agreementLabel(job)}
                       </span>
                     </td>
                     <td className="col-nowrap">

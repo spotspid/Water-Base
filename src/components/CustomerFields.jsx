@@ -19,6 +19,13 @@ export default function CustomerFields({ form, onChange, disabled }) {
             value={form.phone} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field field-full">
+          <label htmlFor="customer_email">
+            Email <span className="optional">(needed to send an agreement)</span>
+          </label>
+          <input id="customer_email" name="customer_email" type="email"
+            value={form.customer_email} onChange={onChange} disabled={disabled} />
+        </div>
+        <div className="field field-full">
           <label htmlFor="address">Address</label>
           <input id="address" name="address" type="text" required
             value={form.address} onChange={onChange} disabled={disabled} />

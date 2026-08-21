@@ -2,6 +2,7 @@ import { useSettings } from '../lib/settings'
 import { useInstallers } from '../lib/useInstallers'
 import AppShell from '../components/AppShell'
 import OperationSettings from '../components/OperationSettings'
+import AgreementTypeEditor from '../components/AgreementTypeEditor'
 import InstallerEditor from '../components/InstallerEditor'
 import OptionListEditor from '../components/OptionListEditor'
 import TransactionTypeEditor from '../components/TransactionTypeEditor'
@@ -81,6 +82,8 @@ export default function Settings() {
         {!loading && !error && (
           <>
             <OperationSettings settings={settings} onChanged={reload} />
+
+            <AgreementTypeEditor />
 
             {crewError ? (
               <div className="inv-error-box" role="alert">

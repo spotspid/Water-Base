@@ -12,6 +12,7 @@ import './NewJob.css'
 const EMPTY_FORM = {
   customer_name: '',
   phone: '',
+  customer_email: '',
   address: '',
   city: '',
   water_source: 'city',
@@ -83,6 +84,13 @@ export default function NewJob() {
     if (!form.customer_name.trim()) return 'Customer name is required.'
     if (!form.phone.trim()) return 'Phone is required.'
     if (!form.address.trim()) return 'Address is required.'
+
+    // optional, but a typo here means the agreement silently never arrives
+    const email = form.customer_email.trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return 'That email address does not look right.'
+    }
+
     if (!form.city) return 'Pick a city.'
     if (!form.system_template) return 'Pick a system template.'
     if (!form.payment_type) return 'Pick a payment type.'
@@ -131,6 +139,7 @@ export default function NewJob() {
     const payload = {
       customer_name: form.customer_name.trim(),
       phone: form.phone.trim(),
+      customer_email: form.customer_email.trim() || null,
       address: form.address.trim(),
       city: form.city,
       water_source: form.water_source,

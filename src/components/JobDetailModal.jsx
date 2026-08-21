@@ -5,6 +5,7 @@ import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import { useInstallers } from '../lib/useInstallers'
 import { crewLabel, formatLongDate } from '../lib/schedule'
+import JobAgreement from './JobAgreement'
 import JobPartsLedger from './JobPartsLedger'
 import JobStatusActions from './JobStatusActions'
 import JobPartsPreview from './JobPartsPreview'
@@ -197,6 +198,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         {' '}
         <a href="/schedule" className="tpl-link">Open the schedule</a>
       </p>
+
+      {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 
       {open && (
         <JobPartsPreview
