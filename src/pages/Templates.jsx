@@ -149,8 +149,8 @@ export default function Templates() {
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
               If the template tables have not been created yet, apply
-              {' '}<code>supabase/migrations/20260819_create_templates_bom.sql</code> and
-              {' '}<code>supabase/migrations/20260819_job_install_functions.sql</code>, then reload.
+              {' '}<code>supabase/migrations/20260819000000_create_templates_bom.sql</code> and
+              {' '}<code>supabase/migrations/20260819000100_job_install_functions.sql</code>, then reload.
             </p>
             <button type="button" className="btn-cancel" onClick={load}>Try again</button>
           </div>

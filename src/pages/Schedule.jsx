@@ -195,7 +195,7 @@ export default function Schedule() {
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
               This page reads the <code>job_schedule</code> view. If it does not exist yet,
-              apply <code>supabase/migrations/20260822_create_scheduling.sql</code> and reload.
+              apply <code>supabase/migrations/20260822000000_create_scheduling.sql</code> and reload.
             </p>
             <button type="button" className="btn-cancel" onClick={load}>Try again</button>
           </div>

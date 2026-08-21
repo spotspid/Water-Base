@@ -67,7 +67,7 @@ export default function Settings() {
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
               If the settings tables have not been created yet, apply
-              {' '}<code>supabase/migrations/20260820_create_settings.sql</code> and reload.
+              {' '}<code>supabase/migrations/20260820000000_create_settings.sql</code> and reload.
             </p>
             <button type="button" className="btn-cancel" onClick={reload}>Try again</button>
           </div>
@@ -83,7 +83,7 @@ export default function Settings() {
                 <p className="inv-error-detail">{crewError}</p>
                 <p className="inv-error-hint">
                   If the roster has not been created yet, apply
-                  {' '}<code>supabase/migrations/20260822_create_scheduling.sql</code> and reload.
+                  {' '}<code>supabase/migrations/20260822000000_create_scheduling.sql</code> and reload.
                 </p>
                 <button type="button" className="btn-cancel" onClick={reloadCrew}>Try again</button>
               </div>

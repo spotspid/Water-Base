@@ -122,7 +122,7 @@ export default function Jobs() {
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
               The jobs list reads the <code>job_margin</code> view. If it does not exist yet,
-              apply <code>supabase/migrations/20260819_create_templates_bom.sql</code> and reload.
+              apply <code>supabase/migrations/20260819000000_create_templates_bom.sql</code> and reload.
             </p>
             <button type="button" className="btn-cancel" onClick={load}>Try again</button>
           </div>
