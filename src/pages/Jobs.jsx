@@ -14,7 +14,9 @@ const ALL_STATUSES = 'all'
 const JOB_MARGIN_COLUMNS =
   'id, created_at, customer_name, city, system_template, template_id, status, install_date, ' +
   'installer, invoice_number, faucet_finish, parts_deducted_at, parts_deduct_batch, ' +
-  'sale_price, installer_pay, parts_cost, parts_count, margin, margin_pct'
+  'sale_price, installer_pay, parts_cost, parts_count, margin, margin_pct, ' +
+  'address, phone, scheduled_date, time_window, installer_id, installer_name, ' +
+  'helper_id, helper_name'
 
 export default function Jobs() {
   const [jobs, setJobs] = useState([])

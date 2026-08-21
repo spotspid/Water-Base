@@ -191,3 +191,49 @@
     gap: 8px;
   }
 }
+
+/* ---- installer roster ---- */
+
+.set-crew-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.set-color {
+  width: 38px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.set-color:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.set-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 8px;
+  vertical-align: baseline;
+  border: 1px solid rgba(28, 54, 81, 0.2);
+}
+
+.set-crew-phone {
+  margin-left: 10px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.set-add-crew {
+  flex-wrap: wrap;
+}

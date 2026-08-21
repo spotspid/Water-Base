@@ -74,6 +74,7 @@ export function SettingsProvider({ children }) {
       cities: activeValues('service_city'),
       finishes: activeValues('faucet_finish'),
       paymentTypes: activeValues('payment_type'),
+      timeWindows: activeValues('time_window'),
       txnTypes: sortedTypes.filter(t => t.active),
       ...readScalars(scalarRows),
     }

@@ -2,12 +2,16 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { attempt } from '../lib/errors'
-import { formatCurrency, formatDateTime } from '../lib/inventory'
+import { formatCurrency } from '../lib/inventory'
+import { useInstallers } from '../lib/useInstallers'
+import { crewLabel, formatLongDate } from '../lib/schedule'
 import JobPartsLedger from './JobPartsLedger'
+import JobStatusActions from './JobStatusActions'
 import JobPartsPreview from './JobPartsPreview'
 import Modal from './Modal'
 
 export default function JobDetailModal({ job, onClose, onChanged }) {
+  const { installers, loading: loadingCrew } = useInstallers({ activeOnly: true })
   const [actionError, setActionError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
@@ -15,8 +19,10 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   const [revertTo, setRevertTo] = useState('scheduled')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [install, setInstall] = useState({
-    install_date: job.install_date || '',
-    installer: job.installer || '',
+    // an install that happened today usually happened on the day it was
+    // promised, so the date it was booked for is the sensible starting point
+    install_date: job.install_date || job.scheduled_date || '',
+    installer_id: job.installer_id || '',
     payout_amount: job.installer_pay == null ? '' : String(job.installer_pay),
   })
 
@@ -49,11 +55,30 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
     setNotice('')
     setBusy(true)
 
+    // the roster id is the source of truth for who did the job, and a trigger
+    // writes the name onto the row from it, so the crew is saved before the
+    // deduction rather than passed through as free text.
+    if (install.installer_id && install.installer_id !== job.installer_id) {
+      const { error: crewErr } = await attempt(
+        () => supabase.from('jobs')
+          .update({ installer_id: install.installer_id })
+          .eq('id', job.id),
+        'The installer could not be assigned.',
+      )
+
+      if (crewErr) {
+        setBusy(false)
+        setActionError(crewErr)
+        onChanged()
+        return
+      }
+    }
+
     const { data, error } = await attempt(
       () => supabase.rpc('mark_job_installed', {
         p_job_id: job.id,
         p_install_date: install.install_date || null,
-        p_installer: install.installer.trim() || null,
+        p_installer: null,
         p_payout: install.payout_amount === '' ? null : Number(install.payout_amount),
       }),
       'The job could not be marked installed.',
@@ -163,6 +188,16 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         item cost later does not rewrite the margin on a job that already installed.
       </p>
 
+      <p className="job-schedule-line">
+        {job.scheduled_date
+          ? `Scheduled for ${formatLongDate(job.scheduled_date)}${job.time_window ? `, ${job.time_window}` : ''}.`
+          : 'Not scheduled yet.'}
+        {' '}
+        {crewLabel(job) ? `Crew: ${crewLabel(job)}.` : 'No crew assigned.'}
+        {' '}
+        <a href="/schedule" className="tpl-link">Open the schedule</a>
+      </p>
+
       {open && (
         <JobPartsPreview
           templateId={job.template_id}
@@ -179,112 +214,26 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         </p>
       )}
 
-      <section className="job-action">
-        <h3>Status</h3>
-        <p className="job-action-current">
-          Currently
-          {' '}
-          <span className={`status-badge status-${job.status}`}>
-            {STATUS_LABELS[job.status] || job.status}
-          </span>
-          {job.parts_deducted_at && (
-            <span className="job-action-stamp">
-              Parts deducted {formatDateTime(job.parts_deducted_at)}
-            </span>
-          )}
-        </p>
-
-        {open && (
-          <div className="form-grid job-install-grid">
-            <div className="field">
-              <label htmlFor="install_date">Install Date</label>
-              <input id="install_date" name="install_date" type="date"
-                value={install.install_date} onChange={handleInstallChange} disabled={busy} />
-            </div>
-            <div className="field">
-              <label htmlFor="installer">Installer</label>
-              <input id="installer" name="installer" type="text"
-                value={install.installer} onChange={handleInstallChange} disabled={busy} />
-            </div>
-            <div className="field">
-              <label htmlFor="payout_amount">Installer Pay ($)</label>
-              <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
-                value={install.payout_amount} onChange={handleInstallChange} disabled={busy} />
-            </div>
-          </div>
-        )}
-
-        {installed && (
-          <div className="field job-revert-field">
-            <label htmlFor="revert_to">Move back to</label>
-            <select id="revert_to" value={revertTo}
-              onChange={e => setRevertTo(e.target.value)} disabled={busy}>
-              <option value="scheduled">Scheduled</option>
-              <option value="sold">Sold</option>
-            </select>
-            <span className="field-hint">Every part deducted for this install is returned to inventory.</span>
-          </div>
-        )}
-
-        {confirmCancel && (
-          <p className="form-warning" role="status">
-            Cancelling releases every part this job has committed and returns it to
-            available. The job stays in the list as cancelled and stops counting toward
-            revenue and margin. Nothing is deducted or returned in the ledger.
-          </p>
-        )}
-
-        {actionError && <p className="form-error" role="alert">{actionError}</p>}
-        {notice && <p className="job-notice" role="status">{notice}</p>}
-
-        <div className="modal-actions job-action-buttons">
-          {job.status === 'sold' && (
-            <button type="button" className="btn-cancel"
-              onClick={() => runPlainStatus('scheduled')} disabled={busy}>
-              Mark Scheduled
-            </button>
-          )}
-          {job.status === 'scheduled' && (
-            <button type="button" className="btn-cancel"
-              onClick={() => runPlainStatus('sold')} disabled={busy}>
-              Back to Sold
-            </button>
-          )}
-          {open && (confirmCancel ? (
-            <>
-              <button type="button" className="btn-cancel"
-                onClick={() => setConfirmCancel(false)} disabled={busy}>
-                Keep Job
-              </button>
-              <button type="button" className="btn-danger"
-                onClick={() => runPlainStatus(CANCELLED_STATUS)} disabled={busy}>
-                {busy ? 'Working...' : 'Cancel Job and Release Parts'}
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" className="btn-cancel" disabled={busy}
-                onClick={() => { setNotice(''); setActionError(''); setConfirmCancel(true) }}>
-                Cancel Job
-              </button>
-              <button type="button" className="btn-primary" onClick={runMarkInstalled} disabled={busy}>
-                {busy ? 'Working...' : 'Mark Installed and Deduct Parts'}
-              </button>
-            </>
-          ))}
-          {cancelled && (
-            <button type="button" className="btn-primary"
-              onClick={() => runPlainStatus('sold')} disabled={busy}>
-              {busy ? 'Working...' : 'Reopen as Sold'}
-            </button>
-          )}
-          {installed && (
-            <button type="button" className="btn-primary" onClick={runRevert} disabled={busy}>
-              {busy ? 'Working...' : 'Reverse Install and Return Parts'}
-            </button>
-          )}
-        </div>
-      </section>
+      <JobStatusActions
+        job={job}
+        install={install}
+        onInstallChange={handleInstallChange}
+        installers={installers}
+        loadingCrew={loadingCrew}
+        busy={busy}
+        revertTo={revertTo}
+        onRevertTo={setRevertTo}
+        confirmCancel={confirmCancel}
+        onConfirmCancel={next => {
+          if (next) { setNotice(''); setActionError('') }
+          setConfirmCancel(next)
+        }}
+        actionError={actionError}
+        notice={notice}
+        onMarkInstalled={runMarkInstalled}
+        onRevert={runRevert}
+        onPlainStatus={runPlainStatus}
+      />
 
       <JobPartsLedger jobId={job.id} refreshKey={ledgerKey} />
     </Modal>

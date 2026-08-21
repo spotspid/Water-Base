@@ -23,6 +23,9 @@ export default function AppShell({ children }) {
           <NavLink to="/jobs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Jobs
           </NavLink>
+          <NavLink to="/schedule" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Schedule
+          </NavLink>
           <NavLink to="/inventory" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Inventory
           </NavLink>

@@ -1,6 +1,8 @@
 import { useSettings } from '../lib/settings'
+import { useInstallers } from '../lib/useInstallers'
 import AppShell from '../components/AppShell'
 import OperationSettings from '../components/OperationSettings'
+import InstallerEditor from '../components/InstallerEditor'
 import OptionListEditor from '../components/OptionListEditor'
 import TransactionTypeEditor from '../components/TransactionTypeEditor'
 import './Settings.css'
@@ -26,11 +28,22 @@ const LISTS = [
     title: 'Payment Types',
     description: 'How a customer paid, recorded on the job.',
   },
+  {
+    listKey: 'time_window',
+    title: 'Time Windows',
+    description: 'The arrival windows a job can be scheduled into.',
+  },
 ]
 
 export default function Settings() {
   const settings = useSettings()
   const { loading, error, reload, allOptions, allTxnTypes } = settings
+  const {
+    installers,
+    loading: loadingCrew,
+    error: crewError,
+    reload: reloadCrew,
+  } = useInstallers()
 
   return (
     <AppShell>
@@ -63,6 +76,22 @@ export default function Settings() {
         {!loading && !error && (
           <>
             <OperationSettings settings={settings} onChanged={reload} />
+
+            {crewError ? (
+              <div className="inv-error-box" role="alert">
+                <p className="inv-error-title">The installer roster could not be loaded.</p>
+                <p className="inv-error-detail">{crewError}</p>
+                <p className="inv-error-hint">
+                  If the roster has not been created yet, apply
+                  {' '}<code>supabase/migrations/20260822_create_scheduling.sql</code> and reload.
+                </p>
+                <button type="button" className="btn-cancel" onClick={reloadCrew}>Try again</button>
+              </div>
+            ) : loadingCrew ? (
+              <p className="inv-state">Loading the installer roster...</p>
+            ) : (
+              <InstallerEditor installers={installers} onChanged={reloadCrew} />
+            )}
 
             <TransactionTypeEditor types={allTxnTypes} onChanged={reload} />
 

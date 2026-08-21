@@ -7,7 +7,7 @@ import { useSystemTemplates } from '../lib/useSystemTemplates'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import JobDetailFields from '../components/JobDetailFields'
-import JobPartsPreview from '../components/JobPartsPreview'
+import JobSystemFields from '../components/JobSystemFields'
 import './NewJob.css'
 
 const EMPTY_FORM = {
@@ -21,8 +21,11 @@ const EMPTY_FORM = {
   payment_type: '',
   faucet_finish: '',
   status: 'sold',
+  scheduled_date: '',
+  time_window: '',
+  installer_id: '',
+  helper_id: '',
   install_date: '',
-  installer: '',
   payout_amount: '',
   invoice_number: '',
   notes: '',
@@ -35,13 +38,9 @@ export default function NewJob() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const {
-    finishes,
-    paymentTypes,
-    installerPayMode,
-    installerPayRate,
-    loading: loadingSettings,
-  } = useSettings()
+  // the pick lists moved into JobSystemFields and JobDetailFields, which read
+  // them from the same context. this page only needs the pay rate now.
+  const { installerPayMode, installerPayRate } = useSettings()
 
   const {
     templates,
@@ -112,6 +111,14 @@ export default function NewJob() {
       if (!Number.isFinite(payout) || payout < 0) return 'Payout amount must be zero or greater.'
     }
 
+    if (form.installer_id && form.helper_id && form.installer_id === form.helper_id) {
+      return 'The installer and the helper cannot be the same person.'
+    }
+
+    if (!form.scheduled_date && form.time_window) {
+      return 'Pick a scheduled date before picking a time window, or clear the window.'
+    }
+
     if (form.status === 'installed' && !selectedTemplate) {
       return 'That template is no longer available, so parts cannot be deducted. Reload and pick another.'
     }
@@ -147,8 +154,11 @@ export default function NewJob() {
       payment_type: form.payment_type,
       faucet_finish: form.faucet_finish,
       status: wantsInstall ? 'scheduled' : form.status,
+      scheduled_date: form.scheduled_date || null,
+      time_window: form.scheduled_date ? (form.time_window || null) : null,
+      installer_id: form.installer_id || null,
+      helper_id: form.helper_id || null,
       install_date: form.install_date || null,
-      installer: form.installer.trim() || null,
       payout_amount: form.payout_amount === '' ? null : Number(form.payout_amount),
       invoice_number: form.invoice_number.trim(),
       notes: form.notes.trim() || null,
@@ -173,8 +183,8 @@ export default function NewJob() {
     const { error: installError } = await attempt(
       () => supabase.rpc('mark_job_installed', {
         p_job_id: data.id,
-        p_install_date: form.install_date || null,
-        p_installer: form.installer.trim() || null,
+        p_install_date: form.install_date || form.scheduled_date || null,
+        p_installer: null,
         p_payout: form.payout_amount === '' ? null : Number(form.payout_amount),
       }),
       'The job was saved but its parts could not be deducted.',
@@ -207,70 +217,17 @@ export default function NewJob() {
 
           <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 
-          <section className="form-section">
-            <h2>System</h2>
+          <JobSystemFields
+            form={form}
+            onChange={handleChange}
+            disabled={saving}
+            templates={templates}
+            loadingTemplates={loadingTemplates}
+            templateError={templateError}
+            onReloadTemplates={reloadTemplates}
+            selectedTemplate={selectedTemplate}
+          />
 
-            {templateError && (
-              <div className="inv-error-box" role="alert">
-                <p className="inv-error-detail">{templateError}</p>
-                <button type="button" className="btn-cancel" onClick={reloadTemplates}>Try again</button>
-              </div>
-            )}
-
-            {!templateError && !loadingTemplates && templates.length === 0 && (
-              <p className="form-warning" role="status">
-                No active system templates exist. Create one on the Templates page first.
-              </p>
-            )}
-
-            <div className="form-grid">
-              <div className="field">
-                <label htmlFor="system_template">System Template</label>
-                <select id="system_template" name="system_template" required
-                  value={form.system_template} onChange={handleChange}
-                  disabled={saving || loadingTemplates || templates.length === 0}>
-                  <option value="">
-                    {loadingTemplates ? 'Loading templates...' : 'Select system...'}
-                  </option>
-                  {templates.map(t => <option key={t.id} value={t.label}>{t.label}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="sale_price">Sale Price ($)</label>
-                <input id="sale_price" name="sale_price" type="number" min="0" step="0.01" required
-                  value={form.sale_price} onChange={handleChange} disabled={saving} />
-              </div>
-              <div className="field">
-                <label htmlFor="faucet_finish">Faucet Finish</label>
-                <select id="faucet_finish" name="faucet_finish" required
-                  value={form.faucet_finish} onChange={handleChange}
-                  disabled={saving || loadingSettings}>
-                  <option value="">
-                    {loadingSettings ? 'Loading finishes...' : 'Select finish...'}
-                  </option>
-                  {finishes.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-                <span className="field-hint">Decides which faucet the template consumes.</span>
-              </div>
-              <div className="field">
-                <label htmlFor="payment_type">Payment Type</label>
-                <select id="payment_type" name="payment_type" required
-                  value={form.payment_type} onChange={handleChange}
-                  disabled={saving || loadingSettings}>
-                  <option value="">
-                    {loadingSettings ? 'Loading payment types...' : 'Select type...'}
-                  </option>
-                  {paymentTypes.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <JobPartsPreview
-              templateId={selectedTemplate?.id || ''}
-              templateLabel={form.system_template}
-              faucetFinish={form.faucet_finish}
-            />
-          </section>
 
           <JobDetailFields
             form={form}

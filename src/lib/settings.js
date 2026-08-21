@@ -10,6 +10,7 @@ export const OPTION_LISTS = [
   'service_city',
   'faucet_finish',
   'payment_type',
+  'time_window',
 ]
 
 export const DIRECTION_LABELS = {
