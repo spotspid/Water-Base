@@ -1,0 +1,77 @@
+/* Shared empty state. Matches the dashboard's first run panel, which was the
+   only page that had one before this. */
+
+.empty-state {
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  background: var(--white);
+  padding: 28px 30px 30px;
+}
+
+.empty-state-compact {
+  padding: 18px 20px 20px;
+}
+
+/* A filter that matched nothing is not a milestone, so it stays quieter than
+   a genuinely new install. */
+.empty-state-filtered {
+  background: var(--gray-100);
+  border-style: dashed;
+}
+
+.empty-state-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0;
+}
+
+.empty-state-compact .empty-state-title {
+  font-size: 16px;
+}
+
+.empty-state-body {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--gray-500);
+  max-width: 640px;
+}
+
+.empty-state-body p {
+  margin: 0 0 8px;
+}
+
+.empty-state-body p:last-child {
+  margin-bottom: 0;
+}
+
+.empty-state-steps {
+  margin: 18px 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+.empty-state-steps li {
+  padding-left: 4px;
+}
+
+.empty-state-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.empty-state-steps a,
+.empty-state-body a {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.empty-state-steps a:hover,
+.empty-state-body a:hover {
+  color: var(--navy);
+}

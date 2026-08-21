@@ -5,9 +5,11 @@ import { crewLabel, isMovable } from '../lib/schedule'
 // same order: who, where, when, and who is going. System type follows, since
 // it is what tells him what is going on the truck.
 //
-// A job that cannot be moved is not draggable and says so on hover, rather
-// than accepting the drag and failing at the database.
-export default function ScheduleJobCard({ job, onOpen, onDragStart, onDragEnd, dragging, compact }) {
+// Dragging is driven by pointer events from the page, not by the draggable
+// attribute, so the same press works with a mouse and with a finger.
+export default function ScheduleJobCard({
+  job, onOpen, onPointerDown, dragging, compact, preview,
+}) {
   const movable = isMovable(job)
   const crew = crewLabel(job)
   const accent = job.installer_color || 'var(--gray-300)'
@@ -17,12 +19,13 @@ export default function ScheduleJobCard({ job, onOpen, onDragStart, onDragEnd, d
     `sch-card-${job.status}`,
     compact ? 'sch-card-compact' : '',
     dragging ? 'sch-card-dragging' : '',
-    movable ? '' : 'sch-card-fixed',
+    preview ? 'sch-card-preview' : '',
+    movable ? 'sch-card-movable' : 'sch-card-fixed',
   ].filter(Boolean).join(' ')
 
   const title = movable
-    ? `${job.customer_name}. Drag to another day, or click to open.`
-    : `${job.customer_name}. This job is ${job.status}, so its date cannot be dragged.`
+    ? `${job.customer_name}. Hold and drag to another day, or tap to open.`
+    : `${job.customer_name}. This job is ${job.status}, so its date cannot be moved.`
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -31,25 +34,45 @@ export default function ScheduleJobCard({ job, onOpen, onDragStart, onDragEnd, d
     }
   }
 
+  // The floating copy that follows the pointer is decoration. It must not be
+  // focusable, clickable, or visible to a screen reader, and above all it
+  // must not intercept the hit test that finds the day underneath it.
+  if (preview) {
+    return (
+      <article className={classes} style={{ borderLeftColor: accent }} aria-hidden="true">
+        <CardBody job={job} crew={crew} compact={false} />
+      </article>
+    )
+  }
+
   return (
     <article
       className={classes}
       style={{ borderLeftColor: accent }}
-      draggable={movable}
-      onDragStart={movable ? e => onDragStart(e, job) : undefined}
-      onDragEnd={movable ? onDragEnd : undefined}
+      data-job-id={job.id}
+      onPointerDown={movable ? e => onPointerDown(e, job) : undefined}
       onClick={() => onOpen(job.id)}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
       title={title}
     >
+      <CardBody job={job} crew={crew} compact={compact} />
+    </article>
+  )
+}
+
+function CardBody({ job, crew, compact }) {
+  return (
+    <>
       <p className="sch-card-name">{job.customer_name}</p>
 
-      <p className="sch-card-address">
-        {job.address}
-        {job.city && <span className="sch-card-city">{job.city}</span>}
-      </p>
+      {!compact && (
+        <p className="sch-card-address">
+          {job.address}
+          {job.city && <span className="sch-card-city">{job.city}</span>}
+        </p>
+      )}
 
       <p className="sch-card-meta">
         <span className={job.time_window ? 'sch-window' : 'sch-window sch-window-missing'}>
@@ -60,7 +83,7 @@ export default function ScheduleJobCard({ job, onOpen, onDragStart, onDragEnd, d
         </span>
       </p>
 
-      <p className="sch-card-system">{job.system_template}</p>
-    </article>
+      {!compact && <p className="sch-card-system">{job.system_template}</p>}
+    </>
   )
 }

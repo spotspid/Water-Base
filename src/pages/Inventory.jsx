@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
   availableOf, committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
 } from '../lib/inventory'
 import AppShell from '../components/AppShell'
+import EmptyState from '../components/EmptyState'
 import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
 import ItemHistoryModal from '../components/ItemHistoryModal'
@@ -140,11 +142,33 @@ export default function Inventory() {
         )}
 
         {hasData && rows.length === 0 && (
-          <p className="inv-state">No inventory items yet. Add your first one.</p>
+          <EmptyState
+            title="No inventory items yet"
+            actions={(
+              <button type="button" className="btn-primary" onClick={() => setOpenModal('add')}>
+                Add your first item
+              </button>
+            )}
+          >
+            <p>
+              Stock on hand is never typed in directly. It is summed from the transaction
+              ledger, so an item starts at zero and gets its count from a logged purchase.
+            </p>
+            <p>
+              Add the parts you carry, log what is on the shelf as a purchase, then put those
+              parts on a <Link to="/templates" className="tpl-link">template</Link> so
+              installing a job deducts them automatically.
+            </p>
+          </EmptyState>
         )}
 
         {hasData && rows.length > 0 && visible.length === 0 && (
-          <p className="inv-state">No items in this category.</p>
+          <EmptyState title="No items in this category" tone="filtered" compact>
+            <p>
+              {rows.length} {rows.length === 1 ? 'item exists' : 'items exist'} in the
+              catalog, but none are in this one. Change the category filter above.
+            </p>
+          </EmptyState>
         )}
 
         {hasData && visible.length > 0 && (

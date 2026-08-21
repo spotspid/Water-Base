@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { groupLinesByTemplate, sortTemplates } from '../lib/templates'
 import AppShell from '../components/AppShell'
+import EmptyState from '../components/EmptyState'
 import TemplateCard from '../components/TemplateCard'
 import TemplateFormModal from '../components/TemplateFormModal'
 import TemplateLineModal from '../components/TemplateLineModal'
@@ -163,7 +164,24 @@ export default function Templates() {
         )}
 
         {hasData && templates.length === 0 && (
-          <p className="inv-state">No templates yet. Create your first one.</p>
+          <EmptyState
+            title="No templates yet"
+            actions={(
+              <button type="button" className="btn-primary" onClick={() => setEditingTemplate({})}>
+                Create your first template
+              </button>
+            )}
+          >
+            <p>
+              A template is the parts list for a system you sell. Installing a job deducts
+              exactly what its template says, at the cost stamped on each part that day, so
+              margin does not move when a supplier price changes later.
+            </p>
+            <p>
+              A line can also defer a choice to the customer, like a faucet finish, and
+              resolve to the matching item when the job installs.
+            </p>
+          </EmptyState>
         )}
 
         {hasData && templates.map(template => (

@@ -181,6 +181,17 @@
   width: 100%;
 }
 
+/* A movable card owns the horizontal gesture so a sideways drag does not
+   scroll the grid, while a vertical swipe still scrolls the page. The hold
+   that starts a drag is handled in JS, which is what makes a vertical drag
+   possible after the hold without giving up scrolling before it. */
+.sch-card-movable {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .sch-card:hover,
 .sch-card:focus-visible {
   background: var(--sky);
@@ -428,4 +439,60 @@
   .sch-grid-week .sch-cell {
     min-height: 220px;
   }
+}
+
+/* ---- drag preview and drop affordances ---- */
+
+/* The card that follows the pointer. Inert to hit testing, because the drop
+   target is found with elementFromPoint and this sits directly under it. */
+.sch-drag-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 220px;
+  margin: -22px 0 0 -110px;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: drop-shadow(0 6px 14px rgba(28, 54, 81, 0.28));
+}
+
+.sch-card-preview {
+  cursor: grabbing;
+  transform: rotate(-1.5deg);
+}
+
+/* While something is in flight, every day reads as a place it could land. */
+.sch-cell-armed {
+  border-style: dashed;
+}
+
+.sch-page-dragging {
+  cursor: grabbing;
+}
+
+.sch-more {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+}
+
+.sch-more:hover,
+.sch-more:focus-visible {
+  background: var(--sky);
+  outline: none;
+}
+
+.sch-day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
 }

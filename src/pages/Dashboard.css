@@ -25,47 +25,6 @@
   color: var(--gray-500);
 }
 
-/* ---- empty state ---- */
-
-.dash-empty {
-  border: 1px solid var(--gray-300);
-  border-radius: 10px;
-  background: var(--white);
-  padding: 28px 30px 30px;
-}
-
-.dash-empty h2 {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.dash-empty p {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--gray-500);
-  max-width: 640px;
-}
-
-.dash-steps {
-  margin: 20px 0 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--navy);
-  max-width: 640px;
-}
-
-.dash-steps a {
-  color: var(--teal);
-  font-weight: 600;
-}
-
-.dash-steps a:hover {
-  color: var(--navy);
-}
-
 /* ---- metric tiles ---- */
 
 .dash-metrics {

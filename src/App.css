@@ -1,1 +1,65 @@
 /* intentionally empty -- page styles live in their own CSS files */
+/* Route level loading and failure. These are the only two things that render
+   outside a page, so they carry their own minimal styling rather than reach
+   into a page stylesheet that may not have loaded yet. */
+
+.route-loading {
+  padding: 40px 24px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--gray-500);
+  text-align: center;
+}
+
+.route-error {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: var(--gray-100);
+}
+
+.route-error-card {
+  max-width: 520px;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  background: var(--white);
+  padding: 28px 30px;
+}
+
+.route-error-card h1 {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--navy);
+  margin: 0 0 10px;
+}
+
+.route-error-card p {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin: 0 0 10px;
+}
+
+.route-error-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: var(--gray-100);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow-wrap: anywhere;
+}
+
+.route-error-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.route-error-actions .btn-cancel {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}

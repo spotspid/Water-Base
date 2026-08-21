@@ -1,9 +1,12 @@
+import { Link } from 'react-router-dom'
 import ScheduleJobCard from './ScheduleJobCard'
 
 // Sold jobs with no date yet. They sit beside the calendar so a week can be
 // filled by dragging from here onto a day, which is the actual motion of
 // planning a week rather than opening each job in turn.
-export default function ScheduleUnscheduled({ jobs, onOpen, onDragStart, onDragEnd, dragJobId }) {
+export default function ScheduleUnscheduled({
+  jobs, onOpen, onPointerDown, drag, hasAnyJobs,
+}) {
   return (
     <aside className="sch-unscheduled">
       <header className="sch-unscheduled-head">
@@ -13,12 +16,19 @@ export default function ScheduleUnscheduled({ jobs, onOpen, onDragStart, onDragE
 
       {jobs.length === 0 ? (
         <p className="sch-unscheduled-empty">
-          Every sold job has a date. Nothing is waiting to be booked.
+          {hasAnyJobs
+            ? 'Every open job has a date. Nothing is waiting to be booked.'
+            : (
+              <>
+                Jobs land here when they are sold without a date.
+                {' '}<Link to="/jobs/new" className="tpl-link">Write one up</Link>.
+              </>
+            )}
         </p>
       ) : (
         <>
           <p className="sch-unscheduled-hint">
-            Drag one onto a day, or click to pick a date and crew.
+            Hold and drag one onto a day, or tap to pick a date and crew.
           </p>
           <div className="sch-unscheduled-list">
             {jobs.map(job => (
@@ -26,10 +36,9 @@ export default function ScheduleUnscheduled({ jobs, onOpen, onDragStart, onDragE
                 key={job.id}
                 job={job}
                 compact
-                dragging={dragJobId === job.id}
+                dragging={drag?.jobId === job.id}
                 onOpen={onOpen}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
+                onPointerDown={onPointerDown}
               />
             ))}
           </div>

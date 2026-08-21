@@ -6,6 +6,7 @@ import { billableJobs } from '../lib/dashboard'
 import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import AppShell from '../components/AppShell'
+import EmptyState from '../components/EmptyState'
 import JobDetailModal from '../components/JobDetailModal'
 import './Jobs.css'
 
@@ -128,11 +129,32 @@ export default function Jobs() {
         )}
 
         {hasData && jobs.length === 0 && (
-          <p className="jobs-state">No jobs yet. Add your first one.</p>
+          <EmptyState
+            title="No jobs yet"
+            actions={<Link to="/jobs/new" className="btn-primary">Write up your first job</Link>}
+          >
+            <p>
+              A job is the unit everything else hangs off. Writing one up commits its parts
+              from inventory, puts it on the schedule once it has a date, and starts the
+              margin showing on the dashboard.
+            </p>
+            <p>
+              If this is a fresh install, set up
+              {' '}<Link to="/inventory" className="tpl-link">inventory</Link> and
+              {' '}<Link to="/templates" className="tpl-link">templates</Link> first, so a
+              job knows what parts it consumes.
+            </p>
+          </EmptyState>
         )}
 
         {hasData && jobs.length > 0 && visible.length === 0 && (
-          <p className="jobs-state">No jobs with that status.</p>
+          <EmptyState title="No jobs with that status" tone="filtered" compact>
+            <p>
+              {jobs.length} {jobs.length === 1 ? 'job exists' : 'jobs exist'}, but none are
+              {' '}{(STATUS_LABELS[status] || status).toLowerCase()}. Change the status
+              filter above to see the rest.
+            </p>
+          </EmptyState>
         )}
 
         {hasData && visible.length > 0 && (

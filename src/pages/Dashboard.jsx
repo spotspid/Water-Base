@@ -7,6 +7,7 @@ import {
   reorderList, statusBreakdown, summarizeJobs,
 } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
+import EmptyState from '../components/EmptyState'
 import DashboardActivity from '../components/DashboardActivity'
 import DashboardLowStock from '../components/DashboardLowStock'
 import DashboardMetrics from '../components/DashboardMetrics'
@@ -109,13 +110,12 @@ export default function Dashboard() {
         )}
 
         {isEmpty && (
-          <section className="dash-empty">
-            <h2>Nothing to report yet</h2>
+          <EmptyState title="Nothing to report yet">
             <p>
               There are no jobs and no inventory items, so every figure below would be zero.
               The dashboard fills in on its own as real records arrive.
             </p>
-            <ol className="dash-steps">
+            <ol className="empty-state-steps">
               <li>
                 <Link to="/settings">Check your settings</Link>, so categories, cities and the
                 installer pay rate match how you actually work.
@@ -133,7 +133,7 @@ export default function Dashboard() {
                 as it is saved.
               </li>
             </ol>
-          </section>
+          </EmptyState>
         )}
 
         {hasData && !isEmpty && (

@@ -32,7 +32,7 @@ const results = []
 
 for (const email of users) {
   const password = generatePassword()
-  const { data, error } = await supabase.auth.admin.createUser({
+  const { error } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
