@@ -4,11 +4,24 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 // docuseal-webhook
 //
 // Public endpoint. Anyone on the internet can POST here, so nothing in the
-// body is trusted until the HMAC over the raw bytes matches.
+// body is trusted until the HMAC matches.
+//
+// This implements DocuSeal's HMAC mode, the whsec_ secret from Security on
+// the webhook page. That scheme is not a plain body signature:
+//
+//   header  X-Docuseal-Signature: <unix seconds>.<hex signature>
+//   signed  `${timestamp}.${raw body}`
+//   secret  the whsec_ value used verbatim, prefix included
+//
+// The timestamp is inside the signed string, which is what stops a captured
+// request being replayed later: changing it invalidates the signature, and
+// keeping it makes the request too old to accept.
 //
 // DocuSeal gives up after 10 seconds, so this answers 200 as soon as the
-// signature checks out and does the database work in the background. A
-// retry storm caused by a slow write is worse than a late write.
+// signature checks out and does the database work in the background. A retry
+// storm caused by a slow write is worse than a late write.
+
+const REPLAY_TOLERANCE_SECONDS = 300
 
 type WebhookEvent = {
   event_type?: string
@@ -62,7 +75,38 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0
 }
 
-async function signatureMatches(secret: string, raw: string, provided: string): Promise<boolean> {
+type SignatureCheck = { ok: true } | { ok: false; reason: string; status: number }
+
+async function verifySignature(
+  secret: string,
+  raw: string,
+  header: string,
+): Promise<SignatureCheck> {
+  // split on the first dot only. the signature is hex and the timestamp is
+  // digits, so neither half can contain one, but being explicit costs nothing.
+  const dot = header.indexOf('.')
+  if (dot < 1 || dot === header.length - 1) {
+    return { ok: false, reason: 'Signature header is malformed.', status: 401 }
+  }
+
+  const timestamp = header.slice(0, dot).trim()
+  const provided = header.slice(dot + 1).trim().toLowerCase()
+
+  const sentAt = Number(timestamp)
+  if (!Number.isFinite(sentAt)) {
+    return { ok: false, reason: 'Signature header has no usable timestamp.', status: 401 }
+  }
+
+  // a valid signature over an old timestamp is a replay, not a fresh event
+  const ageSeconds = Math.abs(Date.now() / 1000 - sentAt)
+  if (ageSeconds > REPLAY_TOLERANCE_SECONDS) {
+    return {
+      ok: false,
+      reason: `Signature timestamp is ${Math.round(ageSeconds)} seconds out, outside the ${REPLAY_TOLERANCE_SECONDS} second window.`,
+      status: 401,
+    }
+  }
+
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
@@ -71,13 +115,18 @@ async function signatureMatches(secret: string, raw: string, provided: string): 
     ['sign'],
   )
 
-  const signed = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw))
-  const expected = toHex(signed)
+  // the signed string is the timestamp, a dot, then the exact bytes received
+  const signed = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    new TextEncoder().encode(`${timestamp}.${raw}`),
+  )
 
-  // some senders prefix the algorithm, so accept both shapes
-  const candidate = provided.startsWith('sha256=') ? provided.slice(7) : provided
+  if (!safeEqual(toHex(signed), provided)) {
+    return { ok: false, reason: 'Signature does not match.', status: 401 }
+  }
 
-  return safeEqual(expected, candidate.trim().toLowerCase())
+  return { ok: true }
 }
 
 Deno.serve(async req => {
@@ -97,23 +146,24 @@ Deno.serve(async req => {
     return reject('This endpoint is not configured.', 500)
   }
 
-  const provided = req.headers.get('X-Docuseal-Signature')
+  const header = req.headers.get('X-Docuseal-Signature')
     || req.headers.get('x-docuseal-signature')
 
-  if (!provided) return reject('Missing signature.', 401)
+  if (!header) return reject('Missing signature.', 401)
 
-  // the raw bytes, before any parsing, because that is what was signed
+  // the raw bytes, before any parsing, because that is what was signed.
+  // re-serialising the JSON first would change the whitespace and break it.
   const raw = await req.text()
 
-  let verified = false
+  let check: SignatureCheck
   try {
-    verified = await signatureMatches(secret, raw, provided)
+    check = await verifySignature(secret, raw, header)
   } catch (caught) {
     console.error('signature check failed to run', caught)
     return reject('Signature could not be verified.', 400)
   }
 
-  if (!verified) return reject('Signature does not match.', 401)
+  if (!check.ok) return reject(check.reason, check.status)
 
   let event: WebhookEvent
   try {

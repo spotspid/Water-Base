@@ -191,6 +191,9 @@ Deno.serve(async req => {
         'X-Auth-Token': apiKey,
         'Content-Type': 'application/json',
       },
+      // fields is a top level key, not a submitter key. DocuSeal accepts a
+      // submitter object carrying one without complaining and then prefills
+      // nothing, so putting it in the wrong place fails silently.
       body: JSON.stringify({
         template_id: Number(templateId) || templateId,
         send_email: true,
@@ -198,8 +201,8 @@ Deno.serve(async req => {
           role: 'Customer',
           email,
           name: spec.submitterName(job),
-          fields,
         }],
+        fields,
         metadata: { job_id: jobId, agreement_type: type },
       }),
     })
