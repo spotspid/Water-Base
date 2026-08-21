@@ -1,65 +1,50 @@
 import { formatCurrency } from '../lib/inventory'
 
-// Four figures, all summed from rows the page already loaded.
+// Four figures that answer "what needs doing", not "how did we do".
 //
-// Margin is the one that needs care. A job that has not been installed has
-// committed its parts but drawn none, and carries no payout, so its margin
-// equals the whole sale price. Presented plainly that reads as a 100 percent
-// margin, which is not a result, it is an artefact of the work not having
-// happened yet. Anything still pending is labelled projected and says how many
-// jobs are waiting, so nobody reads a forecast as earned.
+// Margin used to sit here twice and is gone. With one install ever, and that
+// one predating the app, no job has drawn parts or recorded a payout, so
+// margin equalled revenue on every row and the percentage was always 100.
+// A number that cannot currently be wrong is not telling anyone anything.
+// Margin lives on Profit and loss, where the month range makes it meaningful.
 export default function DashboardMetrics({
-  monthTotals, monthName, inventoryValue, inventoryUnits, itemCount,
+  monthTotals, monthName, notBooked, bookedSoon, bookingDays,
+  inventoryValue, inventoryUnits, itemCount,
 }) {
-  const { count, revenue, margin, avgMargin, installedCount, pendingCount, projected } = monthTotals
-  const marginPct = revenue > 0 ? (margin / revenue) * 100 : null
-
-  const pendingNote = pendingCount === 1
-    ? '1 job has not been installed, so its parts and pay are not recorded yet'
-    : `${pendingCount} jobs have not been installed, so their parts and pay are not recorded yet`
+  const { count } = monthTotals
 
   return (
     <div className="dash-metrics">
       <article className="dash-tile">
         <span className="dash-tile-label">Revenue in {monthName}</span>
-        <span className="dash-tile-value">{formatCurrency(revenue)}</span>
+        <span className="dash-tile-value">{formatCurrency(monthTotals.revenue)}</span>
         <span className="dash-tile-foot">
           {count === 0 ? 'No jobs written yet this month' : `${count} ${count === 1 ? 'job' : 'jobs'} booked`}
         </span>
       </article>
 
-      <article className={margin < 0 ? 'dash-tile dash-tile-bad' : 'dash-tile'}>
-        <span className="dash-tile-label">
-          Margin in {monthName}
-          {projected && count > 0 && <span className="dash-projected">projected</span>}
-        </span>
-        <span className="dash-tile-value">{formatCurrency(margin)}</span>
+      <article className={notBooked > 0 ? 'dash-tile dash-tile-attention' : 'dash-tile'}>
+        <span className="dash-tile-label">Sold, not booked</span>
+        <span className="dash-tile-value">{notBooked}</span>
         <span className="dash-tile-foot">
-          {count === 0
-            ? 'No jobs to measure'
-            : projected
-              ? pendingNote
-              : `${marginPct == null ? '' : `${marginPct.toFixed(1)}% of revenue, `}all ${count === 1 ? 'job' : 'jobs'} installed`}
+          {notBooked === 0
+            ? 'Every sold job has a date'
+            : `${notBooked === 1 ? 'Job is' : 'Jobs are'} waiting on a date`}
         </span>
       </article>
 
       <article className="dash-tile">
-        <span className="dash-tile-label">
-          Margin per Job
-          {projected && count > 0 && <span className="dash-projected">projected</span>}
-        </span>
-        <span className="dash-tile-value">
-          {avgMargin == null ? 'n/a' : formatCurrency(avgMargin)}
-        </span>
+        <span className="dash-tile-label">Booked, next {bookingDays} days</span>
+        <span className="dash-tile-value">{bookedSoon}</span>
         <span className="dash-tile-foot">
-          {avgMargin == null
-            ? 'Needs at least one job this month'
-            : `Across ${count} ${count === 1 ? 'job' : 'jobs'}, ${installedCount} installed`}
+          {bookedSoon === 0
+            ? 'Nothing on the calendar yet'
+            : `${bookedSoon === 1 ? 'Install' : 'Installs'} scheduled`}
         </span>
       </article>
 
       <article className="dash-tile">
-        <span className="dash-tile-label">Stock on Hand</span>
+        <span className="dash-tile-label">Stock on hand</span>
         <span className="dash-tile-value">{formatCurrency(inventoryValue)}</span>
         <span className="dash-tile-foot">
           {itemCount === 0

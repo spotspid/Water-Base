@@ -150,7 +150,7 @@
 }
 
 .sch-cell-day {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: 15px;
   font-weight: 600;
 }

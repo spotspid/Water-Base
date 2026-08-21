@@ -736,8 +736,9 @@ a {
   text-transform: none;
 }
 
+/* Inter, not Poppins. See the note on .dash-tile-value. */
 .inv-stat-value {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: 25px;
   font-weight: 600;
   color: var(--ink);
@@ -953,7 +954,7 @@ a {
 }
 
 .txn-effect-qty {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-size: 24px;
   font-weight: 700;
   color: var(--navy);

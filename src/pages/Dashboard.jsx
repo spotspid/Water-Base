@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  billableJobs, inventoryUnits, inventoryValue, jobsSince, monthLabel, monthStart,
-  reorderList, statusBreakdown, summarizeJobs,
+  billableJobs, bookedWithin, inventoryUnits, inventoryValue, jobsSince, monthLabel,
+  monthStart, reorderList, soldNotBooked, statusBreakdown, summarizeJobs,
 } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
@@ -17,10 +17,19 @@ import './Dashboard.css'
 // five is enough to answer "what just happened". The Ledger link covers the rest.
 const ACTIVITY_LIMIT = 5
 
-const JOB_COLUMNS = 'id, created_at, status, sale_price, parts_cost, installer_pay, margin'
+const BOOKING_DAYS = 14
 
+const JOB_COLUMNS =
+  'id, created_at, status, scheduled_date, sale_price, parts_cost, installer_pay, margin'
+
+// committed and available are what the reservation layer contributes, and the
+// meter is meaningless without them. They were missing here, and because
+// committedOf and availableOf are written to survive a database one migration
+// behind, the absent columns read as a confident zero rather than an error:
+// every row showed "none promised" while eight reservations were open.
 const STOCK_COLUMNS =
-  'id, sku, name, category, variant, on_hand, reorder_threshold, unit_cost, stock_value, active'
+  'id, sku, name, category, variant, on_hand, reorder_threshold, unit_cost, ' +
+  'stock_value, active, committed, available'
 
 const ACTIVITY_COLUMNS =
   'id, created_at, quantity, txn_type, unit_cost_at_txn, source, deduct_batch, note, ' +
@@ -78,6 +87,8 @@ export default function Dashboard() {
   const monthJobs = useMemo(() => billableJobs(jobsSince(jobs, start)), [jobs, start])
   const monthTotals = useMemo(() => summarizeJobs(monthJobs), [monthJobs])
   const statuses = useMemo(() => statusBreakdown(jobs), [jobs])
+  const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
+  const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const reorder = useMemo(() => reorderList(stock), [stock])
 
   const hasData = !loading && !error
@@ -142,6 +153,9 @@ export default function Dashboard() {
             <DashboardMetrics
               monthTotals={monthTotals}
               monthName={monthLabel(start)}
+              notBooked={notBooked}
+              bookedSoon={bookedSoon}
+              bookingDays={BOOKING_DAYS}
               inventoryValue={inventoryValue(stock)}
               inventoryUnits={inventoryUnits(stock)}
               itemCount={stock.length}

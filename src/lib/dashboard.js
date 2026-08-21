@@ -1,5 +1,32 @@
 import { CANCELLED_STATUS, STATUS_LABELS } from './constants'
-import { isLowStock } from './inventory'
+import { availableOf, isLowStock } from './inventory'
+
+// A local ISO day, so date comparisons never touch a timezone. scheduled_date
+// is a plain YYYY-MM-DD, and ISO dates sort lexicographically in date order,
+// so comparing them as strings is both correct and cheaper than parsing.
+function isoDay(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// Sold, agreed, and still waiting on a date. This is the queue David works
+// from, and it is the number that should be falling.
+export function soldNotBooked(jobs) {
+  return jobs.filter(job => job.status === 'sold' && !job.scheduled_date)
+}
+
+// What is actually coming up. Cancelled and installed jobs are excluded
+// because neither is work still to be done.
+export function bookedWithin(jobs, days, today = new Date()) {
+  const start = isoDay(today)
+  const end = isoDay(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days))
+
+  return jobs.filter(job => {
+    if (job.status === CANCELLED_STATUS || job.status === 'installed') return false
+    const when = job.scheduled_date
+    return Boolean(when) && when >= start && when <= end
+  })
+}
 
 // A cancelled job never earned anything, so it is dropped before any money
 // is added up. It is deliberately left in the status breakdown, where the
@@ -84,13 +111,32 @@ export function statusBreakdown(jobs) {
   }))
 }
 
-// Items at or below their reorder threshold, worst shortfall first. Inactive
-// items are left out because nobody is going to reorder them.
+// A part needs attention for one of two reasons, and they are not the same.
+//
+//   nothing free   every unit on the shelf is promised to a booked job, so
+//                  there is none left to sell even though the shelf is not
+//                  empty. SALT-40 sits at 8 on hand against a reorder point
+//                  of 6, so a threshold test alone says it is fine, while all
+//                  8 bags are spoken for.
+//   at the line    on hand has fallen to the reorder point. Still sellable,
+//                  but it is time to order.
+//
+// Nothing free is ranked first, because a part you cannot promise blocks a
+// sale today, while a part at the line only threatens one later. Within each
+// group the worse number leads. Inactive items are left out, since nobody is
+// going to reorder them.
 export function reorderList(stockRows) {
   return stockRows
-    .filter(row => row.active !== false && isLowStock(row))
-    .map(row => ({ ...row, shortfall: (Number(row.reorder_threshold) || 0) - (Number(row.on_hand) || 0) }))
+    .filter(row => row.active !== false && (isLowStock(row) || availableOf(row) <= 0))
+    .map(row => ({
+      ...row,
+      free: availableOf(row),
+      shortfall: (Number(row.reorder_threshold) || 0) - (Number(row.on_hand) || 0),
+      urgency: availableOf(row) <= 0 ? 'none-free' : 'at-line',
+    }))
     .sort((a, b) => {
+      if (a.urgency !== b.urgency) return a.urgency === 'none-free' ? -1 : 1
+      if (a.urgency === 'none-free' && a.free !== b.free) return a.free - b.free
       if (b.shortfall !== a.shortfall) return b.shortfall - a.shortfall
       return String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' })
     })
