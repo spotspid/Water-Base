@@ -87,73 +87,9 @@
   padding: 18px 0 4px;
 }
 
-.tpl-detail {
-  color: var(--gray-500);
-  font-size: 13px;
-}
-
-.tpl-line-note {
-  display: block;
-  font-size: 12px;
-  color: var(--gray-500);
-  font-weight: 400;
-}
-
-.tpl-pick-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  background: rgba(44, 129, 155, 0.14);
-  color: var(--teal);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
 .tpl-varies {
   color: var(--gray-500);
   font-style: italic;
-}
-
-.col-actions {
-  white-space: nowrap;
-  text-align: right;
-}
-
-.tpl-confirm {
-  display: inline-flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.tpl-link,
-.tpl-danger {
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.tpl-link {
-  color: var(--teal);
-}
-
-.tpl-link:hover {
-  color: var(--navy);
-}
-
-.tpl-danger {
-  color: var(--maroon);
-}
-
-.tpl-danger:hover {
-  color: var(--maroon-hover);
 }
 
 .tpl-resolve {

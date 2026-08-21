@@ -174,7 +174,7 @@ export default function Inventory() {
 
         {hasData && visible.length > 0 && (
           <div className="table-wrap">
-            <table className="jobs-table inv-table">
+            <table className="jobs-table">
               <thead>
                 <tr>
                   <th>Part</th>

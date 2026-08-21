@@ -217,3 +217,923 @@ a {
     animation: none !important;
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Shared table, badge and cell primitives.
+
+   These live here rather than in a page stylesheet because more than one route
+   renders them, and routes are lazily loaded. A rule that only arrives with
+   Jobs.css is missing on the dashboard, which is exactly how the dashboard
+   ended up with unpadded headers colliding and a SKU running into the item
+   name: the classes were right, the stylesheet carrying them was never loaded.
+--------------------------------------------------------------------------- */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.jobs-table th {
+  background: var(--raised);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+
+.jobs-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--body-text);
+  vertical-align: middle;
+}
+
+.jobs-table tbody tr:last-child td { border-bottom: none; }
+.jobs-table tbody tr:hover td { background: var(--raised); }
+
+.jobs-table tfoot td {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--raised);
+}
+
+/* the name of the thing a row is about */
+.td-customer {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* a quieter second line under it, for a SKU, a city, a supplier */
+.cell-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* a field nobody has filled in yet, absent rather than an error */
+.cell-unset {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.col-num { text-align: right; white-space: nowrap; }
+.col-nowrap { white-space: nowrap; }
+.col-value { font-weight: 600; }
+.col-meter { width: 168px; min-width: 168px; }
+
+.col-sku {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.col-note {
+  max-width: 220px;
+  color: var(--muted);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-sold { background: var(--amber-soft); color: var(--amber); }
+.status-scheduled { background: var(--teal-soft); color: var(--teal-deep); }
+.status-installed { background: var(--green-soft); color: var(--green); }
+.status-cancelled { background: var(--line-soft); color: var(--muted); text-decoration: line-through; }
+
+.txn-badge {
+  display: inline-block;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.txn-purchase, .txn-return { background: var(--teal-soft); color: var(--teal-deep); }
+.txn-install, .txn-damage { background: var(--red-soft); color: var(--maroon); }
+.txn-adjustment { background: #E7EDF3; color: var(--navy); }
+
+.qty-in { color: var(--teal); font-weight: 700; }
+.qty-out { color: var(--maroon); font-weight: 700; }
+
+.inv-onhand { font-weight: 700; }
+.inv-none { color: var(--muted); }
+.inv-committed { font-weight: 600; color: var(--navy); }
+.inv-available { font-weight: 700; }
+
+.inv-low {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  background: var(--red-soft);
+  color: var(--maroon);
+  font-size: 11.5px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.inv-inactive {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  background: var(--line-soft);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.inv-state {
+  color: var(--muted);
+  font-size: 13.5px;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.inv-ledger-note {
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.tpl-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--teal);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tpl-link:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------------------------
+   The error card. Rendered by every route that loads from the database, so it
+   belongs here rather than in whichever page stylesheet happens to be loaded.
+   An unstyled error card is the one thing that must never itself look like a
+   rendering failure.
+--------------------------------------------------------------------------- */
+.inv-error-box {
+  background: var(--red-soft);
+  border: 1px solid rgba(140, 47, 47, 0.24);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.inv-error-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--maroon);
+}
+
+.inv-error-detail {
+  font-size: 14px;
+  color: var(--navy);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-word;
+}
+
+.inv-error-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.inv-error-hint code {
+  font-size: 12px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.inv-error-box .btn-cancel {
+  margin-top: 6px;
+  background: var(--white);
+}
+
+/* the numbered next steps in an empty state */
+.empty-state-steps {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.empty-state-steps li + li { margin-top: 6px; }
+
+
+/* ---------------------------------------------------------------------------
+   Buttons, form fields, metric tiles and panel cards.
+
+   Same reason as the table primitives above. Vite splits CSS per lazily
+   loaded route, so a rule sitting in NewJob.css only exists on /jobs/new.
+   Every modal in the app renders .field and .form-grid, and four routes
+   render .btn-primary, so leaving these page scoped meant unstyled forms
+   and unstyled buttons everywhere except the one page that owned them.
+--------------------------------------------------------------------------- */
+/* ---- buttons ---- */
+
+/* ---- buttons ----
+   Maroon is reserved for the primary action on a view. Everything else is a
+   neutral outline, so the one thing worth clicking is never ambiguous. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: var(--maroon);
+  color: var(--white);
+  border: 1px solid var(--maroon);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--maroon-hover);
+  border-color: var(--maroon-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Destructive confirm. Outlined rather than filled, so it does not compete
+   with the primary action until it is the one the operator meant. */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--white);
+  color: var(--maroon);
+  border: 1px solid var(--maroon);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--maroon);
+  color: var(--white);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: var(--white);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: var(--paper);
+  border-color: var(--gray-500);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ---- form fields, rendered by every modal in the app ---- */
+
+.form-section {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.form-section h2 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--gray-500);
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--navy);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  font-size: 13px;
+  color: var(--maroon);
+  background: rgba(140, 47, 47, 0.07);
+  border: 1px solid rgba(140, 47, 47, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 32px;
+}
+
+/* modal forms */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.field-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.form-warning {
+  font-size: 13px;
+  color: var(--amber-ink);
+  background: rgba(214, 158, 46, 0.12);
+  border: 1px solid rgba(214, 158, 46, 0.4);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+
+/* ---- metric tiles and panel cards ---- */
+
+/* ---- metric cards ----
+   Uniform white cards rather than one filled navy card. A filled card reads as
+   a selected state, and none of these are selectable. Emphasis comes from the
+   value colour instead: teal for the headline figure, maroon when something
+   needs attention. */
+.inv-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.inv-stat {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.inv-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.inv-stat-value {
+  font-family: var(--font-heading);
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.inv-stat-lead .inv-stat-value {
+  color: var(--teal-deep);
+}
+
+.inv-stat-alert .inv-stat-value {
+  color: var(--maroon);
+}
+
+.inv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.inv-header h1 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inv-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.inv-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+}
+
+.inv-filter label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.inv-filter select {
+  padding: 9px 32px 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink);
+  background-color: var(--white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 180px;
+}
+
+.inv-filter select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+/* table */
+.inv-row {
+  cursor: pointer;
+}
+
+.inv-row:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: -2px;
+}
+
+.set-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow);
+  padding: 20px 22px 22px;
+  margin-bottom: 16px;
+}
+
+.set-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.set-card-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.set-card-desc {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--gray-500);
+  max-width: 620px;
+}
+
+.set-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  white-space: nowrap;
+  padding-top: 3px;
+}
+
+.set-notice {
+  margin-top: 10px;
+  padding: 8px 13px;
+  border-radius: 6px;
+  background: var(--sky);
+  border: 1px solid rgba(44, 129, 155, 0.35);
+  color: var(--teal-deep);
+  font-size: 13px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   The last of the cross route primitives. Same reasoning as above: each of
+   these is rendered by at least two lazily loaded routes, so it cannot live
+   in the stylesheet of whichever one happened to define it first.
+--------------------------------------------------------------------------- */
+/* ---- the signed movement preview, shown by three modals ---- */
+
+/* direction toggle for adjustments */
+.direction-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.dir-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1.5px solid var(--gray-300);
+  background: var(--white);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.dir-btn:hover:not(:disabled) {
+  border-color: var(--gray-500);
+}
+
+.dir-in.active {
+  background: rgba(44, 129, 155, 0.12);
+  border-color: var(--teal);
+  color: var(--teal-deep);
+}
+
+.dir-out.active {
+  background: rgba(140, 47, 47, 0.1);
+  border-color: var(--maroon);
+  color: var(--maroon);
+}
+
+.dir-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* live effect preview so nobody has to reason about signs */
+.txn-effect {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1.5px solid;
+}
+
+.txn-effect-in {
+  background: rgba(44, 129, 155, 0.09);
+  border-color: rgba(44, 129, 155, 0.4);
+}
+
+.txn-effect-out {
+  background: rgba(140, 47, 47, 0.07);
+  border-color: rgba(140, 47, 47, 0.32);
+}
+
+.txn-effect-verb {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.txn-effect-in .txn-effect-verb {
+  color: var(--teal-deep);
+}
+
+.txn-effect-out .txn-effect-verb {
+  color: var(--maroon);
+}
+
+.txn-effect-qty {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.txn-effect-detail {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.txn-effect-detail strong {
+  color: var(--navy);
+}
+
+
+/* ---- quiet inline notes and danger links ---- */
+
+.tpl-line-note {
+  display: block;
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 400;
+}
+
+.tpl-pick-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(44, 129, 155, 0.14);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.tpl-detail {
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+/* .tpl-link is now a shared primitive in index.css, because more than one
+   lazily loaded route renders it. Only the danger variant is local. */
+.tpl-danger {
+  color: var(--maroon);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.tpl-danger:hover {
+  color: var(--maroon-hover);
+}
+
+.tpl-confirm {
+  display: inline-flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+
+/* ---- job parts panel, rendered on the new job form too ---- */
+
+.job-parts {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.job-parts h3 {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.job-parts-none {
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+.job-parts-missing td {
+  background: var(--red-soft);
+}
+
+.col-total-label {
+  text-align: right;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.job-notice {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--teal-soft);
+  border: 1px solid rgba(44, 129, 155, 0.28);
+  color: var(--teal-deep);
+  font-size: 13px;
+}
+
+.jobs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.jobs-header h1 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+
+/* ---- the date range bar, shared by expenses and the P and L ---- */
+
+/* filter bar */
+.exp-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.exp-filters .field {
+  gap: 5px;
+}
+
+.exp-filters label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+.exp-filters input,
+.exp-filters select {
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--navy);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.exp-filters select {
+  min-width: 190px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.exp-filters input:focus,
+.exp-filters select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+.col-actions {
+  white-space: nowrap;
+  text-align: right;
+}

@@ -11,77 +11,6 @@
   width: 100%;
 }
 
-.jobs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.jobs-header h1 {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-/* ---- buttons ----
-   Maroon is reserved for the primary action on a view. Everything else is a
-   neutral outline, so the one thing worth clicking is never ambiguous. */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  background: var(--maroon);
-  color: var(--white);
-  border: 1px solid var(--maroon);
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.13s, border-color 0.13s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--maroon-hover);
-  border-color: var(--maroon-hover);
-}
-
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* Destructive confirm. Outlined rather than filled, so it does not compete
-   with the primary action until it is the one the operator meant. */
-.btn-danger {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 14px;
-  background: var(--white);
-  color: var(--maroon);
-  border: 1px solid var(--maroon);
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.13s, color 0.13s;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--maroon);
-  color: var(--white);
-}
-
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .jobs-state {
   color: var(--muted);
   font-size: 13.5px;
@@ -91,104 +20,6 @@
 
 .jobs-error {
   color: var(--maroon);
-}
-
-/* ---- table ---- */
-.table-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--white);
-  box-shadow: var(--shadow);
-}
-
-.jobs-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13.5px;
-}
-
-.jobs-table th {
-  background: var(--raised);
-  color: var(--muted);
-  font-family: var(--font-body);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  padding: 9px 18px;
-  text-align: left;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--line);
-}
-
-.jobs-table td {
-  padding: 13px 18px;
-  border-bottom: 1px solid var(--line-soft);
-  color: var(--body-text);
-  vertical-align: middle;
-}
-
-.jobs-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.jobs-table tbody tr:hover td {
-  background: var(--raised);
-}
-
-.td-customer {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-/* quieter second line under a row's name, for a SKU, a city, a supplier */
-.cell-sub {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-  margin-top: 1px;
-}
-
-/* A field nobody has filled in yet. Italic and muted so it reads as absent
-   rather than as a value, and never as an error. */
-.cell-unset {
-  color: var(--muted);
-  font-style: italic;
-}
-
-/* ---- status badges, on the pill shape ---- */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2.5px 9px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.status-sold {
-  background: var(--amber-soft);
-  color: var(--amber);
-}
-
-.status-scheduled {
-  background: var(--teal-soft);
-  color: var(--teal-deep);
-}
-
-.status-installed {
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.status-cancelled {
-  background: var(--line-soft);
-  color: var(--muted);
-  text-decoration: line-through;
 }
 
 /* ---- job margin and install controls ---- */
@@ -243,16 +74,6 @@ td.job-margin-bad {
 }
 
 .job-action h3,
-.job-parts h3 {
-  font-family: var(--font-body);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-
 .job-action-current {
   display: flex;
   align-items: center;
@@ -277,52 +98,14 @@ td.job-margin-bad {
   margin-bottom: 6px;
 }
 
-.job-notice {
-  margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--teal-soft);
-  border: 1px solid rgba(44, 129, 155, 0.28);
-  color: var(--teal-deep);
-  font-size: 13px;
-}
-
 .job-action-buttons {
   margin-top: 16px;
-}
-
-.job-parts {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-}
-
-.job-parts-missing td {
-  background: var(--red-soft);
-}
-
-.job-parts-none {
-  color: var(--maroon);
-  font-weight: 600;
 }
 
 .job-schedule-line {
   font-size: 13px;
   color: var(--muted);
   margin: 12px 0;
-}
-
-.col-total-label {
-  text-align: right;
-  font-weight: 600;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.jobs-table tfoot td {
-  padding: 11px 18px;
-  border-top: 1px solid var(--line);
-  background: var(--raised);
 }
 
 @media (max-width: 900px) {

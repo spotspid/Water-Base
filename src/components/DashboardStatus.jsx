@@ -1,11 +1,19 @@
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../lib/inventory'
 
+// Only statuses that actually hold a job get a row. An empty bar next to
+// $0.00 is three lines of furniture saying nothing, and with four statuses and
+// one in use it was most of the panel. The ones sitting at zero are named in a
+// single quiet line underneath instead, so the shape of the pipeline is still
+// readable without the noise.
 export default function DashboardStatus({ statuses, totalJobs }) {
+  const used = statuses.filter(row => row.count > 0)
+  const empty = statuses.filter(row => row.count === 0)
+
   return (
     <section className="dash-panel">
       <header className="dash-panel-head">
-        <h2>Jobs by Status</h2>
+        <h2>Jobs by status</h2>
         <Link to="/jobs" className="tpl-link">All jobs</Link>
       </header>
 
@@ -15,7 +23,7 @@ export default function DashboardStatus({ statuses, totalJobs }) {
 
       {totalJobs > 0 && (
         <ul className="dash-status-list">
-          {statuses.map(row => (
+          {used.map(row => (
             <li key={row.status} className="dash-status-row">
               <span className={`status-badge status-${row.status}`}>{row.label}</span>
               <span className="dash-bar" aria-hidden="true">
@@ -30,8 +38,10 @@ export default function DashboardStatus({ statuses, totalJobs }) {
 
       {totalJobs > 0 && (
         <p className="dash-panel-foot">
-          {totalJobs} {totalJobs === 1 ? 'job' : 'jobs'} all time. Revenue is the sale price
-          booked at each status.
+          {totalJobs} {totalJobs === 1 ? 'job' : 'jobs'} all time.
+          {empty.length > 0 && (
+            <> Nothing is {empty.map(r => r.label.toLowerCase()).join(' or ')} yet.</>
+          )}
         </p>
       )}
     </section>

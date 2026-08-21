@@ -42,11 +42,6 @@
   box-shadow: var(--shadow);
 }
 
-.dash-tile-lead {
-  background: var(--sky);
-  border-color: rgba(44, 129, 155, 0.4);
-}
-
 .dash-tile-label {
   font-family: var(--font-heading);
   font-size: 11px;
@@ -54,10 +49,6 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--gray-500);
-}
-
-.dash-tile-lead .dash-tile-label {
-  color: var(--teal-deep);
 }
 
 .dash-tile-value {
@@ -187,24 +178,6 @@
   font-size: 13px;
 }
 
-/* ---- reorder ---- */
-
-.dash-short {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 20px;
-  background: rgba(140, 47, 47, 0.12);
-  color: var(--maroon);
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.dash-at-line {
-  color: var(--gray-500);
-  font-size: 13px;
-  font-style: italic;
-}
-
 @media (max-width: 1000px) {
   .dash-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -247,4 +220,20 @@
   border-right: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* A forecast, never dressed as a result. Sits inline with the tile label so
+   the qualifier is read at the same moment as the number. */
+.dash-projected {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  background: var(--amber-soft);
+  color: var(--amber-ink);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }

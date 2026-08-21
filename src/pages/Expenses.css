@@ -2,56 +2,6 @@
   width: 100%;
 }
 
-/* filter bar */
-.exp-filters {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.exp-filters .field {
-  gap: 5px;
-}
-
-.exp-filters label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gray-500);
-}
-
-.exp-filters input,
-.exp-filters select {
-  padding: 9px 12px;
-  border: 1.5px solid var(--gray-300);
-  border-radius: 6px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--navy);
-  background: var(--white);
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.exp-filters select {
-  min-width: 190px;
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: 32px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-}
-
-.exp-filters input:focus,
-.exp-filters select:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
-}
-
 .exp-total {
   margin-left: auto;
 }

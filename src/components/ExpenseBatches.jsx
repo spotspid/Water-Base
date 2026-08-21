@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { reverseBatch } from '../lib/importPipeline'
-import { formatCurrency, formatDate } from '../lib/expenses'
+import { formatCurrency } from '../lib/expenses'
 import { formatDateTime } from '../lib/inventory'
 
 // Every import that has been committed, newest first, with the one action a
@@ -87,7 +87,7 @@ export default function ExpenseBatches({ batches, onChanged }) {
                   <td className="col-num col-value">{formatCurrency(batch.total_amount)}</td>
                   <td>
                     {reversed
-                      ? <span className="inv-inactive">Reversed {formatDate(batch.reversed_at)}</span>
+                      ? <span className="inv-inactive">Reversed {formatDateTime(batch.reversed_at)}</span>
                       : <span className="txn-badge txn-adjustment">Active</span>}
                   </td>
                   <td className="col-num">

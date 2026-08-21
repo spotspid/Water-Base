@@ -19,8 +19,16 @@ export function monthLabel(date) {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
-const EMPTY_TOTALS = { count: 0, revenue: 0, parts: 0, pay: 0, margin: 0, avgMargin: null }
+const EMPTY_TOTALS = {
+  count: 0, revenue: 0, parts: 0, pay: 0, margin: 0, avgMargin: null,
+  installedCount: 0, pendingCount: 0, projected: false,
+}
 
+// Margin on a job that has not been installed is a forecast, not a result. Its
+// parts have been committed but not drawn, and no payout has been entered, so
+// the margin equals the whole sale price and reads as 100 percent of revenue.
+// The totals still include it, because that is the pipeline, but the caller is
+// told how many jobs are unearned so it can say so rather than imply certainty.
 export function summarizeJobs(jobs) {
   if (jobs.length === 0) return EMPTY_TOTALS
 
@@ -32,7 +40,15 @@ export function summarizeJobs(jobs) {
     margin: acc.margin + (Number(job.margin) || 0),
   }), { count: 0, revenue: 0, parts: 0, pay: 0, margin: 0 })
 
-  return { ...totals, avgMargin: totals.margin / totals.count }
+  const installedCount = jobs.filter(job => job.status === 'installed').length
+
+  return {
+    ...totals,
+    avgMargin: totals.margin / totals.count,
+    installedCount,
+    pendingCount: totals.count - installedCount,
+    projected: installedCount < totals.count,
+  }
 }
 
 export function jobsSince(jobs, since) {
@@ -88,8 +104,11 @@ export function inventoryUnits(stockRows) {
   return stockRows.reduce((sum, row) => sum + (Number(row.on_hand) || 0), 0)
 }
 
-// What a ledger row did to the money tied up in stock. Install rows carry a
-// negative quantity, so -quantity is the count consumed.
+// What a ledger row did to the money tied up in stock, signed to match the
+// movement. A purchase of ten bags adds their cost, an install of one system
+// takes its cost away. The previous sign was the parts consumed convention,
+// which is right for job costing and backwards for a stock value delta: it
+// showed a positive quantity beside a negative amount on every receipt.
 export function costEffect(txn) {
-  return -Number(txn.quantity || 0) * Number(txn.unit_cost_at_txn || 0)
+  return Number(txn.quantity || 0) * Number(txn.unit_cost_at_txn || 0)
 }

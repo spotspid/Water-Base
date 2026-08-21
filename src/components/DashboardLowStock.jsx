@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { formatCurrency } from '../lib/inventory'
 import StockMeter from './StockMeter'
 
 export default function DashboardLowStock({ rows, itemCount }) {
@@ -30,8 +29,6 @@ export default function DashboardLowStock({ rows, itemCount }) {
                 <th className="col-meter">Available</th>
                 <th className="col-num">On hand</th>
                 <th className="col-num">Reorder at</th>
-                <th className="col-num">Short by</th>
-                <th className="col-num">Unit cost</th>
               </tr>
             </thead>
             <tbody>
@@ -48,12 +45,6 @@ export default function DashboardLowStock({ rows, itemCount }) {
                     <span className="inv-onhand">{row.on_hand}</span>
                   </td>
                   <td className="col-num">{row.reorder_threshold}</td>
-                  <td className="col-num">
-                    {row.shortfall > 0
-                      ? <span className="dash-short">{row.shortfall}</span>
-                      : <span className="dash-at-line">at the line</span>}
-                  </td>
-                  <td className="col-num">{formatCurrency(row.unit_cost)}</td>
                 </tr>
               ))}
             </tbody>

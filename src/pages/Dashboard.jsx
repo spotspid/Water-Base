@@ -14,7 +14,8 @@ import DashboardMetrics from '../components/DashboardMetrics'
 import DashboardStatus from '../components/DashboardStatus'
 import './Dashboard.css'
 
-const ACTIVITY_LIMIT = 12
+// five is enough to answer "what just happened". The Ledger link covers the rest.
+const ACTIVITY_LIMIT = 5
 
 const JOB_COLUMNS = 'id, created_at, status, sale_price, parts_cost, installer_pay, margin'
 

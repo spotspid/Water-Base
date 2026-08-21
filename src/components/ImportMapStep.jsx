@@ -80,7 +80,7 @@ export default function ImportMapStep({
       </div>
 
       {sample.length > 0 && (
-        <div className="imp-sample">
+        <div>
           <p className="imp-sample-title">First {sample.length} rows as read</p>
           <div className="table-wrap">
             <table className="jobs-table imp-table">

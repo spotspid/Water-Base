@@ -43,6 +43,16 @@ export function formatDateTime(value) {
   })
 }
 
+// The day a timestamp falls on, in the reader's own timezone. The ledger's
+// meaningful grain is the day, and several rows were back loaded from an
+// invoice date with no real clock time, so printing one would be inventing it.
+// The full instant is still available for a tooltip.
+export function formatDay(value) {
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export function isLowStock(row) {
   return Number(row.on_hand) <= Number(row.reorder_threshold)
 }
