@@ -206,6 +206,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
           templateId={job.template_id}
           templateLabel={job.system_template}
           faucetFinish={job.faucet_finish}
+          roType={job.ro_type}
           committed
         />
       )}

@@ -12,6 +12,7 @@ export const OPTION_LISTS = [
   'payment_type',
   'time_window',
   'expense_category',
+  'ro_type',
 ]
 
 export const DIRECTION_LABELS = {

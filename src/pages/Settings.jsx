@@ -39,6 +39,11 @@ const LISTS = [
     title: 'Expense Categories',
     description: 'How spending is grouped on the Expenses page and the profit and loss.',
   },
+  {
+    listKey: 'ro_type',
+    title: 'RO Types',
+    description: 'Matched against the variant on an inventory item when a job installs.',
+  },
 ]
 
 export default function Settings() {

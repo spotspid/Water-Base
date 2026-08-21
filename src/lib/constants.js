@@ -21,10 +21,19 @@ export const PICK_SOURCES = [
     defaultCategory: 'Faucet',
     help: 'Resolves to the item whose variant matches the finish chosen on the job.',
   },
+  {
+    value: 'ro_type',
+    label: 'RO Type',
+    jobField: 'ro_type',
+    defaultCategory: 'RO',
+    help: 'Resolves to the item whose variant matches the RO type chosen on the job. '
+      + 'Both cost the same, so this is a choice rather than an upgrade.',
+  },
 ]
 
 export const PICK_SOURCE_LABELS = {
   faucet_finish: 'Faucet Finish',
+  ro_type: 'RO Type',
 }
 
 export const STATUS_LABELS = {

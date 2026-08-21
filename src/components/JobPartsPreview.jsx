@@ -12,7 +12,7 @@ import { pickSourceLabel } from '../lib/templates'
 // claim. On the new job form it is false, because nothing is claimed until
 // the job is saved.
 export default function JobPartsPreview({
-  templateId, templateLabel, faucetFinish, committed = false,
+  templateId, templateLabel, faucetFinish, roType, committed = false,
 }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -32,6 +32,7 @@ export default function JobPartsPreview({
       () => supabase.rpc('resolve_template_parts', {
         p_template_id: templateId,
         p_faucet_finish: faucetFinish || null,
+        p_ro_type: roType || null,
       }),
       'The parts list could not be resolved.',
     )
@@ -44,7 +45,7 @@ export default function JobPartsPreview({
     }
 
     setLoading(false)
-  }, [templateId, faucetFinish])
+  }, [templateId, faucetFinish, roType])
 
   useEffect(() => { load() }, [load])
 
@@ -86,7 +87,7 @@ export default function JobPartsPreview({
       {!loading && !error && unresolved.length > 0 && (
         <p className="form-error" role="alert">
           {unresolved.length} {unresolved.length === 1 ? 'line has' : 'lines have'} no matching
-          inventory item for {faucetFinish ? `finish "${faucetFinish}"` : 'the chosen options'}.
+          inventory item for the choices on this job.
           Installing will be refused until the item exists, and nothing will be partly deducted.
         </p>
       )}

@@ -20,7 +20,7 @@ const JOB_MARGIN_COLUMNS =
   'address, phone, scheduled_date, time_window, installer_id, installer_name, ' +
   'helper_id, helper_name, customer_email, agreement_status, agreement_signed_url, ' +
   'agreement_id, agreement_sent_at, agreement_completed_at, agreement_audit_log_url, ' +
-  'agreement_last_error, agreement_send_count'
+  'agreement_last_error, agreement_send_count, ro_type'
 
 export default function Jobs() {
   const [jobs, setJobs] = useState([])

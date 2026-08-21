@@ -8,7 +8,7 @@ export default function JobSystemFields({
   form, onChange, disabled, templates, loadingTemplates, templateError, onReloadTemplates,
   selectedTemplate,
 }) {
-  const { finishes, paymentTypes, loading: loadingSettings } = useSettings()
+  const { finishes, roTypes, paymentTypes, loading: loadingSettings } = useSettings()
 
   return (
     <section className="form-section">
@@ -57,6 +57,20 @@ export default function JobSystemFields({
           <span className="field-hint">Decides which faucet the template consumes.</span>
         </div>
         <div className="field">
+          <label htmlFor="ro_type">RO Type</label>
+          <select id="ro_type" name="ro_type" required
+            value={form.ro_type} onChange={onChange}
+            disabled={disabled || loadingSettings}>
+            <option value="">
+              {loadingSettings ? 'Loading RO types...' : 'Select RO type...'}
+            </option>
+            {roTypes.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <span className="field-hint">
+            Decides which RO unit the build sheet consumes. Same price either way.
+          </span>
+        </div>
+        <div className="field">
           <label htmlFor="payment_type">Payment Type</label>
           <select id="payment_type" name="payment_type" required
             value={form.payment_type} onChange={onChange}
@@ -73,6 +87,7 @@ export default function JobSystemFields({
         templateId={selectedTemplate?.id || ''}
         templateLabel={form.system_template}
         faucetFinish={form.faucet_finish}
+        roType={form.ro_type}
       />
     </section>
   )

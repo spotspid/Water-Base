@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   sale_price: '',
   payment_type: '',
   faucet_finish: '',
+  ro_type: '',
   status: 'sold',
   scheduled_date: '',
   time_window: '',
@@ -95,6 +96,7 @@ export default function NewJob() {
     if (!form.system_template) return 'Pick a system template.'
     if (!form.payment_type) return 'Pick a payment type.'
     if (!form.faucet_finish) return 'Pick a faucet finish.'
+    if (!form.ro_type) return 'Pick an RO type.'
     if (!form.invoice_number.trim()) return 'Invoice number is required.'
 
     const price = Number(form.sale_price)
@@ -148,6 +150,7 @@ export default function NewJob() {
       sale_price: Number(form.sale_price),
       payment_type: form.payment_type,
       faucet_finish: form.faucet_finish,
+      ro_type: form.ro_type || null,
       status: wantsInstall ? 'scheduled' : form.status,
       scheduled_date: form.scheduled_date || null,
       time_window: form.scheduled_date ? (form.time_window || null) : null,

@@ -76,6 +76,7 @@ export function SettingsProvider({ children }) {
       paymentTypes: activeValues('payment_type'),
       timeWindows: activeValues('time_window'),
       expenseCategories: activeValues('expense_category'),
+      roTypes: activeValues('ro_type'),
       txnTypes: sortedTypes.filter(t => t.active),
       ...readScalars(scalarRows),
     }
