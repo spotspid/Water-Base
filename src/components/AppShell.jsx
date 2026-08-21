@@ -32,6 +32,12 @@ export default function AppShell({ children }) {
           <NavLink to="/templates" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Templates
           </NavLink>
+          <NavLink to="/expenses" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Expenses
+          </NavLink>
+          <NavLink to="/pnl" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            P and L
+          </NavLink>
           <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Settings
           </NavLink>

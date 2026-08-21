@@ -33,6 +33,11 @@ const LISTS = [
     title: 'Time Windows',
     description: 'The arrival windows a job can be scheduled into.',
   },
+  {
+    listKey: 'expense_category',
+    title: 'Expense Categories',
+    description: 'How spending is grouped on the Expenses page and the profit and loss.',
+  },
 ]
 
 export default function Settings() {

@@ -16,6 +16,8 @@ const NewJob = lazy(() => import('./pages/NewJob'))
 const Schedule = lazy(() => import('./pages/Schedule'))
 const Inventory = lazy(() => import('./pages/Inventory'))
 const Templates = lazy(() => import('./pages/Templates'))
+const Expenses = lazy(() => import('./pages/Expenses'))
+const PnL = lazy(() => import('./pages/PnL'))
 const Settings = lazy(() => import('./pages/Settings'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 
@@ -41,6 +43,8 @@ export default function App() {
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+            <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+            <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>

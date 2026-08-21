@@ -11,6 +11,7 @@ export const OPTION_LISTS = [
   'faucet_finish',
   'payment_type',
   'time_window',
+  'expense_category',
 ]
 
 export const DIRECTION_LABELS = {
@@ -54,13 +55,9 @@ export function sortTxnTypes(rows) {
 
 export function readScalars(rows) {
   const byKey = new Map(rows.map(r => [r.key, r]))
-  const mode = byKey.get('installer_pay_mode')?.text_value
-  const rate = byKey.get('installer_pay_rate')?.numeric_value
   const location = byKey.get('default_location')?.text_value
 
   return {
-    installerPayMode: mode === 'percent' ? 'percent' : 'flat',
-    installerPayRate: Number.isFinite(Number(rate)) ? Number(rate) : 0,
     defaultLocation: location || '',
   }
 }
@@ -72,17 +69,6 @@ export function withCurrent(list, current) {
   return [...list, current]
 }
 
-// Default installer pay for a job, from the rate an operator configured.
-// Flat is a dollar amount, percent is a share of the sale price.
-export function defaultInstallerPay(mode, rate, salePrice) {
-  const amount = Number(rate)
-  if (!Number.isFinite(amount) || amount <= 0) return null
-
-  if (mode === 'percent') {
-    const price = Number(salePrice)
-    if (!Number.isFinite(price) || price <= 0) return null
-    return Math.round(price * amount) / 100
-  }
-
-  return amount
-}
+// There is deliberately no defaultInstallerPay here any more. The amount varies
+// by installer and by job, so a single house rate prefilled a number that was
+// wrong more often than right. It is typed on the job, every time.

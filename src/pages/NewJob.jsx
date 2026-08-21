@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
-import { defaultInstallerPay, useSettings } from '../lib/settings'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
@@ -34,13 +33,11 @@ const EMPTY_FORM = {
 export default function NewJob() {
   const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY_FORM)
-  const [payoutTouched, setPayoutTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   // the pick lists moved into JobSystemFields and JobDetailFields, which read
-  // them from the same context. this page only needs the pay rate now.
-  const { installerPayMode, installerPayRate } = useSettings()
+  // them from the same context, so this page reads no settings of its own.
 
   const {
     templates,
@@ -68,19 +65,8 @@ export default function NewJob() {
     [templates, form.system_template],
   )
 
-  const suggestedPay = defaultInstallerPay(installerPayMode, installerPayRate, form.sale_price)
-
-  // Installer pay follows the configured rate until someone types over it.
-  // A percent rate has to track the sale price, so this recomputes on change.
-  useEffect(() => {
-    if (payoutTouched || suggestedPay == null) return
-    const next = String(suggestedPay)
-    setForm(f => (f.payout_amount === next ? f : { ...f, payout_amount: next }))
-  }, [suggestedPay, payoutTouched])
-
   function handleChange(e) {
     const { name, value } = e.target
-    if (name === 'payout_amount') setPayoutTouched(true)
     if (name === 'system_template') {
       const tpl = templates.find(t => t.label === value)
       setForm(f => ({
@@ -200,11 +186,8 @@ export default function NewJob() {
     navigate('/jobs')
   }
 
-  const payHint = suggestedPay == null
-    ? 'No default pay rate is set. Configure one on the Settings page.'
-    : installerPayMode === 'percent'
-      ? `Default is ${installerPayRate}% of the sale price.`
-      : 'Default comes from the flat rate on the Settings page.'
+  // no default. it varies by installer and by job, so it is typed every time.
+  const payHint = 'Flat amount for this job. Subtracted from margin.'
 
   return (
     <AppShell>

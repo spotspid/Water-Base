@@ -1,0 +1,71 @@
+.pnl-page {
+  padding: 32px;
+  max-width: 1240px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.pnl-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.pnl-summary .inv-stat {
+  flex: 1 1 160px;
+}
+
+.pnl-stat-note {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.pnl-net .inv-stat-value {
+  font-size: 24px;
+}
+
+/* costs read as deductions without needing a minus sign in every cell */
+.pnl-cost {
+  color: var(--gray-500);
+}
+
+.pnl-table {
+  font-size: 14px;
+}
+
+.pnl-table th:first-child,
+.pnl-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--white);
+}
+
+.pnl-table thead th:first-child {
+  background: var(--navy);
+}
+
+.pnl-total-row td {
+  border-top: 2px solid var(--navy);
+  background: var(--gray-100);
+  font-weight: 700;
+}
+
+.pnl-total-row td:first-child {
+  background: var(--gray-100);
+}
+
+.pnl-blank {
+  color: var(--gray-300);
+  user-select: none;
+}
+
+@media (max-width: 760px) {
+  .pnl-page {
+    padding: 20px 16px;
+  }
+
+  .pnl-summary .inv-stat {
+    flex: 1 1 132px;
+  }
+}
