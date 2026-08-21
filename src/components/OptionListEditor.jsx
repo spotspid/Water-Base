@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
+import { singularise, withArticle } from '../lib/text'
 
 // One editable pick list. The same component drives inventory categories,
 // service cities, faucet finishes and payment types, because all four are
@@ -27,7 +28,10 @@ export default function OptionListEditor({ listKey, title, description, rows, on
     setNotice('')
     setBusyId(id)
 
-    const { error: err } = await attempt(work, `That ${title.toLowerCase()} change could not be saved.`)
+    const { error: err } = await attempt(
+      work,
+      `That ${singularise(title.toLowerCase())} change could not be saved.`,
+    )
 
     if (err) {
       setError(err)
@@ -190,7 +194,7 @@ export default function OptionListEditor({ listKey, title, description, rows, on
           className="set-input"
           value={adding}
           onChange={e => setAdding(e.target.value)}
-          placeholder={`Add a ${title.toLowerCase().replace(/s$/, '')}`}
+          placeholder={`Add ${withArticle(singularise(title.toLowerCase()))}`}
           disabled={busyId === 'new'}
           aria-label={`Add to ${title}`}
         />
