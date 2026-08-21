@@ -1,7 +1,4 @@
 .set-page {
-  padding: 32px;
-  max-width: 1100px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -23,11 +20,12 @@
 }
 
 .set-card {
-  border: 1px solid var(--gray-300);
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   background: var(--white);
+  box-shadow: var(--shadow);
   padding: 20px 22px 22px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .set-card-head {
@@ -167,7 +165,7 @@
   border-radius: 6px;
   background: var(--sky);
   border: 1px solid rgba(44, 129, 155, 0.35);
-  color: #1a5c73;
+  color: var(--teal-deep);
   font-size: 13px;
 }
 

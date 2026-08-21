@@ -1,77 +1,59 @@
-/* Shared empty state. Matches the dashboard's first run panel, which was the
-   only page that had one before this. */
+/* ---------------------------------------------------------------------------
+   Empty states.
 
+   The distinction worth keeping is between empty and broken. A bare line of
+   grey text reads as a page that failed. A dashed card with a heading, a
+   sentence saying why it is empty and the next thing to do reads as a page
+   waiting for work.
+
+   'start' is a system with no data yet and something to do about it.
+   'filtered' is a system with data that this filter happens to exclude, where
+   the fix is the filter rather than more records, so it stays quieter.
+--------------------------------------------------------------------------- */
 .empty-state {
-  border: 1px solid var(--gray-300);
-  border-radius: 10px;
-  background: var(--white);
-  padding: 28px 30px 30px;
+  border: 1.5px dashed var(--dash-border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  padding: 44px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .empty-state-compact {
-  padding: 18px 20px 20px;
+  padding: 26px 20px;
 }
 
-/* A filter that matched nothing is not a milestone, so it stays quieter than
-   a genuinely new install. */
 .empty-state-filtered {
-  background: var(--gray-100);
-  border-style: dashed;
+  border-style: solid;
+  border-color: var(--line);
+  background: var(--white);
 }
 
 .empty-state-title {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--navy);
-  margin: 0;
-}
-
-.empty-state-compact .empty-state-title {
-  font-size: 16px;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .empty-state-body {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 46ch;
+}
+
+.empty-state-body p + p {
   margin-top: 8px;
-  font-size: 14px;
-  color: var(--gray-500);
-  max-width: 640px;
-}
-
-.empty-state-body p {
-  margin: 0 0 8px;
-}
-
-.empty-state-body p:last-child {
-  margin-bottom: 0;
-}
-
-.empty-state-steps {
-  margin: 18px 0 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--gray-500);
-}
-
-.empty-state-steps li {
-  padding-left: 4px;
 }
 
 .empty-state-actions {
-  margin-top: 18px;
+  margin-top: 10px;
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
-}
-
-.empty-state-steps a,
-.empty-state-body a {
-  color: var(--teal);
-  font-weight: 600;
-}
-
-.empty-state-steps a:hover,
-.empty-state-body a:hover {
-  color: var(--navy);
+  flex-wrap: wrap;
+  justify-content: center;
 }

@@ -14,9 +14,9 @@
 }
 
 .inv-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .inv-header-actions {
@@ -34,57 +34,49 @@
   cursor: not-allowed;
 }
 
-/* summary bar */
+/* ---- metric cards ----
+   Uniform white cards rather than one filled navy card. A filled card reads as
+   a selected state, and none of these are selectable. Emphasis comes from the
+   value colour instead: teal for the headline figure, maroon when something
+   needs attention. */
 .inv-summary {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .inv-stat {
   background: var(--white);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
-  padding: 14px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 120px;
-}
-
-.inv-stat-lead {
-  background: var(--navy);
-  border-color: var(--navy);
+  gap: 5px;
+  min-width: 0;
 }
 
 .inv-stat-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gray-500);
-}
-
-.inv-stat-lead .inv-stat-label {
-  color: rgba(223, 247, 252, 0.75);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .inv-stat-value {
   font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
 }
 
 .inv-stat-lead .inv-stat-value {
-  color: var(--sky);
-}
-
-.inv-stat-alert {
-  border-color: rgba(140, 47, 47, 0.45);
-  background: rgba(140, 47, 47, 0.06);
+  color: var(--teal-deep);
 }
 
 .inv-stat-alert .inv-stat-value {
@@ -92,7 +84,6 @@
 }
 
 .inv-filter {
-  margin-left: auto;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -100,20 +91,18 @@
 }
 
 .inv-filter label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .inv-filter select {
   padding: 9px 32px 9px 12px;
-  border: 1.5px solid var(--gray-300);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--navy);
+  font-size: 13.5px;
+  color: var(--ink);
   background-color: var(--white);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -191,28 +180,29 @@
 }
 
 .inv-low {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-left: 8px;
-  padding: 2px 8px;
+  padding: 2.5px 9px;
   border-radius: 20px;
-  background: rgba(140, 47, 47, 0.12);
+  background: var(--red-soft);
   color: var(--maroon);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   vertical-align: middle;
 }
 
 .inv-inactive {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-left: 8px;
-  padding: 2px 8px;
+  padding: 2.5px 9px;
   border-radius: 20px;
-  background: var(--gray-100);
-  border: 1px solid var(--gray-300);
-  color: var(--gray-500);
-  font-size: 11px;
+  background: var(--line-soft);
+  color: var(--muted);
+  font-size: 11.5px;
   font-weight: 600;
 }
 
@@ -238,7 +228,7 @@
 .txn-purchase,
 .txn-return {
   background: rgba(44, 129, 155, 0.14);
-  color: #1a5c73;
+  color: var(--teal-deep);
 }
 
 .txn-install,
@@ -254,17 +244,17 @@
 
 /* states */
 .inv-state {
-  color: var(--gray-500);
-  font-size: 15px;
-  padding: 48px 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  padding: 40px 0;
   text-align: center;
 }
 
 .inv-error-box {
-  background: rgba(140, 47, 47, 0.06);
-  border: 1px solid rgba(140, 47, 47, 0.28);
-  border-radius: 8px;
-  padding: 22px 24px;
+  background: var(--red-soft);
+  border: 1px solid rgba(140, 47, 47, 0.24);
+  border-radius: var(--radius);
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -305,9 +295,9 @@
 
 .inv-ledger-note {
   margin-top: 14px;
-  font-size: 12px;
-  color: var(--gray-500);
-  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 /* modal forms */
@@ -344,7 +334,7 @@
 
 .form-warning {
   font-size: 13px;
-  color: #8a5a12;
+  color: var(--amber-ink);
   background: rgba(214, 158, 46, 0.12);
   border: 1px solid rgba(214, 158, 46, 0.4);
   border-radius: 6px;
@@ -378,7 +368,7 @@
 .dir-in.active {
   background: rgba(44, 129, 155, 0.12);
   border-color: var(--teal);
-  color: #1a5c73;
+  color: var(--teal-deep);
 }
 
 .dir-out.active {
@@ -422,7 +412,7 @@
 }
 
 .txn-effect-in .txn-effect-verb {
-  color: #1a5c73;
+  color: var(--teal-deep);
 }
 
 .txn-effect-out .txn-effect-verb {
@@ -455,4 +445,12 @@
   .inv-filter select {
     width: 100%;
   }
+}
+
+
+/* the meter column is fixed width so every bar starts and ends on the same
+   pixel, which is what makes the promised segments comparable down the page */
+.col-meter {
+  width: 168px;
+  min-width: 168px;
 }

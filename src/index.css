@@ -1,16 +1,70 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
+/* ---------------------------------------------------------------------------
+   Design tokens.
+   Every colour, radius and shadow in the app resolves to something here. No
+   component hardcodes a hex value, so a palette change is one file.
+
+   The gray-100 / gray-300 / gray-500 names are kept as aliases pointing at
+   their replacements. Sixteen stylesheets already reference them, and
+   rewriting all of those to chase a rename would risk behaviour for no visual
+   gain. New rules use the semantic names.
+--------------------------------------------------------------------------- */
 :root {
+  /* brand */
   --navy: #1C3651;
+  --navy-900: #132538;
+  --navy-700: #22415f;
   --teal: #2C819B;
-  --sky: #DFF7FC;
+  --teal-deep: #1D6580;
+  --teal-soft: #E4F0F4;
   --maroon: #8C2F2F;
+  --maroon-hover: #752626;
+
+  /* text */
+  --ink: #14202C;
+  --body-text: #3E4E5C;
+  --muted: #7A8B99;
+
+  /* surfaces */
+  --line: #E2E8EE;
+  --line-soft: #EDF1F5;
+  --paper: #F5F7F9;
   --white: #ffffff;
-  --gray-100: #f5f7f9;
-  --gray-300: #c8d0d8;
-  --gray-500: #6b7a8a;
+  --raised: #FBFCFD;
+
+  /* status */
+  --amber: #B57A16;
+  --amber-soft: #FDF3DF;
+  --green: #2F7D5B;
+  --green-soft: #E6F2EC;
+  --red-soft: #FBEAEA;
+
+  /* legacy aliases, see note above */
+  --sky: #DFF7FC;
+  --gray-100: var(--paper);
+  --gray-300: var(--line);
+  --gray-500: var(--muted);
+
+  /* text and accents that sit on the navy rail rather than on paper */
+  --rail-text: #C6D8E4;
+  --rail-sub: #8FB0C4;
+  --rail-group: #6F92AC;
+  --rail-accent: #7FC4D9;
+  --teal-shade: #1d5f75;
+
+  /* ink shades used on soft status grounds */
+  --amber-ink: #8a5a12;
+  --dash-border: #C3D2DE;
+
+  /* layout */
+  --rail: 236px;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20, 32, 44, 0.05), 0 6px 18px rgba(20, 32, 44, 0.06);
+  --shadow-lift: 0 3px 10px rgba(20, 32, 44, 0.11);
+
   --font-body: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Poppins', system-ui, sans-serif;
+  --font-heading: 'Poppins', 'Inter', system-ui, sans-serif;
 }
 
 *, *::before, *::after {
@@ -25,13 +79,141 @@ html, body, #root {
 
 body {
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
-  color: var(--navy);
-  background: var(--white);
+  color: var(--body-text);
+  background: var(--paper);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
+  color: var(--ink);
+}
+
+a {
+  color: var(--teal);
+}
+
+/* Figures line up column to column only with tabular numerals. Applied to the
+   numeric table cells and every metric value. */
+.num,
+.col-num,
+.inv-stat-value,
+.metric-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Stock meter.
+   The signature element. One bar carries the whole reservation story:
+     teal          free to sell right now
+     hatched navy  promised to a booked job, still on the shelf
+     maroon        promised beyond what the shelf holds
+
+   The hatching matters. Promised stock is physically present but spoken for,
+   and a flat block would read as a second solid quantity rather than as a
+   claim against the first.
+
+   Widths are data, not design, so they arrive as a custom property and the
+   rule below consumes it. That keeps every colour and dimension in CSS.
+--------------------------------------------------------------------------- */
+.meter {
+  width: 132px;
+  min-width: 132px;
+}
+
+.meter-track {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--line-soft);
+  overflow: hidden;
+  display: flex;
+}
+
+.meter-seg {
+  width: var(--seg-width, 0%);
+  transition: width 0.2s ease;
+}
+
+.meter-free {
+  background: var(--teal);
+}
+
+.meter-promised {
+  background-color: var(--navy);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.34) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+.meter-short {
+  background: var(--maroon);
+}
+
+.meter-key {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-key b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.meter-key-short,
+.meter-key-short b {
+  color: var(--maroon);
+}
+
+/* ---------------------------------------------------------------------------
+   Pills. One shape for every short status word in the app.
+--------------------------------------------------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  background: var(--line-soft);
+  color: var(--body-text);
+  white-space: nowrap;
+}
+
+.pill-teal { background: var(--teal-soft); color: var(--teal-deep); }
+.pill-green { background: var(--green-soft); color: var(--green); }
+.pill-amber { background: var(--amber-soft); color: var(--amber); }
+.pill-red { background: var(--red-soft); color: var(--maroon); }
+.pill-navy { background: #E7EDF3; color: var(--navy); }
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 6px;
+}
+
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

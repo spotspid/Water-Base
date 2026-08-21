@@ -151,7 +151,7 @@
 }
 
 .btn-signin:hover:not(:disabled) {
-  background: #7a2828;
+  background: var(--maroon-hover);
 }
 
 .btn-signin:disabled {

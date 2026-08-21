@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  availableOf, committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
+  committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
 } from '../lib/inventory'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
 import ItemHistoryModal from '../components/ItemHistoryModal'
+import StockMeter from '../components/StockMeter'
 import './Inventory.css'
 
 const ALL_CATEGORIES = 'all'
@@ -86,7 +87,7 @@ export default function Inventory() {
           <div className="inv-header-actions">
             <button type="button" className="btn-cancel"
               onClick={() => setOpenModal('log')} disabled={loading || !!error || rows.length === 0}>
-              Log Transaction
+              Log a movement
             </button>
             <button type="button" className="btn-primary" onClick={() => setOpenModal('add')} disabled={loading}>
               + Add Item
@@ -97,7 +98,7 @@ export default function Inventory() {
         {hasData && (
           <div className="inv-summary">
             <div className="inv-stat inv-stat-lead">
-              <span className="inv-stat-label">Total Stock Value</span>
+              <span className="inv-stat-label">Value on hand</span>
               <span className="inv-stat-value">{formatCurrency(totalValue)}</span>
             </div>
             <div className="inv-stat">
@@ -105,15 +106,15 @@ export default function Inventory() {
               <span className="inv-stat-value">{visible.length}</span>
             </div>
             <div className="inv-stat">
-              <span className="inv-stat-label">Committed</span>
+              <span className="inv-stat-label">Promised to booked jobs</span>
               <span className="inv-stat-value">{committedUnits}</span>
             </div>
             <div className={lowCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
-              <span className="inv-stat-label">Low Stock</span>
+              <span className="inv-stat-label">Needs reordering</span>
               <span className="inv-stat-value">{lowCount}</span>
             </div>
             <div className={shortCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
-              <span className="inv-stat-label">Oversold</span>
+              <span className="inv-stat-label">Short</span>
               <span className="inv-stat-value">{shortCount}</span>
             </div>
             <div className="inv-filter">
@@ -176,15 +177,13 @@ export default function Inventory() {
             <table className="jobs-table inv-table">
               <thead>
                 <tr>
-                  <th>SKU</th>
-                  <th>Name</th>
+                  <th>Part</th>
                   <th>Category</th>
-                  <th>Variant</th>
-                  <th className="col-num">On Hand</th>
-                  <th className="col-num">Committed</th>
-                  <th className="col-num">Available</th>
-                  <th className="col-num">Unit Cost</th>
-                  <th className="col-num">Stock Value</th>
+                  <th className="col-meter">Available</th>
+                  <th className="col-num">On hand</th>
+                  <th className="col-num">Promised</th>
+                  <th className="col-num">Unit cost</th>
+                  <th className="col-num">Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,18 +196,20 @@ export default function Inventory() {
                         setHistoryItem(row)
                       }
                     }}>
-                    <td className="col-sku">{row.sku}</td>
                     <td className="td-customer">
                       {row.name}
                       {!row.active && <span className="inv-inactive">Inactive</span>}
+                      <span className="cell-sub">
+                        {[row.sku, row.variant].filter(Boolean).join(', ')}
+                      </span>
                     </td>
-                    <td>{row.category}</td>
-                    <td>{row.variant || ''}</td>
+                    <td><span className="pill">{row.category}</span></td>
+                    <td className="col-meter"><StockMeter row={row} /></td>
                     <td className="col-num">
                       <span className="inv-onhand">{row.on_hand}</span>
                       {isLowStock(row) && (
-                        <span className="inv-low" title={`At or below reorder threshold of ${row.reorder_threshold}`}>
-                          Low
+                        <span className="inv-low" title={`At or below the reorder point of ${row.reorder_threshold}`}>
+                          Reorder
                         </span>
                       )}
                     </td>
@@ -216,20 +217,9 @@ export default function Inventory() {
                       {committedOf(row) === 0
                         ? <span className="inv-none">0</span>
                         : <span className="inv-committed"
-                            title="Claimed by booked jobs that have not been installed">
+                            title="Promised to booked jobs that have not been installed">
                             {committedOf(row)}
                           </span>}
-                    </td>
-                    <td className="col-num">
-                      <span className={isShort(row) ? 'inv-available inv-available-short' : 'inv-available'}>
-                        {availableOf(row)}
-                      </span>
-                      {isShort(row) && (
-                        <span className="inv-low"
-                          title="More is committed to jobs than is on the shelf">
-                          Short
-                        </span>
-                      )}
                     </td>
                     <td className="col-num">{formatCurrency(row.unit_cost)}</td>
                     <td className="col-num col-value">{formatCurrency(row.stock_value)}</td>
@@ -243,7 +233,7 @@ export default function Inventory() {
         {hasData && visible.length > 0 && (
           <p className="inv-ledger-note">
             On hand is summed from the transaction ledger and is never edited directly.
-            Committed is what booked jobs have claimed but not yet consumed, and available
+            Promised is what booked jobs have claimed but not yet consumed, and free to sell
             is on hand minus committed. Booking a job never moves stock. Only marking it
             installed writes to the ledger. Click a row to see its history.
           </p>

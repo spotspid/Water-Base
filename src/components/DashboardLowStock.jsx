@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../lib/inventory'
+import StockMeter from './StockMeter'
 
 export default function DashboardLowStock({ rows, itemCount }) {
   return (
     <section className="dash-panel">
       <header className="dash-panel-head">
-        <h2>Needs Reorder</h2>
+        <h2>Running low</h2>
+        <span className="dash-panel-note">
+          Teal is free to sell, hatched navy is promised to a booked job
+        </span>
         <Link to="/inventory" className="tpl-link">Inventory</Link>
       </header>
 
@@ -14,7 +18,7 @@ export default function DashboardLowStock({ rows, itemCount }) {
       )}
 
       {itemCount > 0 && rows.length === 0 && (
-        <p className="inv-state">Everything is above its reorder threshold.</p>
+        <p className="inv-state">Everything is above its reorder point.</p>
       )}
 
       {rows.length > 0 && (
@@ -22,11 +26,12 @@ export default function DashboardLowStock({ rows, itemCount }) {
           <table className="jobs-table">
             <thead>
               <tr>
-                <th>Item</th>
-                <th className="col-num">On Hand</th>
-                <th className="col-num">Threshold</th>
-                <th className="col-num">Short By</th>
-                <th className="col-num">Unit Cost</th>
+                <th>Part</th>
+                <th className="col-meter">Available</th>
+                <th className="col-num">On hand</th>
+                <th className="col-num">Reorder at</th>
+                <th className="col-num">Short by</th>
+                <th className="col-num">Unit cost</th>
               </tr>
             </thead>
             <tbody>
@@ -34,10 +39,11 @@ export default function DashboardLowStock({ rows, itemCount }) {
                 <tr key={row.id}>
                   <td className="td-customer">
                     {row.name}
-                    <span className="tpl-line-note">
-                      {[row.sku, row.variant].filter(Boolean).join(' : ')}
+                    <span className="cell-sub">
+                      {[row.sku, row.variant].filter(Boolean).join(', ')}
                     </span>
                   </td>
+                  <td className="col-meter"><StockMeter row={row} /></td>
                   <td className="col-num">
                     <span className="inv-onhand">{row.on_hand}</span>
                   </td>
@@ -58,7 +64,7 @@ export default function DashboardLowStock({ rows, itemCount }) {
       {rows.length > 0 && (
         <p className="dash-panel-foot">
           {rows.length} of {itemCount} {itemCount === 1 ? 'item is' : 'items are'} at or below
-          the reorder threshold set on the item.
+          the reorder point set on the item.
         </p>
       )}
     </section>

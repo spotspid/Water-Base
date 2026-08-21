@@ -29,7 +29,7 @@ export default function Templates() {
         () => supabase
           .from('system_templates')
           .select('id, label, default_price, active, sort_order, notes'),
-        'Templates could not be loaded.',
+        'Build sheets could not be loaded.',
       ),
       attempt(
         () => supabase
@@ -105,7 +105,7 @@ export default function Templates() {
       <div className="tpl-page">
         <div className="tpl-header">
           <div>
-            <h1>Templates</h1>
+            <h1>Build sheets</h1>
             <p className="tpl-sub">
               Each system carries a parts list. Marking a job installed deducts this list
               from inventory once, and reversing the status puts it back.
@@ -117,14 +117,14 @@ export default function Templates() {
             onClick={() => setEditingTemplate({})}
             disabled={loading || !!error}
           >
-            + New Template
+            + New build sheet
           </button>
         </div>
 
         {hasData && templates.length > 0 && (
           <div className="inv-summary">
             <div className="inv-stat inv-stat-lead">
-              <span className="inv-stat-label">Templates</span>
+              <span className="inv-stat-label">Build sheets</span>
               <span className="inv-stat-value">{templates.length}</span>
             </div>
             <div className="inv-stat">
@@ -145,7 +145,7 @@ export default function Templates() {
 
         {!loading && error && (
           <div className="inv-error-box" role="alert">
-            <p className="inv-error-title">Templates could not be loaded.</p>
+            <p className="inv-error-title">Build sheets could not be loaded.</p>
             <p className="inv-error-detail">{error}</p>
             <p className="inv-error-hint">
               If the template tables have not been created yet, apply

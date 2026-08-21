@@ -82,12 +82,12 @@
 
 .agr-wait {
   background: rgba(214, 158, 46, 0.14);
-  color: #7a5010;
+  color: var(--amber-ink);
 }
 
 .agr-good {
   background: rgba(44, 129, 155, 0.18);
-  color: #1a5c73;
+  color: var(--teal-deep);
 }
 
 .agr-bad {

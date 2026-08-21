@@ -134,7 +134,7 @@ export default function JobPartsPreview({
 
       {!loading && !error && committed && rows.length > 0 && (
         <p className="inv-ledger-note">
-          These parts are committed to this job now, which lowers their available count
+          These parts are promised to this job now, which lowers what is free to sell
           without moving stock. They leave the shelf when the job is marked installed,
           and the claim is released if it is cancelled.
           {unresolved.length > 0 && ' A line with no matching item cannot be committed either, so it is not counted above.'}

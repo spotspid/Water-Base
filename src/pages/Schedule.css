@@ -319,7 +319,7 @@
   padding: 9px 12px;
   border-radius: 6px;
   background: rgba(44, 129, 155, 0.1);
-  color: #1a5c73;
+  color: var(--teal-deep);
   font-size: 14px;
   font-weight: 600;
 }

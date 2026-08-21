@@ -88,7 +88,7 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
 
   return (
     <Modal
-      title="Log Transaction"
+      title="Log a movement"
       subtitle="Every stock change is a new ledger entry. Nothing is overwritten."
       onClose={onClose}
     >
@@ -184,7 +184,7 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
         <div className="modal-actions">
           <button type="button" className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Log Transaction'}
+            {saving ? 'Saving...' : 'Log the movement'}
           </button>
         </div>
       </form>

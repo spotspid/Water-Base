@@ -1,7 +1,4 @@
 .tpl-page {
-  padding: 32px;
-  max-width: 1100px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -32,7 +29,7 @@
   border-radius: 6px;
   background: var(--sky);
   border: 1px solid rgba(44, 129, 155, 0.35);
-  color: #1a5c73;
+  color: var(--teal-deep);
   font-size: 14px;
 }
 
@@ -156,7 +153,7 @@
 }
 
 .tpl-danger:hover {
-  color: #7a2828;
+  color: var(--maroon-hover);
 }
 
 .tpl-resolve {

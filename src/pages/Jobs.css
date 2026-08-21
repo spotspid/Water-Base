@@ -1,7 +1,13 @@
+/* ---------------------------------------------------------------------------
+   Jobs page, plus the table, button and badge primitives the whole app reuses.
+
+   The table header went from solid navy to a light rule. At eight or nine
+   columns a navy band dominated the page and competed with the rail for
+   attention, and the rail is the thing that should win. Muted uppercase on a
+   near white ground keeps the header legible while letting the data read
+   first.
+--------------------------------------------------------------------------- */
 .jobs-page {
-  padding: 32px;
-  max-width: 1100px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -9,48 +15,61 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .jobs-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--navy);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
+/* ---- buttons ----
+   Maroon is reserved for the primary action on a view. Everything else is a
+   neutral outline, so the one thing worth clicking is never ambiguous. */
 .btn-primary {
-  display: inline-block;
-  padding: 9px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
   background: var(--maroon);
   color: var(--white);
-  border: none;
-  border-radius: 6px;
+  border: 1px solid var(--maroon);
+  border-radius: 8px;
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.13s, border-color 0.13s;
 }
 
-.btn-primary:hover {
-  background: #7a2828;
+.btn-primary:hover:not(:disabled) {
+  background: var(--maroon-hover);
+  border-color: var(--maroon-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Destructive confirm. Outlined rather than filled, so it does not compete
    with the primary action until it is the one the operator meant. */
 .btn-danger {
-  display: inline-block;
-  padding: 9px 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
   background: var(--white);
   color: var(--maroon);
-  border: 1.5px solid var(--maroon);
-  border-radius: 6px;
+  border: 1px solid var(--maroon);
+  border-radius: 8px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.13s, color 0.13s;
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -64,9 +83,9 @@
 }
 
 .jobs-state {
-  color: var(--gray-500);
-  font-size: 15px;
-  padding: 48px 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  padding: 40px 0;
   text-align: center;
 }
 
@@ -74,36 +93,39 @@
   color: var(--maroon);
 }
 
+/* ---- table ---- */
 .table-wrap {
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
   background: var(--white);
+  box-shadow: var(--shadow);
 }
 
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .jobs-table th {
-  background: var(--navy);
-  color: var(--sky);
-  font-family: var(--font-heading);
-  font-size: 12px;
+  background: var(--raised);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 12px 16px;
+  padding: 9px 18px;
   text-align: left;
   white-space: nowrap;
+  border-bottom: 1px solid var(--line);
 }
 
 .jobs-table td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--gray-300);
-  color: var(--navy);
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--body-text);
   vertical-align: middle;
 }
 
@@ -112,74 +134,86 @@
 }
 
 .jobs-table tbody tr:hover td {
-  background: var(--sky);
+  background: var(--raised);
 }
 
 .td-customer {
   font-weight: 600;
+  color: var(--ink);
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
+/* quieter second line under a row's name, for a SKU, a city, a supplier */
+.cell-sub {
+  display: block;
   font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* ---- status badges, on the pill shape ---- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2.5px 9px;
+  border-radius: 20px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .status-sold {
-  background: rgba(44, 129, 155, 0.12);
-  color: var(--teal);
+  background: var(--amber-soft);
+  color: var(--amber);
 }
 
 .status-scheduled {
-  background: rgba(28, 54, 81, 0.1);
-  color: var(--navy);
+  background: var(--teal-soft);
+  color: var(--teal-deep);
 }
 
 .status-installed {
-  background: rgba(44, 129, 155, 0.22);
-  color: #1a5c73;
+  background: var(--green-soft);
+  color: var(--green);
 }
 
 .status-cancelled {
-  background: var(--gray-100);
-  border: 1px solid var(--gray-300);
-  color: var(--gray-500);
+  background: var(--line-soft);
+  color: var(--muted);
   text-decoration: line-through;
 }
 
 /* ---- job margin and install controls ---- */
-
 .job-margin-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 0;
   margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 .job-margin-cell {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: var(--gray-100);
-  border: 1px solid var(--gray-300);
+  gap: 4px;
+  padding: 15px 16px;
+  background: var(--white);
+  border-right: 1px solid var(--line-soft);
+}
+
+.job-margin-cell:last-child {
+  border-right: none;
 }
 
 .job-margin-minus .inv-stat-label::before {
   content: 'less ';
 }
 
-.job-margin-total {
-  background: var(--sky);
-  border-color: rgba(44, 129, 155, 0.4);
-}
-
 .job-margin-total .inv-stat-value {
-  color: #1a5c73;
+  color: var(--green);
 }
 
 .job-margin-bad .inv-stat-value,
@@ -192,23 +226,23 @@ td.job-margin-bad {
   margin-left: 7px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--gray-500);
+  color: var(--muted);
 }
 
 .job-action {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--gray-300);
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .job-action h3,
 .job-parts h3 {
-  font-family: var(--font-heading);
-  font-size: 13px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--gray-500);
+  color: var(--muted);
   margin-bottom: 12px;
 }
 
@@ -217,14 +251,14 @@ td.job-margin-bad {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 14px;
-  color: var(--navy);
+  font-size: 13.5px;
+  color: var(--ink);
   margin-bottom: 14px;
 }
 
 .job-action-stamp {
   font-size: 12px;
-  color: var(--gray-500);
+  color: var(--muted);
 }
 
 .job-install-grid {
@@ -239,11 +273,11 @@ td.job-margin-bad {
 .job-notice {
   margin-top: 10px;
   padding: 10px 14px;
-  border-radius: 6px;
-  background: var(--sky);
-  border: 1px solid rgba(44, 129, 155, 0.35);
-  color: #1a5c73;
-  font-size: 14px;
+  border-radius: 8px;
+  background: var(--teal-soft);
+  border: 1px solid rgba(44, 129, 155, 0.28);
+  color: var(--teal-deep);
+  font-size: 13px;
 }
 
 .job-action-buttons {
@@ -251,13 +285,13 @@ td.job-margin-bad {
 }
 
 .job-parts {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--gray-300);
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .job-parts-missing td {
-  background: rgba(140, 47, 47, 0.06);
+  background: var(--red-soft);
 }
 
 .job-parts-none {
@@ -265,20 +299,26 @@ td.job-margin-bad {
   font-weight: 600;
 }
 
+.job-schedule-line {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+
 .col-total-label {
   text-align: right;
   font-weight: 600;
-  color: var(--gray-500);
-  font-size: 13px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .jobs-table tfoot td {
-  padding: 11px 16px;
-  border-top: 1px solid var(--gray-300);
-  background: var(--gray-100);
+  padding: 11px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--raised);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .job-margin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

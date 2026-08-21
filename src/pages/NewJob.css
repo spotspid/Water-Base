@@ -1,7 +1,5 @@
 .newjob-page {
-  padding: 32px;
   max-width: 860px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -123,20 +121,23 @@
 }
 
 .btn-cancel {
-  padding: 9px 20px;
-  background: transparent;
-  color: var(--navy);
-  border: 1.5px solid var(--gray-300);
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: var(--white);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.13s, border-color 0.13s;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: var(--gray-100);
+  background: var(--paper);
   border-color: var(--gray-500);
 }
 

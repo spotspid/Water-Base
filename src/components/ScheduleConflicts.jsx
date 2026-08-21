@@ -70,7 +70,7 @@ export default function ScheduleConflicts({ conflicts, checking, error, onRetry 
 
             <p className="sch-conflict-math">
               Needs {row.required}. {row.on_hand} on hand, {row.committed_other} already
-              committed to other jobs, leaving {row.available_other} for this one.
+              promised to other jobs, leaving {row.available_other} for this one.
             </p>
 
             {Array.isArray(row.competing_jobs) && row.competing_jobs.length === 0 && (
