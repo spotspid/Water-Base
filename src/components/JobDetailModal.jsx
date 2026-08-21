@@ -5,6 +5,7 @@ import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import { useInstallers } from '../lib/useInstallers'
 import { crewLabel, formatLongDate } from '../lib/schedule'
+import { metaLine } from '../lib/text'
 import JobAgreement from './JobAgreement'
 import JobPartsLedger from './JobPartsLedger'
 import JobStatusActions from './JobStatusActions'
@@ -156,7 +157,11 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
     finish(statusNotice(next))
   }
 
-  const subtitle = `${job.system_template} · ${job.city} · Invoice ${job.invoice_number}`
+  const subtitle = metaLine([
+    job.system_template,
+    job.city,
+    job.invoice_number && `Invoice ${job.invoice_number}`,
+  ])
 
   return (
     <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide>

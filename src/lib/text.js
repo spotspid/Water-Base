@@ -102,3 +102,16 @@ export function withArticle(phrase) {
   if (!text) return ''
   return `${indefiniteArticle(text)} ${text}`
 }
+
+/**
+ * Joins the parts of a heading, dropping the ones that are not known.
+ *
+ * A template literal turns a null into the four characters "null", which
+ * reads on screen as a bug rather than as a blank. Building the line from the
+ * parts that exist means an unknown city simply is not mentioned.
+ */
+export function metaLine(parts) {
+  return parts
+    .filter(part => part !== null && part !== undefined && String(part).trim() !== '')
+    .join(' · ')
+}

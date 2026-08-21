@@ -188,7 +188,7 @@ export default function Jobs() {
                       }
                     }}>
                     <td className="td-customer">{job.customer_name}</td>
-                    <td>{job.city}</td>
+                    <td>{job.city || <span className="cell-unset">not set</span>}</td>
                     <td>{job.system_template}</td>
                     <td className="col-num">{formatCurrency(job.sale_price)}</td>
                     <td className="col-num">

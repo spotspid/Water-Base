@@ -5,6 +5,7 @@ import { attempt } from '../lib/errors'
 import { useSettings, withCurrent } from '../lib/settings'
 import { useInstallers } from '../lib/useInstallers'
 import { formatLongDate, isMovable } from '../lib/schedule'
+import { metaLine } from '../lib/text'
 import ScheduleConflicts from './ScheduleConflicts'
 import Modal from './Modal'
 
@@ -118,7 +119,11 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
     onSaved()
   }
 
-  const subtitle = `${job.system_template} · ${job.city} · Invoice ${job.invoice_number}`
+  const subtitle = metaLine([
+    job.system_template,
+    job.city,
+    job.invoice_number && `Invoice ${job.invoice_number}`,
+  ])
 
   return (
     <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide>

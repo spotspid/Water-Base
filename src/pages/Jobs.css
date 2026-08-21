@@ -151,6 +151,13 @@
   margin-top: 1px;
 }
 
+/* A field nobody has filled in yet. Italic and muted so it reads as absent
+   rather than as a value, and never as an error. */
+.cell-unset {
+  color: var(--muted);
+  font-style: italic;
+}
+
 /* ---- status badges, on the pill shape ---- */
 .status-badge {
   display: inline-flex;
