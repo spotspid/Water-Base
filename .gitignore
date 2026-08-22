@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 token.txt
 .claude/
+
+# supabase CLI scratch
+supabase/.temp/
