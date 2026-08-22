@@ -82,6 +82,12 @@ function todayLong(now: Date): string {
   return now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+// Prefilled on every work order. Both are company facts rather than job facts,
+// so they live here as constants rather than as columns nobody would ever edit
+// per job. If either changes, it changes in one place.
+const COMPANY_SIGNATORY = 'Steve Burgess'
+const PAYMENT_TERMS = 'Paid weekly on Fridays'
+
 const CUSTOMER_INSTALL: AgreementSpec = {
   type: 'customer_install',
   submitterRole: 'Customer',
@@ -147,6 +153,13 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
         return day || window
       } },
 
+    // What the installer needs to know about the house before he gets there.
+    // The only field on this document with nothing derived behind it, so it
+    // has a column on the job. Sent blank and locked when the job has none,
+    // rather than filled with a placeholder saying there is nothing to say.
+    { key: 'site_conditions', required: false, names: ['site_conditions'],
+      lockBlank: true, value: ctx => text(ctx.job.site_conditions) },
+
     // the system as sold, with the two choices that decide which parts go on
     // the truck
     { key: 'systems', required: true, names: ['systems'],
@@ -169,7 +182,7 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
     { key: 'agreed_pay', required: false, names: ['agreed_pay'],
       value: ctx => moneyIfSet(ctx.job.installer_pay) },
     { key: 'payment_terms', required: false, names: ['payment_terms'],
-      value: () => '' },
+      value: () => PAYMENT_TERMS },
 
     // exactly one box carries an X. The other is sent blank and locked, so it
     // cannot be ticked as well.
@@ -179,7 +192,7 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
       lockBlank: true, value: () => '' },
 
     { key: 'company_signature', required: true, names: ['company_signature'],
-      value: () => 'Michigan Water Pros' },
+      value: () => COMPANY_SIGNATORY },
     { key: 'company_date', required: true, names: ['company_date'],
       value: ctx => todayLong(ctx.today) },
 

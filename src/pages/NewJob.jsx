@@ -29,6 +29,7 @@ const EMPTY_FORM = {
   install_date: '',
   payout_amount: '',
   invoice_number: '',
+  site_conditions: '',
   notes: '',
 }
 
@@ -159,6 +160,7 @@ export default function NewJob() {
       install_date: form.install_date || null,
       payout_amount: form.payout_amount === '' ? null : Number(form.payout_amount),
       invoice_number: form.invoice_number.trim(),
+      site_conditions: form.site_conditions.trim() || null,
       notes: form.notes.trim() || null,
     }
 

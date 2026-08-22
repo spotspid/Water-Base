@@ -9,6 +9,7 @@ import { metaLine } from '../lib/text'
 import JobAgreement from './JobAgreement'
 import JobWorkOrder from './JobWorkOrder'
 import JobPartsLedger from './JobPartsLedger'
+import JobSiteConditions from './JobSiteConditions'
 import JobStatusActions from './JobStatusActions'
 import JobPartsPreview from './JobPartsPreview'
 import Modal from './Modal'
@@ -206,6 +207,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
       </p>
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
+
+      {!cancelled && <JobSiteConditions job={job} onChanged={onChanged} />}
 
       {!cancelled && <JobWorkOrder job={job} onChanged={onChanged} />}
 

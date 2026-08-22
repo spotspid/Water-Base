@@ -84,9 +84,22 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           {payHint && <span className="field-hint">{payHint}</span>}
         </div>
         <div className="field field-full">
+          <label htmlFor="site_conditions">
+            Site Conditions <span className="optional">(optional)</span>
+          </label>
+          <textarea id="site_conditions" name="site_conditions" rows="3"
+            value={form.site_conditions} onChange={onChange} disabled={disabled} />
+          <span className="field-hint">
+            Anything the installer needs to know about the house before he gets there:
+            access, where the shutoff is, stairs, a dog, a tenant. Printed on the work
+            order. Leave it blank if there is nothing worth saying.
+          </span>
+        </div>
+        <div className="field field-full">
           <label htmlFor="notes">Notes <span className="optional">(optional)</span></label>
           <textarea id="notes" name="notes" rows="3"
             value={form.notes} onChange={onChange} disabled={disabled} />
+          <span className="field-hint">For the office. Never leaves the building.</span>
         </div>
       </div>
     </section>

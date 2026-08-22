@@ -25,6 +25,10 @@ export default function JobWorkOrder({ job, onChanged }) {
   const signed = job.work_order_status === 'completed'
   const crew = job.installer_name || 'the installer'
   const sends = Number(job.work_order_send_count) || 0
+  const carries = job.site_conditions
+    ? "this job's parts list and the site conditions above"
+    : "this job's parts list"
+
 
   async function run() {
     setError('')
@@ -58,7 +62,7 @@ export default function JobWorkOrder({ job, onChanged }) {
           <h3>Work Order</h3>
           <p className="agr-sub">
             {job.installer_email
-              ? <>Goes to <strong>{crew}</strong> at {job.installer_email}, with this job's parts list.</>
+              ? <>Goes to <strong>{crew}</strong> at {job.installer_email}, with {carries}.</>
               : 'Assign a crew with an email address and this can be sent.'}
           </p>
         </div>
