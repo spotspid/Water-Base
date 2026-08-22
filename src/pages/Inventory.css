@@ -47,3 +47,79 @@
 }
 
 
+
+
+/* ---------------------------------------------------------------------------
+   At the reorder point.
+
+   Came off the dashboard, where it was mixed in with parts that genuinely had
+   nothing free to sell and made eight of eleven parts look like a problem.
+   Here it is a purchasing note sitting above the table, on the page with the
+   button that logs the purchase.
+
+   Amber, not maroon. Reaching the reorder point is a reminder, and the shelf
+   still covers the next job.
+--------------------------------------------------------------------------- */
+.inv-reorder {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow);
+  padding: 14px 18px 12px;
+  margin-bottom: 16px;
+}
+
+.inv-reorder-head {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--amber-ink);
+  margin-bottom: 9px;
+}
+
+.inv-reorder-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.inv-reorder-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.inv-reorder-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inv-reorder-name .cell-sub {
+  font-weight: 400;
+}
+
+.inv-reorder-figures {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-reorder-figures b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.inv-reorder-foot {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 12px;
+  color: var(--muted);
+}

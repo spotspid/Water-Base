@@ -3,24 +3,35 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  billableJobs, bookedWithin, inventoryUnits, inventoryValue, jobsSince, monthLabel,
-  monthStart, reorderList, soldNotBooked, statusBreakdown, summarizeJobs,
+  atReorderPoint, bookedWithin, groupActivity, inventoryUnits, inventoryValue,
+  monthLabel, monthStart, pipelineSummary, soldNotBooked, splitMonthRevenue,
+  stockShortages,
 } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DashboardActivity from '../components/DashboardActivity'
-import DashboardLowStock from '../components/DashboardLowStock'
 import DashboardMetrics from '../components/DashboardMetrics'
-import DashboardStatus from '../components/DashboardStatus'
+import DashboardShortages from '../components/DashboardShortages'
 import './Dashboard.css'
 
-// five is enough to answer "what just happened". The Ledger link covers the rest.
+// five entries is enough to answer "what just happened". The Ledger link
+// covers the rest.
 const ACTIVITY_LIMIT = 5
+
+// Rows are fetched, entries are shown, and one job's install can be any number
+// of rows. Fetching a generous window means five entries are still five
+// distinct things after grouping, rather than one install and nothing else.
+const ACTIVITY_FETCH = 60
 
 const BOOKING_DAYS = 14
 
+// install_date matters as much as created_at now. Sold revenue is dated by
+// the day a job was written, installed revenue by the day it happened, so a
+// job sold in one month and installed in the next lands in the right month on
+// both counts.
 const JOB_COLUMNS =
-  'id, created_at, status, scheduled_date, sale_price, parts_cost, installer_pay, margin'
+  'id, created_at, status, scheduled_date, install_date, sale_price, parts_cost, ' +
+  'installer_pay, margin'
 
 // committed and available are what the reservation layer contributes, and the
 // meter is meaningless without them. They were missing here, and because
@@ -31,9 +42,11 @@ const STOCK_COLUMNS =
   'id, sku, name, category, variant, on_hand, reorder_threshold, unit_cost, ' +
   'stock_value, active, committed, available'
 
+// job_id is what folds five part rows into one install. Without it the panel
+// can join to a customer name but cannot tell two jobs apart.
 const ACTIVITY_COLUMNS =
   'id, created_at, quantity, txn_type, unit_cost_at_txn, source, deduct_batch, note, ' +
-  'inventory_items(sku, name, variant), jobs(customer_name)'
+  'job_id, inventory_items(sku, name, variant), jobs(customer_name)'
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState([])
@@ -60,7 +73,7 @@ export default function Dashboard() {
           .from('inventory_transactions')
           .select(ACTIVITY_COLUMNS)
           .order('created_at', { ascending: false })
-          .limit(ACTIVITY_LIMIT),
+          .limit(ACTIVITY_FETCH),
         'Recent activity could not be loaded.',
       ),
     ])
@@ -84,12 +97,14 @@ export default function Dashboard() {
   useEffect(() => { load() }, [load])
 
   const start = useMemo(() => monthStart(), [])
-  const monthJobs = useMemo(() => billableJobs(jobsSince(jobs, start)), [jobs, start])
-  const monthTotals = useMemo(() => summarizeJobs(monthJobs), [monthJobs])
-  const statuses = useMemo(() => statusBreakdown(jobs), [jobs])
+  const revenue = useMemo(() => splitMonthRevenue(jobs, start), [jobs, start])
+  const pipeline = useMemo(() => pipelineSummary(jobs), [jobs])
   const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
-  const reorder = useMemo(() => reorderList(stock), [stock])
+  const shortages = useMemo(() => stockShortages(stock), [stock])
+  const atLine = useMemo(() => atReorderPoint(stock), [stock])
+  const allEntries = useMemo(() => groupActivity(activity), [activity])
+  const entries = useMemo(() => allEntries.slice(0, ACTIVITY_LIMIT), [allEntries])
 
   const hasData = !loading && !error
   const isEmpty = hasData && jobs.length === 0 && stock.length === 0
@@ -151,7 +166,8 @@ export default function Dashboard() {
         {hasData && !isEmpty && (
           <>
             <DashboardMetrics
-              monthTotals={monthTotals}
+              sold={revenue.sold}
+              installed={revenue.installed}
               monthName={monthLabel(start)}
               notBooked={notBooked}
               bookedSoon={bookedSoon}
@@ -161,12 +177,30 @@ export default function Dashboard() {
               itemCount={stock.length}
             />
 
-            <div className="dash-columns">
-              <DashboardStatus statuses={statuses} totalJobs={jobs.length} />
-              <DashboardLowStock rows={reorder} itemCount={stock.length} />
-            </div>
+            {/* What used to be a panel with two bars in it. The counts were
+                the whole content, so they are a sentence now. */}
+            {pipeline.total > 0 && (
+              <p className="dash-pipeline">
+                <Link to="/jobs" className="tpl-link">{pipeline.total} {pipeline.total === 1 ? 'job' : 'jobs'}</Link>
+                {' '}all time:
+                {' '}{pipeline.used.map(row => `${row.count} ${row.label.toLowerCase()}`).join(', ')}.
+                {pipeline.empty.length > 0 && (
+                  <> Nothing is {pipeline.empty.join(' or ')} yet.</>
+                )}
+              </p>
+            )}
 
-            <DashboardActivity rows={activity} limit={ACTIVITY_LIMIT} />
+            <DashboardShortages
+              rows={shortages}
+              itemCount={stock.length}
+              atLineCount={atLine.length}
+            />
+
+            <DashboardActivity
+              entries={entries}
+              limit={ACTIVITY_LIMIT}
+              totalEntries={allEntries.length}
+            />
           </>
         )}
       </div>

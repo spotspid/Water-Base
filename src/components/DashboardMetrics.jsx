@@ -1,25 +1,42 @@
 import { formatCurrency } from '../lib/inventory'
 
-// Four figures that answer "what needs doing", not "how did we do".
+// Five figures that answer "what needs doing", not "how did we do".
 //
-// Margin used to sit here twice and is gone. With one install ever, and that
-// one predating the app, no job has drawn parts or recorded a payout, so
-// margin equalled revenue on every row and the percentage was always 100.
-// A number that cannot currently be wrong is not telling anyone anything.
-// Margin lives on Profit and loss, where the month range makes it meaningful.
+// Revenue is two tiles rather than one. A single month total added six signed
+// contracts to one finished install and called the sum revenue, which is two
+// different claims wearing one number: the six are owed to customers and have
+// not consumed a part or paid an installer, while the one is delivered and has
+// a real margin behind it. They are measured off different dates too, sold by
+// the day it was written and installed by the day it happened, so a job sold
+// in July and installed in August lands in the right month either way.
+//
+// Margin is not here at all. With one install ever, no job has drawn parts or
+// recorded a payout, so margin equalled revenue on every row and the
+// percentage was always 100. It lives on Profit and loss, where the month
+// range makes it mean something.
 export default function DashboardMetrics({
-  monthTotals, monthName, notBooked, bookedSoon, bookingDays,
+  sold, installed, monthName, notBooked, bookedSoon, bookingDays,
   inventoryValue, inventoryUnits, itemCount,
 }) {
-  const { count } = monthTotals
-
   return (
     <div className="dash-metrics">
       <article className="dash-tile">
-        <span className="dash-tile-label">Revenue in {monthName}</span>
-        <span className="dash-tile-value">{formatCurrency(monthTotals.revenue)}</span>
+        <span className="dash-tile-label">Sold in {monthName}</span>
+        <span className="dash-tile-value">{formatCurrency(sold.revenue)}</span>
         <span className="dash-tile-foot">
-          {count === 0 ? 'No jobs written yet this month' : `${count} ${count === 1 ? 'job' : 'jobs'} booked`}
+          {sold.count === 0
+            ? 'Nothing written up yet this month'
+            : `${sold.count} ${sold.count === 1 ? 'job' : 'jobs'} contracted, not yet installed`}
+        </span>
+      </article>
+
+      <article className="dash-tile">
+        <span className="dash-tile-label">Installed in {monthName}</span>
+        <span className="dash-tile-value">{formatCurrency(installed.revenue)}</span>
+        <span className="dash-tile-foot">
+          {installed.count === 0
+            ? 'Nothing installed yet this month'
+            : `${installed.count} ${installed.count === 1 ? 'job' : 'jobs'} delivered and earned`}
         </span>
       </article>
 

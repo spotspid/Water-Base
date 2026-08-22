@@ -42,101 +42,141 @@ export function monthStart(now = new Date()) {
   return new Date(now.getFullYear(), now.getMonth(), 1)
 }
 
+// The first instant of the following month, so a month range is a half open
+// interval and a job installed on the 31st is not silently dropped.
+export function monthEnd(start) {
+  return new Date(start.getFullYear(), start.getMonth() + 1, 1)
+}
+
 export function monthLabel(date) {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
-const EMPTY_TOTALS = {
-  count: 0, revenue: 0, parts: 0, pay: 0, margin: 0, avgMargin: null,
-  installedCount: 0, pendingCount: 0, projected: false,
-}
+/**
+ * Two different months' worth of money, kept apart.
+ *
+ * A month total that adds six signed contracts to one finished install is not
+ * a number anyone can act on. They answer different questions and they are
+ * measured off different dates:
+ *
+ *   sold      written up this month and not yet installed. What was contracted
+ *             and is still owed to the customer. Dated by created_at.
+ *   installed installed this month. What was actually delivered, with parts
+ *             drawn and a real margin behind it. Dated by install_date, so a
+ *             job sold in July and installed in August lands in August.
+ *
+ * They partition rather than overlap, so they can be read side by side without
+ * anything being counted twice. Cancelled jobs are in neither.
+ */
+export function splitMonthRevenue(jobs, start) {
+  const from = isoDay(start)
+  const to = isoDay(monthEnd(start))
+  const cutoff = start.getTime()
+  const until = monthEnd(start).getTime()
 
-// Margin on a job that has not been installed is a forecast, not a result. Its
-// parts have been committed but not drawn, and no payout has been entered, so
-// the margin equals the whole sale price and reads as 100 percent of revenue.
-// The totals still include it, because that is the pipeline, but the caller is
-// told how many jobs are unearned so it can say so rather than imply certainty.
-export function summarizeJobs(jobs) {
-  if (jobs.length === 0) return EMPTY_TOTALS
+  const empty = { count: 0, revenue: 0 }
+  const sold = { ...empty }
+  const installed = { ...empty }
 
-  const totals = jobs.reduce((acc, job) => ({
-    count: acc.count + 1,
-    revenue: acc.revenue + (Number(job.sale_price) || 0),
-    parts: acc.parts + (Number(job.parts_cost) || 0),
-    pay: acc.pay + (Number(job.installer_pay) || 0),
-    margin: acc.margin + (Number(job.margin) || 0),
-  }), { count: 0, revenue: 0, parts: 0, pay: 0, margin: 0 })
+  for (const job of jobs) {
+    if (job.status === CANCELLED_STATUS) continue
 
-  const installedCount = jobs.filter(job => job.status === 'installed').length
+    const price = Number(job.sale_price) || 0
 
-  return {
-    ...totals,
-    avgMargin: totals.margin / totals.count,
-    installedCount,
-    pendingCount: totals.count - installedCount,
-    projected: installedCount < totals.count,
+    if (job.status === 'installed') {
+      const day = String(job.install_date || '').slice(0, 10)
+      if (day && day >= from && day < to) {
+        installed.count += 1
+        installed.revenue += price
+      }
+      continue
+    }
+
+    const written = new Date(job.created_at).getTime()
+    if (Number.isFinite(written) && written >= cutoff && written < until) {
+      sold.count += 1
+      sold.revenue += price
+    }
   }
+
+  return { sold, installed }
 }
 
-export function jobsSince(jobs, since) {
-  const cutoff = since.getTime()
-  return jobs.filter(job => {
-    const created = new Date(job.created_at).getTime()
-    return Number.isFinite(created) && created >= cutoff
-  })
-}
-
-// Every known status is listed even at zero, so the shape of the pipeline is
-// readable rather than appearing and disappearing as jobs move through it.
-// A status that somehow is not in the label map still gets a row.
-export function statusBreakdown(jobs) {
-  const counts = new Map(Object.keys(STATUS_LABELS).map(key => [key, { count: 0, revenue: 0 }]))
+// The shape of the pipeline, small enough to say in one sentence.
+//
+// This used to be a panel with a bar chart. With two statuses in use it was a
+// third of the screen spent repeating what the metric tiles already said, and
+// a bar whose only comparison was against the one other bar. The counts are
+// the whole content, so they are returned as counts and rendered as a line.
+export function pipelineSummary(jobs) {
+  const counts = new Map(Object.keys(STATUS_LABELS).map(key => [key, 0]))
 
   for (const job of jobs) {
     const key = job.status || 'unknown'
-    if (!counts.has(key)) counts.set(key, { count: 0, revenue: 0 })
-    const row = counts.get(key)
-    row.count += 1
-    row.revenue += Number(job.sale_price) || 0
+    counts.set(key, (counts.get(key) || 0) + 1)
   }
 
-  const total = jobs.length
-
-  return [...counts.entries()].map(([status, row]) => ({
+  const rows = [...counts.entries()].map(([status, count]) => ({
     status,
     label: STATUS_LABELS[status] || status,
-    count: row.count,
-    revenue: row.revenue,
-    share: total === 0 ? 0 : Math.round((row.count / total) * 100),
+    count,
   }))
+
+  return {
+    total: jobs.length,
+    used: rows.filter(row => row.count > 0),
+    empty: rows.filter(row => row.count === 0).map(row => row.label.toLowerCase()),
+  }
 }
 
-// A part needs attention for one of two reasons, and they are not the same.
+// A part can need attention for two reasons, and only one of them is a
+// problem today.
 //
-//   nothing free   every unit on the shelf is promised to a booked job, so
-//                  there is none left to sell even though the shelf is not
-//                  empty. SALT-40 sits at 8 on hand against a reorder point
-//                  of 6, so a threshold test alone says it is fine, while all
-//                  8 bags are spoken for.
-//   at the line    on hand has fallen to the reorder point. Still sellable,
-//                  but it is time to order.
+//   short       nothing free to sell. Every unit on the shelf is promised to a
+//               booked job, or more is promised than exists. Salt sits at 8 on
+//               hand against a reorder point of 2, so a threshold test says it
+//               is fine while all 8 bags are spoken for and the next sale
+//               cannot be filled.
+//   at the line on hand has reached the reorder point. Still sellable, still
+//               enough for the next job. This is a purchasing note, not an
+//               alarm, and it belongs on Inventory rather than the dashboard.
 //
-// Nothing free is ranked first, because a part you cannot promise blocks a
-// sale today, while a part at the line only threatens one later. Within each
-// group the worse number leads. Inactive items are left out, since nobody is
-// going to reorder them.
-export function reorderList(stockRows) {
-  return stockRows
-    .filter(row => row.active !== false && (isLowStock(row) || availableOf(row) <= 0))
-    .map(row => ({
-      ...row,
-      free: availableOf(row),
-      shortfall: (Number(row.reorder_threshold) || 0) - (Number(row.on_hand) || 0),
-      urgency: availableOf(row) <= 0 ? 'none-free' : 'at-line',
-    }))
+// Splitting them is the whole point. Mixed together, eight of eleven parts
+// read as needing attention and the two that actually did were buried.
+
+function decorate(row) {
+  return {
+    ...row,
+    free: availableOf(row),
+    shortfall: (Number(row.reorder_threshold) || 0) - (Number(row.on_hand) || 0),
+  }
+}
+
+function stockable(rows) {
+  return rows.filter(row => row.active !== false)
+}
+
+// Nothing free to sell. The worse the number, the higher it sits, so an
+// oversold part leads a merely exhausted one.
+export function stockShortages(stockRows) {
+  return stockable(stockRows)
+    .filter(row => availableOf(row) <= 0)
+    .map(decorate)
     .sort((a, b) => {
-      if (a.urgency !== b.urgency) return a.urgency === 'none-free' ? -1 : 1
-      if (a.urgency === 'none-free' && a.free !== b.free) return a.free - b.free
+      if (a.free !== b.free) return a.free - b.free
+      return String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' })
+    })
+}
+
+// At or below the reorder point, but with stock still free to sell. A part
+// that is genuinely short is deliberately left out: it is already being
+// reported as the more serious thing, and listing it twice is how the two
+// signals blurred into one in the first place.
+export function atReorderPoint(stockRows) {
+  return stockable(stockRows)
+    .filter(row => isLowStock(row) && availableOf(row) > 0)
+    .map(decorate)
+    .sort((a, b) => {
       if (b.shortfall !== a.shortfall) return b.shortfall - a.shortfall
       return String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' })
     })
@@ -157,4 +197,67 @@ export function inventoryUnits(stockRows) {
 // showed a positive quantity beside a negative amount on every receipt.
 export function costEffect(txn) {
   return Number(txn.quantity || 0) * Number(txn.unit_cost_at_txn || 0)
+}
+
+/**
+ * Ledger rows folded so that one job reads as one thing that happened.
+ *
+ * Installing a Flagship Bundle writes five rows, one per part. Shown raw they
+ * filled the whole panel with a single install and pushed everything else off
+ * the bottom, so "recent activity" answered "what happened once" rather than
+ * "what has been happening".
+ *
+ * Rows are grouped on the job and the deduct batch together, not the job
+ * alone. A job can be installed, reversed and installed again, and a later
+ * hand correction against the same job is a separate event from the automatic
+ * draw, so those must not collapse into each other. A row with no job is its
+ * own entry: two unrelated purchases on the same day are two things.
+ *
+ * A group of one is returned as a plain row, because "1 part drawn" that
+ * expands to reveal the one part is worse than just showing it.
+ */
+export function groupActivity(rows, limit = Infinity) {
+  const order = []
+  const byKey = new Map()
+
+  rows.forEach((row, index) => {
+    const key = row.job_id
+      ? `job:${row.job_id}:${row.deduct_batch ?? 'manual'}`
+      : `row:${row.id ?? index}`
+
+    if (!byKey.has(key)) {
+      byKey.set(key, { key, rows: [] })
+      order.push(key)
+    }
+
+    byKey.get(key).rows.push(row)
+  })
+
+  return order.slice(0, limit).map(key => {
+    const group = byKey.get(key)
+    const [head] = group.rows
+
+    if (group.rows.length === 1) {
+      return { key, single: true, row: head, rows: group.rows }
+    }
+
+    const types = new Set(group.rows.map(r => r.txn_type))
+    const units = group.rows.reduce((sum, r) => sum + Math.abs(Number(r.quantity) || 0), 0)
+
+    return {
+      key,
+      single: false,
+      row: head,
+      rows: group.rows,
+      lineCount: group.rows.length,
+      units,
+      quantity: group.rows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0),
+      value: group.rows.reduce((sum, r) => sum + costEffect(r), 0),
+      // one badge only when every row agrees, so a mixed group cannot claim
+      // to be a single kind of movement
+      txnType: types.size === 1 ? head.txn_type : null,
+      customerName: head.jobs?.customer_name || '',
+      auto: head.source === 'template',
+    }
+  })
 }

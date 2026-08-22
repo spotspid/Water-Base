@@ -77,16 +77,6 @@
 
 /* ---- panels ---- */
 
-.dash-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-  gap: 20px;
-  margin-bottom: 20px;
-  /* each panel sizes to its own content. Stretching them to match made
-     the status panel a mostly empty box beside the stock table. */
-  align-items: start;
-}
-
 .dash-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -95,10 +85,6 @@
   padding: 0 0 16px;
   margin-bottom: 16px;
   overflow: hidden;
-}
-
-.dash-columns .dash-panel {
-  margin-bottom: 0;
 }
 
 .dash-panel-head {
@@ -130,70 +116,9 @@
 
 /* ---- status breakdown ---- */
 
-.dash-status-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-}
-
-.dash-status-row {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 34px 84px;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-
-.dash-bar {
-  display: block;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--gray-100);
-  border: 1px solid var(--gray-300);
-  overflow: hidden;
-}
-
-.dash-bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--teal);
-  transition: width 0.2s;
-}
-
-.dash-bar-sold {
-  background: var(--teal);
-}
-
-.dash-bar-scheduled {
-  background: var(--navy);
-}
-
-.dash-bar-installed {
-  background: var(--teal-deep);
-}
-
-.dash-status-count {
-  text-align: right;
-  font-weight: 700;
-  color: var(--navy);
-  font-variant-numeric: tabular-nums;
-}
-
-.dash-status-revenue {
-  text-align: right;
-  color: var(--gray-500);
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-}
-
 @media (max-width: 1000px) {
   .dash-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dash-columns {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -204,14 +129,6 @@
 
   .dash-metrics {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dash-status-row {
-    grid-template-columns: 92px minmax(0, 1fr) 30px;
-  }
-
-  .dash-status-revenue {
-    display: none;
   }
 }
 
@@ -231,23 +148,102 @@
   box-shadow: none;
 }
 
-/* A forecast, never dressed as a result. Sits inline with the tile label so
-   the qualifier is read at the same moment as the number. */
-.dash-projected {
-  display: inline-block;
-  margin-left: 7px;
-  padding: 1px 7px;
-  border-radius: 20px;
-  background: var(--amber-soft);
-  color: var(--amber-ink);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  vertical-align: middle;
-}
-
 /* a tile holding a queue that is not empty, nudged rather than alarmed */
 .dash-tile-attention .dash-tile-value {
   color: var(--amber);
+}
+
+
+/* ---------------------------------------------------------------------------
+   The pipeline line.
+
+   This replaces a panel with a bar chart in it. With two statuses in use the
+   bars only ever compared against each other, and the panel spent a third of
+   the screen restating the metric tiles above it. The counts were the whole
+   content, so they are set as a sentence and given the width of one line.
+--------------------------------------------------------------------------- */
+.dash-pipeline {
+  font-size: 13px;
+  color: var(--muted);
+  margin: -2px 0 18px;
+}
+
+/* Nothing wrong, said plainly. An empty panel reads as broken, and a green
+   tick reads as a celebration, so this is a quiet statement of fact on the
+   same ground as the tables it stands in for. */
+.dash-clear {
+  margin: 0 18px 4px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------------------
+   Grouped activity.
+
+   A job that drew five parts is one row that opens. The header row carries
+   the totals; the lines underneath repeat only what differs, so the eye runs
+   down the parts rather than re-reading the same date and reason five times.
+--------------------------------------------------------------------------- */
+.dash-act-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.dash-act-toggle:hover {
+  color: var(--teal-deep);
+}
+
+.dash-act-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* a disclosure triangle drawn in borders, so it needs no icon font */
+.dash-act-caret {
+  width: 0;
+  height: 0;
+  flex: 0 0 auto;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--muted);
+  transition: transform 0.13s ease;
+}
+
+.dash-act-caret.on {
+  transform: rotate(90deg);
+}
+
+.dash-act-group td {
+  background: var(--raised);
+}
+
+/* the parts inside an open group. Indented and quieter, because they are
+   detail on the row above rather than events in their own right. */
+.dash-act-line td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  font-size: 13px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dash-act-line .td-customer {
+  padding-left: 34px;
+  font-weight: 400;
+  color: var(--body-text);
 }

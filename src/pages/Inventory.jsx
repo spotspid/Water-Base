@@ -5,10 +5,12 @@ import { attempt } from '../lib/errors'
 import {
   committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
 } from '../lib/inventory'
+import { atReorderPoint } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
+import InventoryReorder from '../components/InventoryReorder'
 import ItemHistoryModal from '../components/ItemHistoryModal'
 import StockMeter from '../components/StockMeter'
 import './Inventory.css'
@@ -64,6 +66,12 @@ export default function Inventory() {
   )
 
   const lowCount = useMemo(() => visible.filter(isLowStock).length, [visible])
+
+  // At the reorder point but still sellable. This list came off the dashboard,
+  // where it was drowning the parts that were genuinely short. It follows the
+  // category filter, because a list that ignored it would contradict the table
+  // right under it.
+  const reorderRows = useMemo(() => atReorderPoint(visible), [visible])
 
   const committedUnits = useMemo(
     () => visible.reduce((sum, r) => sum + committedOf(r), 0),
@@ -126,6 +134,8 @@ export default function Inventory() {
             </div>
           </div>
         )}
+
+        {hasData && <InventoryReorder rows={reorderRows} />}
 
         {loading && <p className="inv-state">Loading inventory...</p>}
 
@@ -208,7 +218,7 @@ export default function Inventory() {
                     <td className="col-num">
                       <span className="inv-onhand">{row.on_hand}</span>
                       {isLowStock(row) && (
-                        <span className="inv-low" title={`At or below the reorder point of ${row.reorder_threshold}`}>
+                        <span className="inv-low" title={`At or below the reorder point of ${row.reorder_threshold}, which is one job’s worth`}>
                           Reorder
                         </span>
                       )}
