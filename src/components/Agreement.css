@@ -190,3 +190,15 @@
     align-items: stretch;
   }
 }
+
+/* The moment a scheduled job gains a crew, this is the prompt to send. Teal
+   rather than amber, because it is an opportunity rather than a problem. */
+.agr-offer {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--teal-soft);
+  border: 1px solid rgba(44, 129, 155, 0.28);
+  color: var(--teal-deep);
+  font-size: 13px;
+  font-weight: 500;
+}

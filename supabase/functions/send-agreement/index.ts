@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { SPECS, matchFields } from './fieldMap.ts'
+import { Context, Part, SPECS, matchFields } from './fieldMap.ts'
 
 // send-agreement
 //
@@ -111,18 +111,89 @@ Deno.serve(async req => {
   const { data: job, error: jobError } = await supabase
     .from('job_margin')
     .select('id, customer_name, customer_email, phone, address, city, system_template, '
-      + 'sale_price, invoice_number, faucet_finish, install_date, scheduled_date, status')
+      + 'template_id, sale_price, invoice_number, faucet_finish, ro_type, install_date, '
+      + 'scheduled_date, time_window, installer_id, installer_pay, status')
     .eq('id', jobId)
     .maybeSingle()
 
   if (jobError) return fail(`That job could not be read. ${jobError.message}`, 500)
   if (!job) return fail('That job does not exist, or you cannot see it.', 404)
 
-  const email = spec.submitterEmail(job)
+  // ---------------------------------------------------------------------
+  // whatever else this agreement type needs before its fields can be built
+  // ---------------------------------------------------------------------
+  let installer: Record<string, unknown> | null = null
+
+  if (spec.needsInstaller) {
+    if (!job.installer_id) {
+      return fail(
+        'No installer is assigned to this job, so there is nobody to send a work order to. '
+        + 'Assign one first.',
+        422,
+      )
+    }
+
+    const { data: crew, error: crewError } = await supabase
+      .from('installers')
+      .select('id, name, email, phone')
+      .eq('id', job.installer_id)
+      .maybeSingle()
+
+    if (crewError) return fail(`The installer could not be read. ${crewError.message}`, 500)
+    if (!crew) return fail('That installer is no longer on the roster.', 404)
+    installer = crew
+  }
+
+  let parts: Part[] = []
+
+  if (spec.needsParts) {
+    if (!job.template_id) {
+      return fail(
+        `This job has no build sheet, so there is no parts list to put on the work order. `
+        + `Pick one on the job first.`,
+        422,
+      )
+    }
+
+    // the same resolver the reservations use, so the sheet the installer reads
+    // cannot disagree with what the job is actually holding
+    const { data: resolved, error: partsError } = await supabase.rpc('resolve_template_parts', {
+      p_template_id: job.template_id,
+      p_faucet_finish: job.faucet_finish || null,
+      p_ro_type: job.ro_type || null,
+    })
+
+    if (partsError) return fail(`The parts list could not be resolved. ${partsError.message}`, 500)
+
+    const rows = (resolved || []) as Array<Record<string, unknown>>
+    const unresolved = rows.filter(r => !r.resolved)
+
+    if (unresolved.length > 0) {
+      return fail(
+        `${unresolved.length} line(s) on this build sheet do not resolve to a stock item for the `
+        + `choices on this job, so the work order would list the wrong parts. Set the faucet `
+        + `finish and RO type first.`,
+        422,
+      )
+    }
+
+    parts = rows.map(r => ({
+      sku: String(r.sku || ''),
+      name: String(r.item_name || ''),
+      quantity: Number(r.quantity) || 0,
+    }))
+  }
+
+  const ctx: Context = { job, installer, parts, today: new Date() }
+
+  const email = spec.submitterEmail(ctx)
   if (!email) {
     return fail(
-      'This job has no customer email, so there is nowhere to send the agreement. '
-      + 'Add one to the job first.',
+      spec.needsInstaller
+        ? `${String(installer?.name || 'That installer')} has no email address on the roster, so `
+          + `there is nowhere to send the work order. Add one in Settings.`
+        : 'This job has no customer email, so there is nowhere to send the agreement. '
+          + 'Add one to the job first.',
       422,
     )
   }
@@ -166,7 +237,7 @@ Deno.serve(async req => {
     )
   }
 
-  const { fields, missing, filled } = matchFields(spec, templateFieldNames, job)
+  const { fields, missing, filled, openToSigner } = matchFields(spec, templateFieldNames, ctx)
 
   if (missing.length > 0) {
     return fail(
@@ -198,9 +269,9 @@ Deno.serve(async req => {
         template_id: Number(templateId) || templateId,
         send_email: true,
         submitters: [{
-          role: 'Customer',
+          role: spec.submitterRole,
           email,
-          name: spec.submitterName(job),
+          name: spec.submitterName(ctx),
         }],
         fields,
         metadata: { job_id: jobId, agreement_type: type },
@@ -276,6 +347,8 @@ Deno.serve(async req => {
     slug,
     sent_to: email,
     fields_prefilled: filled,
+    left_for_signer: openToSigner,
+    parts_listed: parts.length,
     send_count: row.send_count,
   })
 })

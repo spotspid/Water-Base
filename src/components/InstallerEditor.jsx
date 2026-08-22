@@ -9,9 +9,9 @@ const DEFAULT_COLOR = '#2C819B'
 // installer, and a delete that is refused by a foreign key rather than by a
 // usage count, since a job points at a person by id.
 export default function InstallerEditor({ installers, onChanged }) {
-  const [draft, setDraft] = useState({ name: '', phone: '', color: DEFAULT_COLOR })
+  const [draft, setDraft] = useState({ name: '', phone: '', email: '', color: DEFAULT_COLOR })
   const [editingId, setEditingId] = useState('')
-  const [edit, setEdit] = useState({ name: '', phone: '', color: DEFAULT_COLOR })
+  const [edit, setEdit] = useState({ name: '', phone: '', email: '', color: DEFAULT_COLOR })
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -60,11 +60,12 @@ export default function InstallerEditor({ installers, onChanged }) {
       supabase.from('installers').insert({
         name,
         phone: draft.phone.trim() || null,
+        email: draft.email.trim() || null,
         color: draft.color,
         sort_order: nextOrder,
       }))
 
-    if (saved) setDraft({ name: '', phone: '', color: DEFAULT_COLOR })
+    if (saved) setDraft({ name: '', phone: '', email: '', color: DEFAULT_COLOR })
   }
 
   async function handleSaveEdit(row) {
@@ -83,6 +84,7 @@ export default function InstallerEditor({ installers, onChanged }) {
       supabase.from('installers').update({
         name,
         phone: edit.phone.trim() || null,
+        email: edit.email.trim() || null,
         color: edit.color,
       }).eq('id', row.id))
   }
@@ -104,7 +106,7 @@ export default function InstallerEditor({ installers, onChanged }) {
 
   function startEdit(row) {
     setEditingId(row.id)
-    setEdit({ name: row.name, phone: row.phone || '', color: row.color || DEFAULT_COLOR })
+    setEdit({ name: row.name, phone: row.phone || '', email: row.email || '', color: row.color || DEFAULT_COLOR })
     setError('')
   }
 
@@ -141,6 +143,9 @@ export default function InstallerEditor({ installers, onChanged }) {
                     <input className="set-input" value={edit.name} autoFocus
                       aria-label={`Rename ${row.name}`} disabled={busyId === row.id}
                       onChange={e => setEdit(d => ({ ...d, name: e.target.value }))} />
+                    <input className="set-input" value={edit.email} placeholder="Email"
+                      type="email" aria-label="Installer email" disabled={busyId === row.id}
+                      onChange={e => setEdit(d => ({ ...d, email: e.target.value }))} />
                     <input className="set-input" value={edit.phone} placeholder="Phone"
                       aria-label={`Phone for ${row.name}`} disabled={busyId === row.id}
                       onChange={e => setEdit(d => ({ ...d, phone: e.target.value }))} />
@@ -160,6 +165,9 @@ export default function InstallerEditor({ installers, onChanged }) {
                   <span className="set-item-value">
                     <span className="set-swatch" style={{ background: row.color }} aria-hidden="true" />
                     {row.name}
+                    {row.email
+                      ? <span className="set-crew-phone">{row.email}</span>
+                      : <span className="cell-unset">no email, cannot receive work orders</span>}
                     {row.phone && <span className="set-crew-phone">{row.phone}</span>}
                     {!row.active && <span className="inv-inactive">Off</span>}
                   </span>
@@ -184,6 +192,9 @@ export default function InstallerEditor({ installers, onChanged }) {
         <input className="set-input" value={draft.name} placeholder="Add an installer"
           aria-label="New installer name" disabled={busyId === 'new'}
           onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} />
+        <input className="set-input" value={draft.email} placeholder="Email, for work orders"
+          type="email" aria-label="New installer email" disabled={busyId === 'new'}
+          onChange={e => setDraft(d => ({ ...d, email: e.target.value }))} />
         <input className="set-input" value={draft.phone} placeholder="Phone (optional)"
           aria-label="New installer phone" disabled={busyId === 'new'}
           onChange={e => setDraft(d => ({ ...d, phone: e.target.value }))} />

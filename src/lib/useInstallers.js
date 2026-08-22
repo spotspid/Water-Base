@@ -26,7 +26,7 @@ export function useInstallers({ activeOnly = false } = {}) {
       () => {
         const query = supabase
           .from('installers')
-          .select('id, name, phone, color, active, sort_order')
+          .select('id, name, phone, email, color, active, sort_order')
         return activeOnly ? query.eq('active', true) : query
       },
       'The installer roster could not be loaded.',

@@ -86,3 +86,50 @@ export async function sendAgreement(jobId, type = 'customer_install') {
     }
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Work orders.
+
+   Stored as an agreements row of type subcontractor_service, so it shares the
+   table, the status vocabulary and the webhook with the customer agreement.
+   Only the reader differs: this one goes to the installer, not the customer.
+--------------------------------------------------------------------------- */
+
+export const WORK_ORDER_TYPE = 'subcontractor_service'
+
+export function workOrderStatusOf(job) {
+  return job?.work_order_status || 'none'
+}
+
+export function workOrderLabel(job) {
+  const status = workOrderStatusOf(job)
+  return AGREEMENT_STATUS_LABELS[status] || status
+}
+
+export function workOrderTone(job) {
+  return AGREEMENT_STATUS_TONE[workOrderStatusOf(job)] || 'neutral'
+}
+
+/**
+ * Everything that has to be true before a work order can go out, and a plain
+ * sentence for whichever one is not. The button reads this rather than
+ * disabling itself silently, because a dead button with no reason is worse
+ * than no button.
+ */
+export function workOrderBlocker(job) {
+  if (!job?.scheduled_date) return 'This job has no date yet, so there is nothing to schedule a crew around.'
+  if (!job?.installer_id) return 'No installer is assigned, so there is nobody to send it to.'
+  if (!job?.installer_email) return `${job.installer_name || 'That installer'} has no email address on the roster. Add one in Settings.`
+  if (!job?.template_id) return 'This job has no build sheet, so there is no parts list to put on the work order.'
+  return ''
+}
+
+// Scheduled, crewed, and nothing sent yet. This is the moment to offer.
+export function workOrderReady(job) {
+  return !workOrderBlocker(job) && ['none', 'failed'].includes(workOrderStatusOf(job))
+}
+
+export function isWorkOrderOut(job) {
+  return ['pending', 'sent', 'opened'].includes(workOrderStatusOf(job))
+}
