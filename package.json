@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check:dates": "node scripts/check-dates.js"
+    "check:dates": "node scripts/check-dates.js",
+    "check:dashboard": "node scripts/check-dashboard.js",
+    "check": "npm run check:dates && npm run check:dashboard"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",

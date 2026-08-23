@@ -1,5 +1,5 @@
-import { CANCELLED_STATUS, STATUS_LABELS } from './constants'
-import { availableOf, isLowStock } from './inventory'
+import { CANCELLED_STATUS, STATUS_LABELS } from './constants.js'
+import { availableOf, isLowStock } from './inventory.js'
 
 // A local ISO day, so date comparisons never touch a timezone. scheduled_date
 // is a plain YYYY-MM-DD, and ISO dates sort lexicographically in date order,
@@ -65,8 +65,15 @@ export function monthLabel(date) {
  *             drawn and a real margin behind it. Dated by install_date, so a
  *             job sold in July and installed in August lands in August.
  *
- * They partition rather than overlap, so they can be read side by side without
- * anything being counted twice. Cancelled jobs are in neither.
+ * They deliberately overlap. A job written on the 3rd and installed on the
+ * 10th is an August booking and an August install, and it belongs in both. An
+ * earlier version partitioned them by dropping installed jobs out of sold,
+ * which made sold decay: the month's booking figure fell every time a job was
+ * delivered, so "sold in August" answered neither what was written nor what is
+ * outstanding. Overlapping is the honest shape, and the count of jobs in both
+ * is returned so the tiles can say so rather than look like a double count.
+ *
+ * Cancelled jobs are in neither.
  */
 export function splitMonthRevenue(jobs, start) {
   const from = isoDay(start)
@@ -77,29 +84,38 @@ export function splitMonthRevenue(jobs, start) {
   const empty = { count: 0, revenue: 0 }
   const sold = { ...empty }
   const installed = { ...empty }
+  let both = 0
 
   for (const job of jobs) {
     if (job.status === CANCELLED_STATUS) continue
 
     const price = Number(job.sale_price) || 0
 
-    if (job.status === 'installed') {
-      const day = String(job.install_date || '').slice(0, 10)
-      if (day && day >= from && day < to) {
-        installed.count += 1
-        installed.revenue += price
-      }
-      continue
+    // delivered this month, dated by the day it happened
+    const day = String(job.install_date || '').slice(0, 10)
+    const installedThisMonth = job.status === 'installed'
+      && Boolean(day) && day >= from && day < to
+
+    if (installedThisMonth) {
+      installed.count += 1
+      installed.revenue += price
     }
 
+    // written this month, whatever has become of it since. An installed job
+    // still counts here: it was sold this month too, and removing it would
+    // shrink the month's bookings as the work got done.
     const written = new Date(job.created_at).getTime()
-    if (Number.isFinite(written) && written >= cutoff && written < until) {
+    const soldThisMonth = Number.isFinite(written) && written >= cutoff && written < until
+
+    if (soldThisMonth) {
       sold.count += 1
       sold.revenue += price
     }
+
+    if (soldThisMonth && installedThisMonth) both += 1
   }
 
-  return { sold, installed }
+  return { sold, installed, both }
 }
 
 // The shape of the pipeline, small enough to say in one sentence.

@@ -168,6 +168,7 @@ export default function Dashboard() {
             <DashboardMetrics
               sold={revenue.sold}
               installed={revenue.installed}
+              both={revenue.both}
               monthName={monthLabel(start)}
               notBooked={notBooked}
               bookedSoon={bookedSoon}

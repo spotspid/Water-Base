@@ -10,12 +10,17 @@ import { formatCurrency } from '../lib/inventory'
 // the day it was written and installed by the day it happened, so a job sold
 // in July and installed in August lands in the right month either way.
 //
+// The two overlap on purpose. A job written and installed in the same month is
+// in both, because it was genuinely sold this month and genuinely delivered
+// this month. The footer says how many are in both, so the pair never reads as
+// a total that has been double counted.
+//
 // Margin is not here at all. With one install ever, no job has drawn parts or
 // recorded a payout, so margin equalled revenue on every row and the
 // percentage was always 100. It lives on Profit and loss, where the month
 // range makes it mean something.
 export default function DashboardMetrics({
-  sold, installed, monthName, notBooked, bookedSoon, bookingDays,
+  sold, installed, both = 0, monthName, notBooked, bookedSoon, bookingDays,
   inventoryValue, inventoryUnits, itemCount,
 }) {
   return (
@@ -26,7 +31,7 @@ export default function DashboardMetrics({
         <span className="dash-tile-foot">
           {sold.count === 0
             ? 'Nothing written up yet this month'
-            : `${sold.count} ${sold.count === 1 ? 'job' : 'jobs'} contracted, not yet installed`}
+            : `${sold.count} ${sold.count === 1 ? 'job' : 'jobs'} written up${both > 0 ? `, ${both} already installed` : ''}`}
         </span>
       </article>
 
@@ -36,7 +41,7 @@ export default function DashboardMetrics({
         <span className="dash-tile-foot">
           {installed.count === 0
             ? 'Nothing installed yet this month'
-            : `${installed.count} ${installed.count === 1 ? 'job' : 'jobs'} delivered and earned`}
+            : `${installed.count} ${installed.count === 1 ? 'job' : 'jobs'} delivered and earned${both > 0 ? ', counted in both tiles' : ''}`}
         </span>
       </article>
 
