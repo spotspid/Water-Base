@@ -194,10 +194,19 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
         ? 'No parts list on this build sheet'
         : ctx.parts.map(p => `${p.quantity} x ${p.name} (${p.sku})`).join('\n') },
 
-    // blank when no payout has been entered, and deliberately not locked in
-    // that case, so it can still be filled in
+    // Always locked, with no exception.
+    //
+    // This was previously omitted when no payout had been entered, on the
+    // reasoning that an empty box could then still be filled in. That is
+    // exactly the problem: the person filling it in is the subcontractor, and
+    // he was being handed an open input to type his own pay into. lockBlank
+    // sends the field whether or not there is a figure, so the worst case is a
+    // blank box nobody can write in rather than an editable one.
+    //
+    // The send is refused outright when there is no payout, so the blank case
+    // should be unreachable. This is the second lock on the same door.
     { key: 'agreed_pay', required: false, names: ['agreed_pay'],
-      value: ctx => moneyIfSet(ctx.job.installer_pay) },
+      lockBlank: true, value: ctx => moneyIfSet(ctx.job.installer_pay) },
     { key: 'payment_terms', required: false, names: ['payment_terms'],
       value: () => PAYMENT_TERMS },
 

@@ -6,6 +6,7 @@ import {
   NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
 } from '../src/lib/nag.js'
 import { SPECS, matchFields } from '../supabase/functions/send-agreement/fieldMap.ts'
+import { agreedPay, workOrderBlocker } from '../src/lib/workOrder.js'
 
 // Checks what the notifier says and when it says it.
 //
@@ -267,6 +268,66 @@ check('and still fills under the old name if a template carries it',
     .fields.some(f => f.name === 'additional_items'))
 check('a template carrying neither does not block the send',
   matchFields(woSpec, WO_TEMPLATE.filter(n => n !== 'parts_list'), woCtx).missing.length === 0)
+
+// --- agreed pay, which the installer must never be able to type -------------
+
+// He was being handed an open input to set his own pay. The field is now sent
+// whether or not there is a figure, so the worst case is a box nobody can
+// write in rather than an editable one.
+const payCtx = amount => ({ ...woCtx, job: { ...woCtx.job, installer_pay: amount } })
+const payField = amount =>
+  matchFields(woSpec, WO_TEMPLATE, payCtx(amount)).fields.find(f => f.name === 'agreed_pay')
+
+check('agreed pay is sent when there is a payout', Boolean(payField(450)))
+check('and carries the figure', payField(450)?.default_value === '$450.00', payField(450)?.default_value)
+check('and is locked', payField(450)?.readonly === true)
+
+check('agreed pay is still sent when there is no payout', Boolean(payField(0)),
+  'omitting it is what left an open box on the document')
+check('and is blank', payField(0)?.default_value === '')
+check('and is still locked, which is the whole point', payField(0)?.readonly === true)
+check('a null payout behaves the same as zero',
+  payField(null)?.readonly === true && payField(null)?.default_value === '')
+
+// The only two boxes the subcontractor may touch, whatever his pay is.
+for (const amount of [450, 0, null]) {
+  const open = matchFields(woSpec, WO_TEMPLATE, payCtx(amount)).openToSigner
+  check(`with pay ${JSON.stringify(amount)} only the signature and date stay open`,
+    open.length === 2 && open.every(n => n.startsWith('subcontractor_')), open.join(','))
+}
+
+// --- and the send is refused before it gets that far ------------------------
+
+// The browser's copy of a rule the edge function also enforces. If these two
+// disagree the button offers a send the server then refuses.
+const sendable = {
+  scheduled_date: '2026-09-08', installer_id: 'i1', installer_email: 'a@example.com',
+  template_id: 't1', installer_pay: 450,
+}
+
+check('a fully priced job is sendable', workOrderBlocker(sendable) === '')
+check('no payout blocks the send',
+  workOrderBlocker({ ...sendable, installer_pay: null }) !== '')
+check('and the blocker names the payout',
+  workOrderBlocker({ ...sendable, installer_pay: null }).includes('payout'))
+check('and points at the job',
+  workOrderBlocker({ ...sendable, installer_pay: null }).includes('on this job'))
+check('a zero payout blocks it too, for the same reason',
+  workOrderBlocker({ ...sendable, installer_pay: 0 }) !== '')
+check('a negative payout blocks it',
+  workOrderBlocker({ ...sendable, installer_pay: -50 }) !== '')
+
+check('agreedPay reads a real figure', agreedPay({ installer_pay: 450 }) === 450)
+check('and reads zero as missing', agreedPay({ installer_pay: 0 }) === null)
+check('and null as missing', agreedPay({ installer_pay: null }) === null)
+check('and a missing job as missing', agreedPay(null) === null)
+
+// The earlier blockers still come first, so somebody who has not scheduled the
+// job is not sent off to fix a payout on a job that is not happening.
+check('an unscheduled job reports the date, not the payout',
+  workOrderBlocker({ ...sendable, scheduled_date: null, installer_pay: null }).includes('no date'))
+check('a crewless job reports the crew, not the payout',
+  workOrderBlocker({ ...sendable, installer_id: null, installer_pay: null }).includes('No installer'))
 
 console.log(failed === 0
   ? '\nAll notification checks passed.'

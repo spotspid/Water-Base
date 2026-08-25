@@ -177,6 +177,27 @@ Deno.serve(async req => {
     if (crewError) return fail(`The installer could not be read. ${crewError.message}`, 500)
     if (!crew) return fail('That installer is no longer on the roster.', 404)
     installer = crew
+
+    // No pay, no document.
+    //
+    // A work order carries an agreed_pay box. Sending one with that box empty
+    // puts a subcontractor's signature on an agreement to work for an amount
+    // nobody wrote down, which is worse than sending nothing at all: there is
+    // no document to argue about, and there is a signature saying there was.
+    //
+    // job_margin coalesces a null payout to zero, so a job nobody has priced
+    // and a job priced at nothing look identical here. Both are refused, for
+    // the same reason.
+    const payout = Number(job.installer_pay)
+
+    if (!Number.isFinite(payout) || payout <= 0) {
+      return fail(
+        `${String(crew.name || 'That installer')} has no payout on this job, so the agreed pay `
+        + 'on the work order would be blank. Enter the payout on the job and send it again.',
+        422,
+        { job_id: jobId, customer_name: job.customer_name ?? null, installer_pay: job.installer_pay },
+      )
+    }
   }
 
   let parts: Part[] = []
