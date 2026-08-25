@@ -1,6 +1,6 @@
 import {
   buildDeclined, buildNag, buildOrderArrived, buildSigned, buildViewed,
-  documentLabel, jobLink, orderLink,
+  channelForDocument, documentLabel, jobLink, orderLink,
 } from '../supabase/functions/notify/messages.ts'
 import {
   NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
@@ -88,10 +88,36 @@ check('a view interrupts nobody', !viewed.message.includes('<!channel>'))
 check('a view does not shout', !viewed.message.includes('*'))
 check('a morning reminder interrupts nobody', !nag.message.includes('<!channel>'))
 
-// --- channels --------------------------------------------------------------
+// --- channels, which follow who signed rather than what happened ------------
 
-check('signatures, declines and views all go to new sale',
-  [signed, declined, viewed].every(m => m.channel === 'new_sale'))
+check('a customer signature is a sale', signed.channel === 'new_sale')
+check('a customer decline is a sale', declined.channel === 'new_sale')
+check('a customer view is a sale', viewed.channel === 'new_sale')
+
+// The work order is chased in scheduling by the morning sweep, so its outcome
+// belongs there too rather than splitting one conversation across two rooms.
+const woSigned = buildSigned(JOB, AG, 'subcontractor_service')
+const woDeclined = buildDeclined(JOB, AG, 'subcontractor_service')
+const woViewed = buildViewed(JOB, AG, 'subcontractor_service', 1, '2026-08-25')
+
+check('a work order signature is operations', woSigned.channel === 'scheduling')
+check('a work order decline is operations', woDeclined.channel === 'scheduling')
+check('a work order view is operations', woViewed.channel === 'scheduling')
+check('and it lands in the same channel the nag chases it from',
+  woSigned.channel === nag.channel)
+
+check('routing follows the document type',
+  channelForDocument('customer_install') === 'new_sale'
+  && channelForDocument('subcontractor_service') === 'scheduling')
+check('an unknown document type stays with the customer channel',
+  channelForDocument('something_else') === 'new_sale')
+
+// Routing must not change the wording or the keys.
+check('a work order signature still names the right document',
+  woSigned.message.includes('work order'))
+check('and keys the same way, so the routing change cannot resend old events',
+  woSigned.dedupe_key === signed.dedupe_key)
+
 check('the nag goes to scheduling', nag.channel === 'scheduling')
 
 // --- every message stands alone, because webhooks cannot thread ------------

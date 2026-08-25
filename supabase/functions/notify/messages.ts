@@ -9,6 +9,12 @@
 // because a line that says "unsigned for 9 days" with no name is a line
 // nobody can act on.
 //
+// Which channel a DocuSeal event lands in follows who signed, not what the
+// event was. A customer signing is a sale. A contractor signing a work order
+// is operations, and the daily reminder chasing that same signature already
+// goes to scheduling, so putting the outcome anywhere else splits one
+// conversation across two rooms.
+//
 // Loudness is deliberate and graded:
 //   declined  <!channel> and a siren. Someone has to phone today.
 //   signed    <!channel> and a tick. Money arrived, and it changes the day.
@@ -108,6 +114,18 @@ export function documentLabel(type: string): string {
   return LABELS[type] || 'document'
 }
 
+/**
+ * Where a document event belongs.
+ *
+ * The work order is chased in scheduling by the morning sweep, so its outcome
+ * belongs there too: the message saying it came back signed lands beside the
+ * messages that were asking for it. Everything else is a customer document and
+ * is news for the sales channel.
+ */
+export function channelForDocument(agreementType: string): Channel {
+  return agreementType === 'subcontractor_service' ? 'scheduling' : 'new_sale'
+}
+
 /* ---------------------------------------------------------------------------
    DocuSeal events, all to the new sale channel
 --------------------------------------------------------------------------- */
@@ -121,7 +139,7 @@ export function buildSigned(
   const detail = subtitle(job)
 
   return {
-    channel: 'new_sale',
+    channel: channelForDocument(agreementType),
     event_type: 'agreement.signed',
     dedupe_key: `agreement.signed:${agreementId}`,
     job_id: job.id,
@@ -144,7 +162,7 @@ export function buildDeclined(
   const who = agreementType === 'subcontractor_service' ? 'The installer' : 'The customer'
 
   return {
-    channel: 'new_sale',
+    channel: channelForDocument(agreementType),
     event_type: 'agreement.declined',
     dedupe_key: `agreement.declined:${agreementId}`,
     job_id: job.id,
@@ -173,7 +191,7 @@ export function buildViewed(
   const times = viewCount > 1 ? `, ${viewCount} times now` : ''
 
   return {
-    channel: 'new_sale',
+    channel: channelForDocument(agreementType),
     event_type: 'agreement.viewed',
     dedupe_key: `agreement.viewed:${agreementId}:${day}`,
     job_id: job.id,
