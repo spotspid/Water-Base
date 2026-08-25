@@ -65,7 +65,13 @@ Deno.serve(async req => {
     return fail('Your session is not valid any more. Sign in again.', 401)
   }
 
-  let body: { job_id?: string; type?: string; inspect?: boolean; submission_id?: string }
+  let body: {
+    job_id?: string
+    type?: string
+    inspect?: boolean
+    submission_id?: string
+    archive?: boolean
+  }
   try {
     body = await req.json()
   } catch {
@@ -79,10 +85,18 @@ Deno.serve(async req => {
   const readBackId = String(body.submission_id || '').trim()
 
   if (readBackId) {
+    // DELETE archives rather than deletes: DocuSeal records archived_at and
+    // keeps the document and its audit log. That is what makes it safe to do
+    // to a superseded submission, and reversible if the wrong one goes.
+    const archiving = body.archive === true
+
     try {
       const res = await fetch(
         `${DOCUSEAL_API}/submissions/${encodeURIComponent(readBackId)}`,
-        { headers: { 'X-Auth-Token': apiKey } },
+        {
+          method: archiving ? 'DELETE' : 'GET',
+          headers: { 'X-Auth-Token': apiKey },
+        },
       )
 
       const payload = await res.json().catch(() => null)
@@ -92,7 +106,7 @@ Deno.serve(async req => {
           { detail: payload })
       }
 
-      return json({ ok: true, submission: payload })
+      return json({ ok: true, archived: archiving, submission: payload })
     } catch (caught) {
       return fail(`DocuSeal could not be reached. ${(caught as Error).message}`, 502)
     }
