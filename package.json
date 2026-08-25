@@ -10,8 +10,9 @@
     "preview": "vite preview",
     "check:dates": "node scripts/check-dates.js",
     "check:dashboard": "node scripts/check-dashboard.js",
-    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications",
-    "check:notifications": "node scripts/check-notifications.js"
+    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders",
+    "check:notifications": "node scripts/check-notifications.js",
+    "check:orders": "node scripts/check-orders.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",

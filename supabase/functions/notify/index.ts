@@ -1,8 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
-  type Built, type Channel, type JobFacts,
-  buildDeclined, buildNag, buildSigned, buildViewed,
+  type Built, type Channel, type JobFacts, type OrderFacts,
+  buildDeclined, buildNag, buildOrderArrived, buildSigned, buildViewed,
 } from './messages.ts'
 import { configuredChannels, postToSlack } from './slack.ts'
 
@@ -38,6 +38,8 @@ type Body = {
   event?: string
   agreement_id?: string
   view_count?: number
+  // mode 'order'
+  order_id?: string
 }
 
 function json(body: Record<string, unknown>, status = 200): Response {
@@ -124,10 +126,12 @@ Deno.serve(async req => {
 
     if (mode === 'send') return await handleSend(supabase, body)
     if (mode === 'agreement') return await handleAgreement(supabase, body, appUrl)
+    if (mode === 'order') return await handleOrder(supabase, body, appUrl)
     if (mode === 'nag') return await handleNag(supabase, body, appUrl)
     if (mode === 'drain') return await handleDrain(supabase)
 
-    return fail(`Unknown mode "${mode}". Use agreement, send, nag, drain or health.`, 400)
+    return fail(
+      `Unknown mode "${mode}". Use agreement, order, send, nag, drain or health.`, 400)
   } catch (caught) {
     console.error('notify threw', caught)
     return fail(`The notifier failed. ${(caught as Error)?.message || String(caught)}`, 500)
@@ -256,6 +260,41 @@ async function handleAgreement(
   }
 
   const outcome = await deliver(supabase, built)
+
+  if (outcome.error) return json({ ok: false, event, ...outcome }, 502)
+  return json({ ok: true, event, ...outcome })
+}
+
+/**
+ * A supplier order landing, to the stock channel.
+ *
+ * Called by a database trigger the moment the last outstanding line is
+ * received, so the message is a consequence of the stock actually existing
+ * rather than of anyone remembering to say so. The trigger swallows failures
+ * on purpose: a delivery that physically arrived must be recorded whether or
+ * not Slack is reachable.
+ */
+async function handleOrder(
+  supabase: ReturnType<typeof createClient>, body: Body, appUrl?: string,
+): Promise<Response> {
+  const orderId = String(body.order_id || '').trim()
+  const event = String(body.event || 'received').trim()
+
+  if (!orderId) return fail('An order id is required.', 400)
+  if (event !== 'received') {
+    return fail(`"${event}" is not an order event. Only received is handled.`, 400)
+  }
+
+  const { data: order, error } = await supabase
+    .from('supplier_order_summary')
+    .select('id, supplier, order_number, line_count, units_received, order_total')
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (error) return fail(`That order could not be read. ${error.message}`, 500)
+  if (!order) return fail('That order does not exist.', 404)
+
+  const outcome = await deliver(supabase, buildOrderArrived(order as OrderFacts, appUrl))
 
   if (outcome.error) return json({ ok: false, event, ...outcome }, 502)
   return json({ ok: true, event, ...outcome })

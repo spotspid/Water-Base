@@ -1138,3 +1138,67 @@ a {
   white-space: nowrap;
   text-align: right;
 }
+
+/* On order, in the meter key. Not a segment on the bar: the bar is the shelf
+   as it stands, and shading in stock that has not arrived would make an empty
+   shelf look half full. Teal because it is the answer to a shortage, maroon
+   when the date has already gone by and the answer has stopped being one. */
+.meter-key-coming,
+.meter-key-coming b {
+  color: var(--teal-deep);
+}
+
+.meter-key-late,
+.meter-key-late b {
+  color: var(--maroon);
+}
+
+
+/* ---------------------------------------------------------------------------
+   Status badge.
+
+   Lives here rather than in a page stylesheet because jobs, agreements and
+   supplier orders all show one, and every one of those routes is loaded
+   lazily. A rule that only arrives with one route's stylesheet is missing on
+   the others, which is how a badge renders as bare text on a page nobody
+   thought to check.
+--------------------------------------------------------------------------- */
+.agr-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.agr-neutral {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-500);
+}
+
+.agr-wait {
+  background: rgba(214, 158, 46, 0.14);
+  color: var(--amber-ink);
+}
+
+.agr-good {
+  background: rgba(44, 129, 155, 0.18);
+  color: var(--teal-deep);
+}
+
+.agr-bad {
+  background: rgba(140, 47, 47, 0.1);
+  color: var(--maroon);
+}
+
+
+/* the sentence in front of an action that cannot be taken back */
+.agr-confirm-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--maroon);
+  flex: 1 1 220px;
+}
+

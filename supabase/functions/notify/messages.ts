@@ -15,6 +15,8 @@
 //   viewed    no mention, no emoji, no bold. It is a breadcrumb, not news.
 //   nag       no mention. It arrives every morning, and a daily <!channel>
 //             would train everyone to mute the channel inside a week.
+//   arrived   no mention. Stock landing is good news, and good news that
+//             pings twelve people is still a ping.
 
 export type Channel = 'new_sale' | 'scheduling' | 'stock'
 
@@ -40,6 +42,15 @@ export type NagFacts = {
   installer_name?: string | null
 }
 
+export type OrderFacts = {
+  id: string
+  supplier?: string | null
+  order_number?: string | null
+  line_count?: number | null
+  units_received?: number | null
+  order_total?: number | string | null
+}
+
 export type Built = {
   channel: Channel
   event_type: string
@@ -51,9 +62,16 @@ export type Built = {
 
 const DEFAULT_APP_URL = 'https://water-base.vercel.app'
 
+function appBase(appUrl?: string): string {
+  return String(appUrl || DEFAULT_APP_URL).replace(/\/+$/, '')
+}
+
 export function jobLink(jobId: string, appUrl = DEFAULT_APP_URL): string {
-  const base = String(appUrl || DEFAULT_APP_URL).replace(/\/+$/, '')
-  return `${base}/jobs?job=${encodeURIComponent(jobId)}`
+  return `${appBase(appUrl)}/jobs?job=${encodeURIComponent(jobId)}`
+}
+
+export function orderLink(orderId: string, appUrl = DEFAULT_APP_URL): string {
+  return `${appBase(appUrl)}/orders?order=${encodeURIComponent(orderId)}`
 }
 
 function name(job: { customer_name?: string | null }): string {
@@ -230,4 +248,49 @@ function describeDocument(
   if (!age) return `${label}: unsigned.`
   if (age === 'sent today') return `${label}: sent today, unsigned.`
   return `${label}: unsigned for ${age}.`
+}
+
+
+/* ---------------------------------------------------------------------------
+   Supplier orders, to the stock channel
+--------------------------------------------------------------------------- */
+
+// "1 line" / "3 lines", where a missing count is left out rather than printed
+// as a confident zero
+function count(n: unknown, singular: string, plural = `${singular}s`): string {
+  const v = Number(n)
+  if (!Number.isFinite(v) || v <= 0) return ''
+  return `${v} ${v === 1 ? singular : plural}`
+}
+
+// Fires once per order, when the last outstanding line is received.
+//
+// The point is that a shortage just ended, so the message names what landed
+// rather than what it cost, and stays quiet: nobody needs interrupting because
+// a delivery van turned up.
+export function buildOrderArrived(order: OrderFacts, appUrl?: string): Built {
+  const who = String(order.supplier || '').trim()
+  const ref = String(order.order_number || '').trim()
+  const title = [ref, who && `from ${who}`].filter(Boolean).join(' ') || 'A supplier order'
+
+  const detail = [
+    count(order.line_count, 'line'),
+    count(order.units_received, 'unit'),
+    money(order.order_total) && `${money(order.order_total)} landed`,
+  ].filter(Boolean).join(', ')
+
+  return {
+    channel: 'stock',
+    event_type: 'order.received',
+    // once per order, ever. A status correction that flips it back and forth
+    // must not announce the same delivery twice.
+    dedupe_key: `order.received:${order.id}`,
+    job_id: '',
+    payload: { order_id: order.id, order_number: ref, supplier: who },
+    message: [
+      `:package: *Arrived* ${title}`,
+      detail ? `${detail}. It is on the shelf and free to sell.` : 'It is on the shelf and free to sell.',
+      `<${orderLink(order.id, appUrl)}|Open the order>`,
+    ].join('\n'),
+  }
 }

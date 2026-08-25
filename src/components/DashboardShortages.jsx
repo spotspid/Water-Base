@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { committedOf } from '../lib/inventory'
+import { arrivalState } from '../lib/orderState'
+import { formatLongDate } from '../lib/schedule'
 import StockMeter from './StockMeter'
 
 // Parts with nothing free to sell.
@@ -14,8 +16,32 @@ import StockMeter from './StockMeter'
 // shelf is promised to a booked job, or more is promised than exists. Parts
 // that have merely reached their reorder point are on Inventory, next to the
 // button that does something about them.
+//
+// Every row carries whether anything is on the way. "Short until the 14th" is
+// a scheduling decision; "short and nothing coming" is a phone call to a
+// supplier, and the two must not look the same.
+// The point of the whole supplier order feature, in one cell. A shortage with
+// a date is a date; a shortage without one is a problem.
+function comingLabel(row) {
+  const arrival = arrivalState(row)
+
+  if (arrival.state === 'none') return <span className="pill pill-red">Nothing on order</span>
+  if (arrival.state === 'undated') {
+    return <span className="pill pill-amber">{arrival.onOrder} on order, no date</span>
+  }
+  if (arrival.state === 'overdue') {
+    return <span className="pill pill-red">{arrival.onOrder} overdue since {formatLongDate(arrival.date)}</span>
+  }
+  if (arrival.state === 'today') {
+    return <span className="pill pill-teal">{arrival.onOrder} due today</span>
+  }
+
+  return <span className="pill pill-teal">{arrival.onOrder} by {formatLongDate(arrival.date)}</span>
+}
+
 export default function DashboardShortages({ rows, itemCount, atLineCount }) {
   const oversold = rows.filter(row => row.free < 0).length
+  const covered = rows.filter(row => arrivalState(row).state !== 'none').length
 
   return (
     <section className="dash-panel">
@@ -48,6 +74,7 @@ export default function DashboardShortages({ rows, itemCount, atLineCount }) {
                 <th className="col-num">On hand</th>
                 <th className="col-num">Promised</th>
                 <th className="col-num">Free</th>
+                <th>Coming</th>
               </tr>
             </thead>
             <tbody>
@@ -67,6 +94,7 @@ export default function DashboardShortages({ rows, itemCount, atLineCount }) {
                       ? <span className="pill pill-red">{row.free} oversold</span>
                       : <span className="pill pill-amber">None free</span>}
                   </td>
+                  <td className="col-nowrap">{comingLabel(row)}</td>
                 </tr>
               ))}
             </tbody>
@@ -82,6 +110,11 @@ export default function DashboardShortages({ rows, itemCount, atLineCount }) {
             free to sell. The stock is on the shelf, it is just already spoken for.
             {oversold > 0 && (
               <> {oversold} {oversold === 1 ? 'is' : 'are'} promised beyond what the shelf holds.</>
+            )}
+            {covered > 0 && (
+              <> {covered} {covered === 1 ? 'has' : 'have'} a delivery on the way, so
+              {' '}{covered === 1 ? 'it is' : 'they are'} short until a date rather than
+              short with nothing coming.</>
             )}
           </>
         )}

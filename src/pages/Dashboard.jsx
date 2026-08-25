@@ -40,7 +40,7 @@ const JOB_COLUMNS =
 // every row showed "none promised" while eight reservations were open.
 const STOCK_COLUMNS =
   'id, sku, name, category, variant, on_hand, reorder_threshold, unit_cost, ' +
-  'stock_value, active, committed, available'
+  'stock_value, active, committed, available, on_order, expected_arrival'
 
 // job_id is what folds five part rows into one install. Without it the panel
 // can join to a customer name but cannot tell two jobs apart.

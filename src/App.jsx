@@ -15,6 +15,7 @@ const Jobs = lazy(() => import('./pages/Jobs'))
 const NewJob = lazy(() => import('./pages/NewJob'))
 const Schedule = lazy(() => import('./pages/Schedule'))
 const Inventory = lazy(() => import('./pages/Inventory'))
+const Orders = lazy(() => import('./pages/Orders'))
 const Templates = lazy(() => import('./pages/Templates'))
 const Expenses = lazy(() => import('./pages/Expenses'))
 const PnL = lazy(() => import('./pages/PnL'))
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/jobs/new" element={<ProtectedRoute><NewJob /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />

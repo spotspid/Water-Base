@@ -6,6 +6,8 @@ import {
   committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
 } from '../lib/inventory'
 import { atReorderPoint } from '../lib/dashboard'
+import { arrivalState } from '../lib/orderState'
+import { formatLongDate } from '../lib/schedule'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import AddItemModal from '../components/AddItemModal'
@@ -19,7 +21,7 @@ const ALL_CATEGORIES = 'all'
 
 const STOCK_COLUMNS =
   'id, sku, name, category, variant, unit_cost, reorder_threshold, active, ' +
-  'on_hand, stock_value, committed, available'
+  'on_hand, stock_value, committed, available, on_order, expected_arrival'
 
 export default function Inventory() {
   const [rows, setRows] = useState([])
@@ -80,6 +82,11 @@ export default function Inventory() {
 
   const shortCount = useMemo(() => visible.filter(isShort).length, [visible])
 
+  const onOrderUnits = useMemo(
+    () => visible.reduce((sum, r) => sum + (Number(r.on_order) || 0), 0),
+    [visible],
+  )
+
   function handleSaved() {
     setOpenModal(null)
     load()
@@ -124,6 +131,10 @@ export default function Inventory() {
             <div className={shortCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
               <span className="inv-stat-label">Short</span>
               <span className="inv-stat-value">{shortCount}</span>
+            </div>
+            <div className="inv-stat">
+              <span className="inv-stat-label">On order</span>
+              <span className="inv-stat-value">{onOrderUnits}</span>
             </div>
             <div className="inv-filter">
               <label htmlFor="category-filter">Category</label>
@@ -192,6 +203,7 @@ export default function Inventory() {
                   <th className="col-meter">Available</th>
                   <th className="col-num">On hand</th>
                   <th className="col-num">Promised</th>
+                  <th className="col-num">On order</th>
                   <th className="col-num">Unit cost</th>
                   <th className="col-num">Value</th>
                 </tr>
@@ -231,6 +243,22 @@ export default function Inventory() {
                             {committedOf(row)}
                           </span>}
                     </td>
+                    <td className="col-num">
+                      {(() => {
+                        const arrival = arrivalState(row)
+                        if (arrival.state === 'none') return <span className="inv-none">0</span>
+                        return (
+                          <span className={arrival.state === 'overdue' ? 'inv-late' : 'inv-coming'}>
+                            {arrival.onOrder}
+                            <span className="cell-sub">
+                              {arrival.date
+                                ? `${arrival.state === 'overdue' ? 'due ' : ''}${formatLongDate(arrival.date)}`
+                                : 'no date'}
+                            </span>
+                          </span>
+                        )
+                      })()}
+                    </td>
                     <td className="col-num">{formatCurrency(row.unit_cost)}</td>
                     <td className="col-num col-value">{formatCurrency(row.stock_value)}</td>
                   </tr>
@@ -244,7 +272,8 @@ export default function Inventory() {
           <p className="inv-ledger-note">
             On hand is summed from the transaction ledger and is never edited directly.
             Promised is what booked jobs have claimed but not yet consumed, and free to sell
-            is on hand minus committed. Booking a job never moves stock. Only marking it
+            is on hand minus committed. On order is what is bought and not here yet, with
+            the earliest date it is expected. Booking a job never moves stock. Only marking it
             installed writes to the ledger. Click a row to see its history.
           </p>
         )}

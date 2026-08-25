@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useSettings } from '../lib/settings'
 import {
   IconBuildSheets, IconDashboard, IconDrop, IconExpenses, IconInventory,
-  IconJobs, IconMoney, IconSchedule, IconSettings,
+  IconJobs, IconMoney, IconOrders, IconSchedule, IconSettings,
 } from './NavIcons'
 import './AppShell.css'
 
@@ -23,6 +23,7 @@ const GROUPS = [
     label: 'Stock',
     items: [
       { to: '/inventory', text: 'Inventory', Icon: IconInventory },
+      { to: '/orders', text: 'Supplier orders', Icon: IconOrders },
       { to: '/templates', text: 'Build sheets', Icon: IconBuildSheets },
     ],
   },
@@ -44,6 +45,7 @@ const TITLES = {
   '/jobs': ['Jobs', 'Every job, and what it earned'],
   '/jobs/new': ['New job', 'Parts are claimed as soon as it is saved'],
   '/inventory': ['Inventory', 'On hand is added up from the ledger, never typed in'],
+  '/orders': ['Supplier orders', 'What is bought and not here yet, and when it lands'],
   '/templates': ['Build sheets', 'Pick the parts once, every job using it draws them'],
   '/expenses': ['Expenses', 'Everything that is not parts or installer pay'],
   '/pnl': ['Profit and loss', 'Revenue less parts, pay and expenses, by month'],

@@ -1,5 +1,6 @@
 import {
-  buildDeclined, buildNag, buildSigned, buildViewed, documentLabel, jobLink,
+  buildDeclined, buildNag, buildOrderArrived, buildSigned, buildViewed,
+  documentLabel, jobLink, orderLink,
 } from '../supabase/functions/notify/messages.ts'
 import {
   NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
@@ -157,6 +158,43 @@ check('both signed means nothing outstanding, which is what stops the reminder',
   unsignedDocuments({ agreement_status: 'completed', work_order_status: 'completed' }).length === 0)
 check('sent is not signed',
   unsignedDocuments({ agreement_status: 'sent', work_order_status: 'completed' }).length === 1)
+
+// --- a supplier order landing ------------------------------------------------
+
+const ORDER = {
+  id: '99999999-8888-7777-6666-555555555555',
+  supplier: 'Honest',
+  order_number: 'QB-20104',
+  line_count: 10,
+  units_received: 34,
+  order_total: 10561.05,
+}
+
+const arrived = buildOrderArrived(ORDER)
+
+check('an arrival goes to the stock channel', arrived.channel === 'stock')
+check('and keys on the order, so a status correction cannot announce it twice',
+  arrived.dedupe_key === `order.received:${ORDER.id}`, arrived.dedupe_key)
+check('an arrival interrupts nobody', !arrived.message.includes('<!channel>'))
+check('it names the order', arrived.message.includes('QB-20104'))
+check('and the supplier', arrived.message.includes('Honest'))
+check('and says the stock is usable', arrived.message.includes('free to sell'))
+check('and carries the landed total', arrived.message.includes('$10,561.05'))
+check('and links to the order', arrived.message.includes(orderLink(ORDER.id)), orderLink(ORDER.id))
+check('an order link is not a job link', !arrived.message.includes('/jobs?job='))
+check('it is short enough to read at a glance', arrived.message.length < 400)
+
+// a bare order still has to produce something readable
+const bareOrder = buildOrderArrived({ id: 'o1' })
+check('an order with no supplier or number still reads',
+  bareOrder.message.includes('A supplier order'), bareOrder.message)
+check('a zero total is left out rather than printed as $0',
+  !buildOrderArrived({ id: 'o1', order_total: 0 }).message.includes('$0'))
+check('a zero line count is left out rather than printed',
+  !buildOrderArrived({ id: 'o1', line_count: 0, units_received: 0 }).message.includes('0 line'))
+check('one line is singular',
+  buildOrderArrived({ id: 'o1', line_count: 1, units_received: 1 }).message.includes('1 line, 1 unit'))
+check('an order notification carries no job id', arrived.job_id === '')
 
 console.log(failed === 0
   ? '\nAll notification checks passed.'

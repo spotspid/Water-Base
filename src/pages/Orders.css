@@ -1,0 +1,169 @@
+/* ---------------------------------------------------------------------------
+   Supplier orders.
+
+   The list and the detail both lean on the shared table, badge and stat
+   primitives in index.css, so what is here is only what a purchase order needs
+   that nothing else does: the entry balance, the line entry row, and the
+   receiving controls that appear underneath a line.
+--------------------------------------------------------------------------- */
+.ord-page {
+  width: 100%;
+}
+
+/* Does what has been typed add up to the invoice in front of you.
+
+   Amber while it does not, because during entry that is the normal state and
+   an alarm colour would cry wolf on every order. Green only when it balances,
+   which is the moment you can stop. */
+.ord-balance {
+  margin: 4px 0 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--amber-soft);
+  color: var(--amber-ink);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.ord-balance-ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.ord-status-cell {
+  display: flex;
+  align-items: center;
+}
+
+/* ---- adding a line off the invoice ---- */
+.ord-line-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raised);
+}
+
+.ord-line-part { flex: 2 1 240px; }
+.ord-line-qty { flex: 0 1 110px; }
+.ord-line-cost { flex: 0 1 140px; }
+
+.ord-line-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* What this line will cost once freight is spread. An estimate, because
+   adding it moves the rate, and the wording says so. */
+.ord-line-preview {
+  flex: 1 1 100%;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ord-line-form .form-error {
+  flex: 1 1 100%;
+}
+
+/* ---- receiving ---- */
+.ord-mini {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+
+.ord-line-action td {
+  background: var(--teal-soft);
+  padding: 12px 16px;
+}
+
+.ord-receive {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--teal-deep);
+}
+
+.ord-receive label {
+  font-weight: 600;
+}
+
+.ord-receive input {
+  width: 80px;
+  padding: 6px 9px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  background: var(--white);
+  color: var(--ink);
+}
+
+.ord-receive input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(44, 129, 155, 0.18);
+}
+
+.ord-receive-note {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A line that was typed wrong. Quiet, because removing one is rare and it
+   must not compete with the button people press every week. */
+.ord-remove {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ord-remove:hover {
+  color: var(--maroon);
+}
+
+/* a fully received line, still readable but no longer asking for anything */
+.ord-line-done td {
+  color: var(--muted);
+}
+
+.ord-line-done .td-customer {
+  color: var(--body-text);
+}
+
+@media (max-width: 720px) {
+  .ord-line-part,
+  .ord-line-qty,
+  .ord-line-cost {
+    flex: 1 1 100%;
+  }
+}
+
+/* the figure row at the top of an order, using the shared stat primitives */
+.ord-figures {
+  margin-bottom: 14px;
+}
+
+/* the one freight rate for the whole shipment, beside the money it came from */
+.ord-uplift {
+  display: inline-block;
+  margin-left: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}

@@ -123,3 +123,23 @@
   font-size: 12px;
   color: var(--muted);
 }
+
+/* On order, in the inventory table. Teal while the date is still ahead,
+   maroon once it has passed: a supplier who is late is a different problem
+   from a supplier who has not got there yet, and only one needs chasing. */
+.inv-coming {
+  color: var(--teal-deep);
+  font-weight: 600;
+}
+
+.inv-late {
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+.inv-coming .cell-sub,
+.inv-late .cell-sub {
+  font-weight: 400;
+  color: inherit;
+  opacity: 0.75;
+}

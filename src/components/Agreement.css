@@ -1,5 +1,10 @@
-/* Agreement panel on the job detail modal, the badge on the jobs list, and the
-   template editor on the settings page. One file because the badge is shared. */
+/* Agreement panel on the job detail modal, and the template editor on the
+   settings page.
+
+   The status badge used to live here. It now sits in index.css, because the
+   supplier orders page shows one too and routes are lazily loaded: a rule that
+   only arrives with Agreement.css is missing on any route that does not import
+   it, which is how a badge renders as unstyled text. */
 
 .agr-panel {
   border: 1px solid var(--gray-300);
@@ -57,43 +62,6 @@
   flex-wrap: wrap;
 }
 
-.agr-confirm-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--maroon);
-  flex: 1 1 220px;
-}
-
-/* status badge, shared with the jobs list column */
-.agr-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.agr-neutral {
-  background: var(--gray-100);
-  border: 1px solid var(--gray-300);
-  color: var(--gray-500);
-}
-
-.agr-wait {
-  background: rgba(214, 158, 46, 0.14);
-  color: var(--amber-ink);
-}
-
-.agr-good {
-  background: rgba(44, 129, 155, 0.18);
-  color: var(--teal-deep);
-}
-
-.agr-bad {
-  background: rgba(140, 47, 47, 0.1);
-  color: var(--maroon);
-}
 
 /* settings editor */
 .agr-type-list {
