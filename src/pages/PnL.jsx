@@ -4,6 +4,7 @@ import { attempt } from '../lib/errors'
 import { formatCurrency, formatMonth, monthsAgoIso, todayIso } from '../lib/expenses'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
+import PnlCash from '../components/PnlCash'
 import PnlCategories from '../components/PnlCategories'
 import './PnL.css'
 
@@ -42,7 +43,8 @@ export default function PnL() {
     const [summaryRes, categoryRes] = await Promise.all([
       attempt(
         () => supabase.from('pnl_monthly')
-          .select('month, revenue, parts_cost, installer_pay, expense_total, job_count, expense_count, net')
+          .select('month, revenue, parts_cost, installer_pay, expense_total, job_count, '
+            + 'expense_count, net, deposits_in, deposit_count, balance_on_install, cash_in')
           .gte('month', start).lte('month', end)
           .order('month', { ascending: false }),
         'The profit and loss could not be loaded.',
@@ -76,8 +78,10 @@ export default function PnL() {
     expense_total: acc.expense_total + Number(m.expense_total),
     net: acc.net + Number(m.net),
     job_count: acc.job_count + Number(m.job_count),
+    cash_in: acc.cash_in + Number(m.cash_in),
   }), {
     revenue: 0, parts_cost: 0, installer_pay: 0, expense_total: 0, net: 0, job_count: 0,
+    cash_in: 0,
   }), [months])
 
   const monthKeys = useMemo(
@@ -152,6 +156,11 @@ export default function PnL() {
               <span className="inv-stat-label">Net</span>
               <span className="inv-stat-value">{formatCurrency(totals.net)}</span>
             </div>
+            <div className="inv-stat pnl-cash-stat">
+              <span className="inv-stat-label">Cash in</span>
+              <span className="inv-stat-value">{formatCurrency(totals.cash_in)}</span>
+              <span className="pnl-stat-note">not income, see below</span>
+            </div>
           </div>
         )}
 
@@ -215,6 +224,8 @@ export default function PnL() {
             pay is the amount entered on the job.
           </p>
         )}
+
+        {hasData && months.length > 0 && <PnlCash months={months} />}
 
         {hasData && months.length > 0 && (
           <PnlCategories months={monthKeys} rows={categories} />

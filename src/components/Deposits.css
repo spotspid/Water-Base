@@ -1,0 +1,168 @@
+/* ---------------------------------------------------------------------------
+   Deposits on a job.
+
+   The balance is the thing somebody opened this panel to find out, so it sits
+   in the header at the size of an answer rather than in a table underneath.
+
+   Three states, three colours, because the sign of a subtraction is not
+   something to make a reader work out at somebody's front door:
+     due      money still to take, teal, the normal case
+     settled  nothing to take, green, also normal
+     credit   more taken than the job is worth, maroon, needs fixing
+--------------------------------------------------------------------------- */
+.dep-balance {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--teal-deep);
+}
+
+.dep-balance-due {
+  color: var(--teal-deep);
+}
+
+.dep-balance-settled {
+  color: var(--green);
+}
+
+.dep-balance-credit {
+  color: var(--maroon);
+}
+
+/* How much of the price is in, at a glance. Describes what happened; it is not
+   a target and there is nothing to compare it against. */
+.dep-bar {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.dep-bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--paid-share, 0%);
+  background: var(--teal);
+  transition: width 0.2s ease;
+}
+
+/* ---- the payments themselves ---- */
+.dep-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dep-row {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(120px, auto) minmax(90px, auto) 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--body-text);
+}
+
+.dep-row:nth-child(odd) {
+  background: var(--raised);
+}
+
+.dep-row-amount {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Money going back out. Maroon on the amount only, because the row is still a
+   normal record of something that happened rather than an error. */
+.dep-row-refund .dep-row-amount {
+  color: var(--maroon);
+}
+
+.dep-row-when,
+.dep-row-method {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dep-row-note {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.dep-row-drop {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dep-row-drop:hover {
+  color: var(--maroon);
+}
+
+.dep-row-confirm {
+  display: flex;
+  gap: 6px;
+}
+
+/* ---- recording one ---- */
+.dep-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raised);
+}
+
+.dep-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dep-amount { flex: 0 1 130px; }
+.dep-date { flex: 0 1 165px; }
+.dep-method { flex: 0 1 160px; }
+.dep-note { flex: 2 1 200px; }
+
+.dep-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+}
+
+.dep-refund-hint {
+  font-size: 12.5px;
+  color: var(--maroon);
+}
+
+.dep-form .form-error {
+  flex: 1 1 100%;
+}
+
+@media (max-width: 760px) {
+  .dep-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .dep-amount,
+  .dep-date,
+  .dep-method,
+  .dep-note {
+    flex: 1 1 100%;
+  }
+}

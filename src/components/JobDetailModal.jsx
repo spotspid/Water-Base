@@ -9,6 +9,7 @@ import { metaLine } from '../lib/text'
 import JobAgreement from './JobAgreement'
 import JobWorkOrder from './JobWorkOrder'
 import JobPartsLedger from './JobPartsLedger'
+import JobDeposits from './JobDeposits'
 import JobNagPause from './JobNagPause'
 import JobSiteConditions from './JobSiteConditions'
 import JobStatusActions from './JobStatusActions'
@@ -206,6 +207,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         {' '}
         <a href="/schedule" className="tpl-link">Open the schedule</a>
       </p>
+
+      {!cancelled && <JobDeposits job={job} onChanged={onChanged} />}
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 

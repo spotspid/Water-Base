@@ -24,7 +24,8 @@ const JOB_MARGIN_COLUMNS =
   'work_order_id, work_order_status, work_order_sent_at, work_order_completed_at, ' +
   'work_order_signed_url, work_order_audit_log_url, work_order_last_error, ' +
   'work_order_send_count, installer_email, site_conditions, ' +
-  'agreement_view_count, work_order_view_count, nag_snoozed_until'
+  'agreement_view_count, work_order_view_count, nag_snoozed_until, ' +
+  'deposits_taken, deposit_count, last_deposit_on, balance_due'
 
 export default function Jobs() {
   // Every Slack message links to /jobs?job=<id>, because a webhook cannot

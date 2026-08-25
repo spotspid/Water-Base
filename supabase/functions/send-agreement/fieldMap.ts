@@ -59,6 +59,17 @@ function money(value: unknown): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
+// Money where zero is a real answer but absent is not.
+//
+// money() cannot serve here, because Number(null) is 0 and so a balance nobody
+// could work out would print as $0.00, which tells an installer to collect
+// nothing on a job that might owe two thousand dollars. Absent has to stay
+// absent and leave the box open.
+function moneyKnown(value: unknown): string {
+  if (value === null || value === undefined || value === '') return ''
+  return money(value)
+}
+
 // job_margin coalesces payout to 0, so zero means nobody entered one rather
 // than an agreed pay of nothing. Blank leaves the box open to be filled.
 function moneyIfSet(value: unknown): string {
@@ -183,6 +194,23 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
       value: ctx => moneyIfSet(ctx.job.installer_pay) },
     { key: 'payment_terms', required: false, names: ['payment_terms'],
       value: () => PAYMENT_TERMS },
+
+    // What is still owed on the day, so the installer collects the right
+    // amount rather than asking for the whole price on a job that already
+    // paid half of it. Sits beside the collected by boxes, which say who takes
+    // it, and answers how much.
+    //
+    // Optional, and offered under a few names, because this field may not
+    // exist on the template yet. A template without it sends exactly as
+    // before; adding a box called balance_due starts filling it with no
+    // further change here.
+    //
+    // Zero is a real answer and prints as $0.00: paid in full is something the
+    // installer needs told, and a blank box would read as nobody having
+    // checked.
+    { key: 'balance_due', required: false,
+      names: ['balance_due', 'amount_to_collect', 'balance_to_collect'],
+      value: ctx => moneyKnown(ctx.job.balance_due) },
 
     // exactly one box carries an X. The other is sent blank and locked, so it
     // cannot be ticked as well.

@@ -3,7 +3,8 @@ import {
   WORK_ORDER_TYPE, isWorkOrderOut, sendAgreement, workOrderBlocker,
   workOrderLabel, workOrderReady, workOrderTone,
 } from '../lib/agreements'
-import { formatDateTime } from '../lib/inventory'
+import { balanceState } from '../lib/depositState'
+import { formatCurrency, formatDateTime } from '../lib/inventory'
 
 // The work order panel, beside the customer agreement on the job record.
 //
@@ -28,6 +29,11 @@ export default function JobWorkOrder({ job, onChanged }) {
   const carries = job.site_conditions
     ? "this job's parts list and the site conditions above"
     : "this job's parts list"
+
+  // What the installer will be told to collect. Worth showing before the send
+  // rather than after, because the document cannot be edited once it is out
+  // and a deposit taken tomorrow will not change the copy in his hand.
+  const balance = balanceState(job)
 
 
   async function run() {
@@ -97,6 +103,22 @@ export default function JobWorkOrder({ job, onChanged }) {
       {job.work_order_status === 'failed' && job.work_order_last_error && (
         <p className="form-error" role="alert">Last send failed. {job.work_order_last_error}</p>
       )}
+
+      {/* What to collect at the door, beside who collects it. */}
+      <p className="agr-sub">
+        {balance.state === 'due' && (
+          <>It will tell {crew} to collect <strong>{formatCurrency(balance.amount)}</strong>
+          {balance.taken > 0 && <>, after {formatCurrency(balance.taken)} already taken</>}.</>
+        )}
+        {balance.state === 'settled' && (
+          <>It will tell {crew} the job is paid in full, so there is nothing to collect.</>
+        )}
+        {balance.state === 'credit' && (
+          <>More has been taken than this job is worth, so it will show nothing to collect
+          and {formatCurrency(balance.amount)} owed back. Fix the deposits before sending.</>
+        )}
+        {out && ' The copy already sent shows the balance as it was that day.'}
+      </p>
 
       {/* the offer. Appears the moment a scheduled job has a crew. */}
       {ready && !confirming && (

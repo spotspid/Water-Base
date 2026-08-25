@@ -5,6 +5,7 @@ import {
 import {
   NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
 } from '../src/lib/nag.js'
+import { SPECS, matchFields } from '../supabase/functions/send-agreement/fieldMap.ts'
 
 // Checks what the notifier says and when it says it.
 //
@@ -195,6 +196,64 @@ check('a zero line count is left out rather than printed',
 check('one line is singular',
   buildOrderArrived({ id: 'o1', line_count: 1, units_received: 1 }).message.includes('1 line, 1 unit'))
 check('an order notification carries no job id', arrived.job_id === '')
+
+// --- the balance the installer is told to collect ----------------------------
+
+// The nineteen names template 5532104 is known to carry. There is no balance
+// box on it yet, so the field has to be optional: adding one in DocuSeal
+// should start filling it, and not adding one must not break the send.
+const WO_TEMPLATE = [
+  'job_number', 'date_issued', 'subcontractor', 'customer_name', 'phone',
+  'install_address', 'city', 'scheduled_window', 'systems', 'site_conditions',
+  'additional_items', 'agreed_pay', 'payment_terms',
+  'collected_by_company', 'collected_by_subcontractor',
+  'company_signature', 'company_date',
+  'subcontractor_signature', 'subcontractor_date',
+]
+
+const woCtx = {
+  job: {
+    customer_name: 'Walter Radu', address: '4120 Maple Ridge Dr', city: 'Novi',
+    system_template: 'Flagship Bundle', ro_type: 'Tank Style', faucet_finish: 'Chrome',
+    invoice_number: '5901', scheduled_date: '2026-09-08', installer_pay: 450,
+    deposits_taken: 500, balance_due: 2499,
+  },
+  installer: { name: 'Anthony Thomas', email: 'a@example.com' },
+  parts: [{ sku: 'MB-1054', name: 'Mixed Bed', quantity: 1 }],
+  today: new Date(2026, 7, 25),
+}
+
+const woSpec = SPECS.subcontractor_service
+const asIs = matchFields(woSpec, WO_TEMPLATE, woCtx)
+
+check('the work order still sends against a template with no balance box',
+  asIs.missing.length === 0)
+check('and does not invent one', !asIs.fields.some(f => f.name === 'balance_due'))
+check('still exactly two fields left for the installer to fill',
+  asIs.openToSigner.length === 2)
+
+const withBox = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], woCtx)
+const woBy = new Map(withBox.fields.map(f => [f.name, f]))
+check('adding a balance_due box starts filling it with no code change',
+  woBy.get('balance_due')?.default_value === '$2,499.00', woBy.get('balance_due')?.default_value)
+check('locked, like every other prefilled field', woBy.get('balance_due')?.readonly === true)
+check('and it sits beside the collected by boxes',
+  woBy.get('collected_by_company')?.default_value === 'X')
+
+const paidInFull = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], {
+  ...woCtx, job: { ...woCtx.job, deposits_taken: 2999, balance_due: 0 },
+})
+check('paid in full prints $0.00, because nothing to collect is an instruction',
+  new Map(paidInFull.fields.map(f => [f.name, f])).get('balance_due')?.default_value === '$0.00')
+
+// Number(null) is 0, so a balance nobody could work out would print as $0.00
+// and send an installer away empty handed from a job that owes money.
+const unknownBalance = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], {
+  ...woCtx, job: { ...woCtx.job, balance_due: null },
+})
+check('an unknown balance leaves the box open rather than claiming zero',
+  !unknownBalance.fields.some(f => f.name === 'balance_due'))
+check('and does not block the send', unknownBalance.missing.length === 0)
 
 console.log(failed === 0
   ? '\nAll notification checks passed.'
