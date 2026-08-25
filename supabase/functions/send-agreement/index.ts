@@ -65,7 +65,7 @@ Deno.serve(async req => {
     return fail('Your session is not valid any more. Sign in again.', 401)
   }
 
-  let body: { job_id?: string; type?: string }
+  let body: { job_id?: string; type?: string; inspect?: boolean }
   try {
     body = await req.json()
   } catch {
@@ -74,6 +74,14 @@ Deno.serve(async req => {
 
   const jobId = String(body.job_id || '').trim()
   const type = String(body.type || 'customer_install').trim()
+
+  // A dry run. Gathers everything, reads the template, matches the field names
+  // and reports what would be sent, without creating a submission or writing a
+  // row. Exists because the only other way to learn a template's real field
+  // names was to email a real person and see what came out, and because a
+  // template can be renamed in DocuSeal by somebody who has never seen this
+  // code.
+  const inspectOnly = body.inspect === true
 
   if (!jobId) return fail('A job id is required.', 400)
 
@@ -230,6 +238,28 @@ Deno.serve(async req => {
     .map(f => String(f?.name || ''))
     .filter(Boolean)
 
+  // A dry run against a template with nothing usable on it still has to say
+  // what DocuSeal sent, because "no named fields" is the answer that most
+  // needs looking at and the least useful on its own.
+  if (inspectOnly && templateFieldNames.length === 0) {
+    const raw = template as Record<string, unknown>
+    return json({
+      ok: false,
+      inspect: true,
+      type,
+      template_id: templateId,
+      template_name: raw.name ?? null,
+      problem: 'The template carries no named fields.',
+      response_keys: Object.keys(raw),
+      field_count: Array.isArray(raw.fields) ? raw.fields.length : null,
+      raw_fields: Array.isArray(raw.fields) ? raw.fields.slice(0, 40) : raw.fields ?? null,
+      submitters: raw.submitters ?? null,
+      documents: Array.isArray(raw.documents)
+        ? (raw.documents as Array<Record<string, unknown>>).map(d => d?.name ?? null)
+        : null,
+    })
+  }
+
   if (templateFieldNames.length === 0) {
     return fail(
       `DocuSeal template ${templateId} has no named fields, so nothing can be prefilled. `
@@ -239,6 +269,52 @@ Deno.serve(async req => {
   }
 
   const { fields, missing, filled, openToSigner } = matchFields(spec, templateFieldNames, ctx)
+
+  // Everything above this line is a read. A dry run stops here, so it can be
+  // pointed at a live job without risk of an email leaving the building.
+  if (inspectOnly) {
+    return json({
+      ok: missing.length === 0,
+      inspect: true,
+      type,
+      template_id: templateId,
+      template_name: template.name || null,
+      template_fields: templateFieldNames,
+      would_send_to: email,
+      // what the spec wanted but the template does not offer
+      missing,
+      // A spec field can fail to reach the document for two unrelated reasons,
+      // and reporting them as one list sends you looking for a missing box
+      // that is actually there. Split on purpose.
+      //
+      //   no box       the template has nothing by any of the names tried,
+      //                which is a template to fix
+      //   no value     the box exists and this job had nothing to put in it,
+      //                which is usually correct and needs nothing
+      no_box_on_template: spec.fields
+        .filter(f => !f.names.some(n => templateFieldNames.includes(n)))
+        .map(f => `${f.key} (looked for ${f.names.join(', ')})`),
+      skipped_no_value: spec.fields
+        .filter(f => f.names.some(n => templateFieldNames.includes(n)))
+        .filter(f => !fields.some(sent => f.names.includes(sent.name)))
+        .map(f => f.key),
+      // template boxes nothing in the spec claims
+      unclaimed_template_fields: templateFieldNames
+        .filter(name => !fields.some(sent => sent.name === name)),
+      // DocuSeal allows two boxes to share a name. They then take the same
+      // value, which is usually what a signature repeated on two pages wants,
+      // but it is worth seeing rather than discovering.
+      duplicate_template_names: templateFieldNames
+        .filter((n, i) => templateFieldNames.indexOf(n) !== i),
+      left_for_signer: openToSigner,
+      would_fill: fields.map(f => ({
+        name: f.name,
+        value: f.default_value,
+        readonly: f.readonly,
+      })),
+      parts_listed: parts.length,
+    })
+  }
 
   if (missing.length > 0) {
     return fail(
