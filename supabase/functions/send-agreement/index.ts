@@ -65,11 +65,37 @@ Deno.serve(async req => {
     return fail('Your session is not valid any more. Sign in again.', 401)
   }
 
-  let body: { job_id?: string; type?: string; inspect?: boolean }
+  let body: { job_id?: string; type?: string; inspect?: boolean; submission_id?: string }
   try {
     body = await req.json()
   } catch {
     return fail('The request body was not valid JSON.', 400)
+  }
+
+  // Reading back a submission that already exists. Needs nothing but an id, so
+  // it answers before any of the job gathering below. Read only: it exists
+  // because "what did DocuSeal actually store" is a question that cannot be
+  // answered from this side any other way, the API key being a secret.
+  const readBackId = String(body.submission_id || '').trim()
+
+  if (readBackId) {
+    try {
+      const res = await fetch(
+        `${DOCUSEAL_API}/submissions/${encodeURIComponent(readBackId)}`,
+        { headers: { 'X-Auth-Token': apiKey } },
+      )
+
+      const payload = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        return fail(`DocuSeal returned ${res.status} for submission ${readBackId}.`, 502,
+          { detail: payload })
+      }
+
+      return json({ ok: true, submission: payload })
+    } catch (caught) {
+      return fail(`DocuSeal could not be reached. ${(caught as Error).message}`, 502)
+    }
   }
 
   const jobId = String(body.job_id || '').trim()
@@ -210,7 +236,11 @@ Deno.serve(async req => {
   // ---------------------------------------------------------------------
   // fetch the template and match its field names, rather than assuming them
   // ---------------------------------------------------------------------
-  let template: { name?: string; fields?: Array<{ name?: string }> }
+  let template: {
+    name?: string
+    fields?: Array<{ name?: string; submitter_uuid?: string; type?: string }>
+    submitters?: Array<{ name?: string; uuid?: string }>
+  }
   try {
     const res = await fetch(`${DOCUSEAL_API}/templates/${encodeURIComponent(templateId)}`, {
       headers: { 'X-Auth-Token': apiKey },
@@ -270,6 +300,49 @@ Deno.serve(async req => {
 
   const { fields, missing, filled, openToSigner } = matchFields(spec, templateFieldNames, ctx)
 
+  // Which role to attach the submitter to.
+  //
+  // A template names its own roles, and sending one it has never heard of does
+  // not fail: DocuSeal quietly files the submitter under whichever role comes
+  // next, which is how a work order addressed to "Subcontractor" arrived as
+  // "Second Party". Prefer the spec's name when the template has it, otherwise
+  // take the template's own first role and say so.
+  const templateRoles = (template.submitters || [])
+    .map(r => String(r?.name || ''))
+    .filter(Boolean)
+
+  // Which role owns how many boxes. This is the part that matters: a submitter
+  // attached to a role that owns nothing sees an empty document, which looks
+  // identical to a prefill that silently failed. Template 5532104 keeps every
+  // field on First Party and has a Second Party that owns none, so picking the
+  // template's first role would be exactly wrong.
+  const fieldsPerRole = new Map<string, number>()
+  for (const field of template.fields || []) {
+    const owner = (template.submitters || [])
+      .find(r => r?.uuid === field?.submitter_uuid)?.name
+    if (owner) fieldsPerRole.set(owner, (fieldsPerRole.get(owner) ?? 0) + 1)
+  }
+
+  const busiestRole = [...fieldsPerRole.entries()]
+    .sort((a, b) => b[1] - a[1])[0]?.[0]
+
+  // Prefer the name the spec asks for, but only if it actually owns boxes.
+  // Otherwise go where the fields are.
+  const submitterRole = (fieldsPerRole.get(spec.submitterRole) ?? 0) > 0
+    ? spec.submitterRole
+    : (busiestRole || templateRoles[0] || spec.submitterRole)
+
+  // What actually prefills a field, per the API reference: values is an object
+  // keyed by field name. The fields array beside it is configuration, which is
+  // where readonly belongs, and it is nested inside the submitter rather than
+  // sitting at the top level of the request.
+  const values: Record<string, string> = {}
+  for (const field of fields) {
+    if (field.default_value !== '') values[field.name] = field.default_value
+  }
+
+  const fieldConfig = fields.map(f => ({ name: f.name, readonly: f.readonly }))
+
   // Everything above this line is a read. A dry run stops here, so it can be
   // pointed at a live job without risk of an email leaving the building.
   if (inspectOnly) {
@@ -280,6 +353,20 @@ Deno.serve(async req => {
       template_id: templateId,
       template_name: template.name || null,
       template_fields: templateFieldNames,
+      template_roles: templateRoles,
+      // Which role owns each box. A submitter attached to the wrong role sees
+      // none of these, which looks exactly like a prefill that did not work.
+      field_owners: (template.fields || []).map(f => ({
+        name: f?.name ?? null,
+        type: f?.type ?? null,
+        role: (template.submitters || [])
+          .find(r => r?.uuid === f?.submitter_uuid)?.name ?? null,
+      })),
+      // the role the submitter will actually be filed under, which is not
+      // always the one the spec asks for
+      submitter_role: submitterRole,
+      role_matched: templateRoles.includes(spec.submitterRole),
+      fields_per_role: Object.fromEntries(fieldsPerRole),
       would_send_to: email,
       // what the spec wanted but the template does not offer
       missing,
@@ -339,18 +426,26 @@ Deno.serve(async req => {
         'X-Auth-Token': apiKey,
         'Content-Type': 'application/json',
       },
-      // fields is a top level key, not a submitter key. DocuSeal accepts a
-      // submitter object carrying one without complaining and then prefills
-      // nothing, so putting it in the wrong place fails silently.
+      // Both halves go inside the submitter, and they do different jobs.
+      //
+      //   values  what the field says. An object keyed by field name.
+      //   fields  how the field behaves. This is where readonly lives.
+      //
+      // An earlier version put a fields array at the top level of the request
+      // with the values in default_value. DocuSeal accepted that request, sent
+      // the email and stored values: [], so the document arrived completely
+      // blank and nothing anywhere reported a problem. Silence is the failure
+      // mode here, which is why the read back exists.
       body: JSON.stringify({
         template_id: Number(templateId) || templateId,
         send_email: true,
         submitters: [{
-          role: spec.submitterRole,
+          role: submitterRole,
           email,
           name: spec.submitterName(ctx),
+          values,
+          fields: fieldConfig,
         }],
-        fields,
         metadata: { job_id: jobId, agreement_type: type },
       }),
     })
@@ -423,7 +518,9 @@ Deno.serve(async req => {
     submission_id: submissionId,
     slug,
     sent_to: email,
+    submitter_role: submitterRole,
     fields_prefilled: filled,
+    values_sent: Object.keys(values).length,
     left_for_signer: openToSigner,
     parts_listed: parts.length,
     send_count: row.send_count,
