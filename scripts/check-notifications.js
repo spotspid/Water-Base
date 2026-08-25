@@ -205,7 +205,7 @@ check('an order notification carries no job id', arrived.job_id === '')
 const WO_TEMPLATE = [
   'job_number', 'date_issued', 'subcontractor', 'customer_name', 'phone',
   'install_address', 'city', 'scheduled_window', 'systems', 'site_conditions',
-  'additional_items', 'agreed_pay', 'payment_terms',
+  'parts_list', 'agreed_pay', 'payment_terms',
   'collected_by_company', 'collected_by_subcontractor',
   'company_signature', 'company_date',
   'subcontractor_signature', 'subcontractor_date',
@@ -254,6 +254,19 @@ const unknownBalance = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], {
 check('an unknown balance leaves the box open rather than claiming zero',
   !unknownBalance.fields.some(f => f.name === 'balance_due'))
 check('and does not block the send', unknownBalance.missing.length === 0)
+
+// The parts box was renamed when the template was rebuilt. Both names are
+// carried so a template restored from a backup still fills, and only one of
+// them can exist on a given document.
+const renamed = matchFields(woSpec, WO_TEMPLATE, woCtx)
+check('the parts list fills under the new name parts_list',
+  renamed.fields.some(f => f.name === 'parts_list'))
+check('and still fills under the old name if a template carries it',
+  matchFields(woSpec,
+    WO_TEMPLATE.map(n => (n === 'parts_list' ? 'additional_items' : n)), woCtx)
+    .fields.some(f => f.name === 'additional_items'))
+check('a template carrying neither does not block the send',
+  matchFields(woSpec, WO_TEMPLATE.filter(n => n !== 'parts_list'), woCtx).missing.length === 0)
 
 console.log(failed === 0
   ? '\nAll notification checks passed.'

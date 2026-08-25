@@ -183,7 +183,13 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
     // the point of the document. One line per part, quantity first, from the
     // same resolver the reservations use, so the sheet cannot disagree with
     // what the job actually holds.
-    { key: 'additional_items', required: false, names: ['additional_items'],
+    //
+    // Two names. The template was rebuilt and this box renamed from
+    // additional_items to parts_list, so the old name is kept behind the
+    // new one: a template restored from a backup still fills, and only one
+    // of the two can exist on any given document anyway.
+    { key: 'parts_list', required: false,
+      names: ['parts_list', 'additional_items'],
       value: ctx => ctx.parts.length === 0
         ? 'No parts list on this build sheet'
         : ctx.parts.map(p => `${p.quantity} x ${p.name} (${p.sku})`).join('\n') },
