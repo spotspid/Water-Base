@@ -99,32 +99,67 @@ function todayLong(now: Date): string {
 const COMPANY_SIGNATORY = 'Steve Burgess'
 const PAYMENT_TERMS = 'Paid weekly on Fridays'
 
+// The customer agreement, against template 5520400.
+//
+// Names are exact now. They used to be matched loosely, because that template
+// was prose and had been built before any of this code; it has since been
+// rebuilt in the same snake_case as the work order, so a near miss should be
+// an error rather than a guess.
+//
+// Only customer_signature and customer_date are left for the signer.
+// Everything else, including the company countersignature, arrives filled and
+// locked.
 const CUSTOMER_INSTALL: AgreementSpec = {
   type: 'customer_install',
   submitterRole: 'Customer',
+  exactNames: true,
   submitterEmail: ctx => text(ctx.job.customer_email),
   submitterName: ctx => text(ctx.job.customer_name),
   fields: [
-    { key: 'customer_name', required: true, names: ['Customer Name', 'Customer', 'Client Name', 'Name'],
+    { key: 'customer_name', required: true, names: ['customer_name'],
       value: ctx => text(ctx.job.customer_name) },
-    { key: 'address', required: true, names: ['Address', 'Service Address', 'Install Address', 'Street Address'],
+
+    // Street only. The template carries a city box of its own, drawn on the
+    // page and marked required, so putting the city in both would print it
+    // twice and leaving the city box empty would leave a required field blank
+    // that nobody is allowed to type in.
+    { key: 'install_address', required: true, names: ['install_address'],
       value: ctx => text(ctx.job.address) },
-    { key: 'city', required: false, names: ['City', 'Service City'],
+    { key: 'city', required: false, names: ['city'],
       value: ctx => text(ctx.job.city) },
-    { key: 'phone', required: false, names: ['Phone', 'Phone Number', 'Customer Phone'],
+
+    // Optional because the template has no phone box today. Adding one starts
+    // filling it with no change here.
+    { key: 'phone', required: false, names: ['phone'],
       value: ctx => text(ctx.job.phone) },
-    { key: 'email', required: false, names: ['Email', 'Email Address', 'Customer Email'],
+
+    { key: 'email', required: true, names: ['email'],
       value: ctx => text(ctx.job.customer_email) },
-    { key: 'system', required: true, names: ['System', 'System Template', 'Package', 'Equipment'],
-      value: ctx => text(ctx.job.system_template) },
-    { key: 'sale_price', required: true, names: ['Price', 'Sale Price', 'Total', 'Contract Price', 'Amount'],
+
+    // What was sold, with the two choices that decide what turns up, the same
+    // sentence the work order prints so the two documents cannot disagree.
+    { key: 'systems', required: true, names: ['systems'],
+      value: ctx => {
+        const picks = [text(ctx.job.ro_type), text(ctx.job.faucet_finish)].filter(Boolean)
+        const base = text(ctx.job.system_template)
+        return picks.length > 0 ? `${base} (${picks.join(', ')})` : base
+      } },
+
+    { key: 'sale_price', required: true, names: ['sale_price'],
       value: ctx => money(ctx.job.sale_price) },
-    { key: 'invoice_number', required: false, names: ['Invoice', 'Invoice Number', 'Invoice #'],
-      value: ctx => text(ctx.job.invoice_number) },
-    { key: 'faucet_finish', required: false, names: ['Faucet Finish', 'Finish'],
-      value: ctx => text(ctx.job.faucet_finish) },
-    { key: 'install_date', required: false, names: ['Install Date', 'Installation Date', 'Scheduled Date', 'Date'],
-      value: ctx => longDate(ctx.job.install_date || ctx.job.scheduled_date) },
+
+    { key: 'company_signature', required: false, names: ['company_signature'],
+      value: () => COMPANY_SIGNATORY },
+    { key: 'company_date', required: false, names: ['company_date'],
+      value: ctx => todayLong(ctx.today) },
+
+    // The only two the customer touches. customer_date is optional because
+    // the box for it on the template has no name yet, and a box with no name
+    // cannot be addressed; it stays open to the signer either way.
+    { key: 'customer_signature', required: true, names: ['customer_signature'],
+      readonly: false, value: () => '' },
+    { key: 'customer_date', required: false, names: ['customer_date'],
+      readonly: false, value: () => '' },
   ],
 }
 

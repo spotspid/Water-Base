@@ -180,6 +180,80 @@ check('a zero price is left out rather than printed as $0',
 check('document labels', documentLabel('customer_install') === 'customer agreement'
   && documentLabel('subcontractor_service') === 'work order')
 
+// --- the customer agreement, against template 5520400 -----------------------
+
+// The ten boxes the template actually carries. It is exact match now, so a
+// rename in DocuSeal is an error rather than a silent blank.
+const CI_TEMPLATE = [
+  'customer_name', 'install_address', 'city', 'email', 'systems', 'sale_price',
+  'customer_signature', 'company_signature', 'company_date',
+]
+
+const ciSpec = SPECS.customer_install
+const ciCtx = {
+  job: {
+    customer_name: 'Steve Burgess', phone: '(248) 555-0100',
+    customer_email: 'steve@example.com', address: '1 Test Street', city: 'Ann Arbor',
+    system_template: 'RO Only', ro_type: 'Tankless', faucet_finish: 'Chrome',
+    sale_price: 1499,
+  },
+  installer: null, parts: [], today: new Date(2026, 7, 25),
+}
+
+const ci = matchFields(ciSpec, CI_TEMPLATE, ciCtx)
+const ciBy = new Map(ci.fields.map(f => [f.name, f]))
+
+check('the customer agreement sends against the real template', ci.missing.length === 0,
+  ci.missing.join('; '))
+check('customer name fills', ciBy.get('customer_name')?.default_value === 'Steve Burgess')
+check('email fills', ciBy.get('email')?.default_value === 'steve@example.com')
+check('sale price fills as money', ciBy.get('sale_price')?.default_value === '$1,499.00')
+check('systems carries the picks',
+  ciBy.get('systems')?.default_value === 'RO Only (Tankless, Chrome)',
+  ciBy.get('systems')?.default_value)
+check('the company countersignature is prefilled',
+  ciBy.get('company_signature')?.default_value === 'Steve Burgess')
+check('and dated', Boolean(ciBy.get('company_date')?.default_value))
+
+// The template carries a city box of its own, so the address is the street
+// alone. Putting the city in both would print it twice, and leaving the city
+// box empty would leave a required field nobody may type in.
+check('the address is the street only',
+  ciBy.get('install_address')?.default_value === '1 Test Street')
+check('and the city goes in the city box',
+  ciBy.get('city')?.default_value === 'Ann Arbor')
+
+// Everything readonly except the two the customer signs.
+check('only two fields are left open', ci.openToSigner.length === 1 || ci.openToSigner.length === 2,
+  ci.openToSigner.join(','))
+check('and the customer signature is one of them',
+  ci.openToSigner.includes('customer_signature'))
+check('every other field is locked',
+  ci.fields.filter(f => !f.readonly).every(f => f.name.startsWith('customer_')))
+check('the company countersignature is locked',
+  ciBy.get('company_signature')?.readonly === true)
+
+// Boxes the template does not carry today must not block the send.
+check('no phone box does not block the send',
+  !ci.fields.some(f => f.name === 'phone') && ci.missing.length === 0)
+check('adding a phone box starts filling it',
+  matchFields(ciSpec, [...CI_TEMPLATE, 'phone'], ciCtx)
+    .fields.find(f => f.name === 'phone')?.default_value === '(248) 555-0100')
+check('naming the customer date box opens it to the signer',
+  matchFields(ciSpec, [...CI_TEMPLATE, 'customer_date'], ciCtx)
+    .openToSigner.includes('customer_date'))
+
+// Exact matching, so the prose names the old template used are now errors.
+check('a prose renamed box is reported rather than guessed at',
+  matchFields(ciSpec, CI_TEMPLATE.map(n => (n === 'customer_name' ? 'Customer Name' : n)), ciCtx)
+    .missing.length === 1)
+
+// The two documents must describe the same sale in the same words.
+check('systems reads the same on both documents',
+  ciBy.get('systems')?.default_value
+  === matchFields(SPECS.subcontractor_service, ['systems'], ciCtx)
+    .fields.find(f => f.name === 'systems')?.default_value)
+
 // --- the pause, which has to agree with the SQL exactly ---------------------
 
 const NOW = new Date(2026, 7, 25)

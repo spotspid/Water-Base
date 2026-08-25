@@ -273,7 +273,13 @@ Deno.serve(async req => {
   // ---------------------------------------------------------------------
   let template: {
     name?: string
-    fields?: Array<{ name?: string; submitter_uuid?: string; type?: string }>
+    fields?: Array<{
+      name?: string
+      submitter_uuid?: string
+      type?: string
+      required?: boolean
+      areas?: unknown[]
+    }>
     submitters?: Array<{ name?: string; uuid?: string }>
   }
   try {
@@ -394,6 +400,11 @@ Deno.serve(async req => {
       field_owners: (template.fields || []).map(f => ({
         name: f?.name ?? null,
         type: f?.type ?? null,
+        required: f?.required ?? null,
+        // How many places on the document this box is drawn. Zero means the
+        // field exists in the template's data but is not on any page, so
+        // filling it would put a value nowhere anybody can see.
+        areas: Array.isArray(f?.areas) ? f.areas.length : 0,
         role: (template.submitters || [])
           .find(r => r?.uuid === f?.submitter_uuid)?.name ?? null,
       })),
