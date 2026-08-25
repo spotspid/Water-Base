@@ -15,10 +15,15 @@
 // goes to scheduling, so putting the outcome anywhere else splits one
 // conversation across two rooms.
 //
-// Loudness is deliberate and graded:
-//   declined  <!channel> and a siren. Someone has to phone today.
-//   signed    <!channel> and a tick. Money arrived, and it changes the day.
-//   viewed    no mention, no emoji, no bold. It is a breadcrumb, not news.
+// Loudness is deliberate and graded, and it follows the channel as well as the
+// event. An at-channel earns its keep in the sales room, where a signature or a
+// decline changes somebody's day. In scheduling it would land beside a quiet
+// daily reminder and be louder than the news deserves, so work order events
+// carry the emoji and the bold and skip the mention.
+//
+//   declined  a siren, and someone has to phone today.
+//   signed    a tick. Money arrived, or a crew is confirmed.
+//   viewed    no emoji and no bold. It is a breadcrumb, not news.
 //   nag       no mention. It arrives every morning, and a daily <!channel>
 //             would train everyone to mute the channel inside a week.
 //   arrived   no mention. Stock landing is good news, and good news that
@@ -126,6 +131,13 @@ export function channelForDocument(agreementType: string): Channel {
   return agreementType === 'subcontractor_service' ? 'scheduling' : 'new_sale'
 }
 
+// Whether an event about this document should interrupt the room it lands in.
+// Only the sales channel gets a mention: a work order coming back signed is
+// good to know, not something to pull twelve people out of what they are doing.
+function mentionFor(agreementType: string): string {
+  return channelForDocument(agreementType) === 'new_sale' ? '<!channel> ' : ''
+}
+
 /* ---------------------------------------------------------------------------
    DocuSeal events, all to the new sale channel
 --------------------------------------------------------------------------- */
@@ -145,7 +157,7 @@ export function buildSigned(
     job_id: job.id,
     payload: { agreement_id: agreementId, agreement_type: agreementType },
     message: [
-      `<!channel> :white_check_mark: *Signed* ${name(job)}`,
+      `${mentionFor(agreementType)}:white_check_mark: *Signed* ${name(job)}`,
       `The ${doc} came back signed${detail ? `. ${detail}` : ''}.`,
       `<${jobLink(job.id, appUrl)}|Open the job>`,
     ].join('\n'),
@@ -168,7 +180,7 @@ export function buildDeclined(
     job_id: job.id,
     payload: { agreement_id: agreementId, agreement_type: agreementType },
     message: [
-      `<!channel> :rotating_light: *DECLINED* ${name(job)}`,
+      `${mentionFor(agreementType)}:rotating_light: *DECLINED* ${name(job)}`,
       `${who} declined the ${doc}${detail ? `. ${detail}` : ''}. This needs a call today.`,
       `<${jobLink(job.id, appUrl)}|Open the job>`,
     ].join('\n'),

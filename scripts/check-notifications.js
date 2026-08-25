@@ -118,6 +118,21 @@ check('a work order signature still names the right document',
 check('and keys the same way, so the routing change cannot resend old events',
   woSigned.dedupe_key === signed.dedupe_key)
 
+// The mention follows the room, not the event. Sales gets interrupted; the
+// scheduling channel, which already carries a quiet daily reminder, does not.
+check('a work order signature does not interrupt the room',
+  !woSigned.message.includes('<!channel>'))
+check('a work order decline does not either',
+  !woDeclined.message.includes('<!channel>'))
+check('but a work order decline still reads as urgent',
+  woDeclined.message.includes(':rotating_light:') && woDeclined.message.includes('*DECLINED*'))
+check('and a work order signature still reads as good news',
+  woSigned.message.includes(':white_check_mark:') && woSigned.message.includes('*Signed*'))
+check('a customer signature still interrupts the sales room',
+  signed.message.includes('<!channel>'))
+check('and a customer decline still does',
+  declined.message.includes('<!channel>'))
+
 check('the nag goes to scheduling', nag.channel === 'scheduling')
 
 // --- every message stands alone, because webhooks cannot thread ------------

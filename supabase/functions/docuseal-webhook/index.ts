@@ -294,7 +294,7 @@ async function handleEvent(
       }
     }
 
-    await tellNotifier(supabaseUrl, serviceKey, {
+    await tellNotifier(supabase, supabaseUrl, serviceKey, {
       mode: 'agreement',
       event: intent,
       agreement_id: agreementId,
@@ -310,15 +310,25 @@ async function handleEvent(
  *
  * This function knows nothing about Slack, channels or webhook URLs, and that
  * is the point: it translates DocuSeal, and one place decides what reaches a
- * human. A failure here is logged and swallowed, because the database write
- * has already succeeded and losing a Slack message is not worth making
- * DocuSeal retry an event that was handled correctly.
+ * human.
+ *
+ * DocuSeal still gets its 200 whatever happens here. The database write has
+ * already succeeded and making DocuSeal retry an event that was handled
+ * correctly would be worse than a late Slack message.
+ *
+ * But a failure is no longer only a console line. It writes a failed row
+ * carrying the event, so the outbox shows the break and the hourly drain can
+ * run it again. The notifier refused every event for weeks with a 403 and the
+ * only trace was a log nobody reads, which is a worse fault than the 403.
  */
 async function tellNotifier(
+  supabase: ReturnType<typeof createClient>,
   supabaseUrl: string,
   serviceKey: string,
   body: Record<string, unknown>,
 ): Promise<void> {
+  let problem = ''
+
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/notify`, {
       method: 'POST',
@@ -331,13 +341,64 @@ async function tellNotifier(
 
     const detail = await res.json().catch(() => null)
 
-    if (!res.ok) {
-      console.error('notifier refused the event', { status: res.status, detail })
+    if (res.ok) {
+      console.log('notifier handled the event', detail)
       return
     }
 
-    console.log('notifier handled the event', detail)
+    console.error('notifier refused the event', { status: res.status, detail })
+    problem = `The notifier answered ${res.status}. `
+      + String((detail as Record<string, unknown>)?.error ?? '').slice(0, 200)
   } catch (caught) {
     console.error('notifier could not be reached', caught)
+    problem = `The notifier could not be reached. ${(caught as Error)?.message ?? ''}`
+  }
+
+  await recordUndelivered(supabase, body, problem)
+}
+
+/**
+ * Records an event the notifier never got to see.
+ *
+ * The row carries the event rather than a message, because the message is the
+ * notifier's to write and it never ran. The drain reads the retry payload back
+ * out and runs the event properly, which is what produces the real message
+ * under its own dedupe key.
+ *
+ * Keyed on the agreement and the intent, so a DocuSeal retry of the same event
+ * lands on the same row instead of stacking up failures.
+ */
+async function recordUndelivered(
+  supabase: ReturnType<typeof createClient>,
+  body: Record<string, unknown>,
+  problem: string,
+): Promise<void> {
+  try {
+    const agreementId = String(body.agreement_id ?? '')
+    const event = String(body.event ?? 'event')
+
+    const { error } = await supabase.from('notifications').upsert({
+      event_type: 'notify.undelivered',
+      // A label rather than a destination. This row is never posted as it
+      // stands: the drain re-runs the event, and the real notification picks
+      // its own channel.
+      channel: 'scheduling',
+      message: `A ${event} event on agreement ${agreementId} never reached the notifier.`,
+      dedupe_key: `notify.undelivered:${agreementId}:${event}`,
+      status: 'failed',
+      last_error: problem.slice(0, 500),
+      payload: { retry: body },
+    }, { onConflict: 'dedupe_key' })
+
+    if (error) {
+      console.error('could not record the undelivered event', error)
+      return
+    }
+
+    console.log('recorded an undelivered event for the drain to retry', { agreementId, event })
+  } catch (caught) {
+    // Last resort. Nothing above this is worth throwing over, because DocuSeal
+    // has already been told the event was handled.
+    console.error('recording the undelivered event threw', caught)
   }
 }

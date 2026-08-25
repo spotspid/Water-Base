@@ -53,12 +53,57 @@ function fail(message: string, status: number, extra: Record<string, unknown> = 
   return json({ error: message, ...extra }, status)
 }
 
-// The role sits in the middle segment of the JWT. This is not a signature
-// check, which verify_jwt has already done at the gateway; it only asks which
-// kind of key got through.
-function roleFromToken(header: string): string {
+/**
+ * Is this the service role, and not merely a valid caller.
+ *
+ * verify_jwt at the gateway has already established that whoever is calling
+ * holds a real credential for this project, and that includes every signed in
+ * user. This asks the narrower question, because a notifier any logged in
+ * account could drive is a way to post anything into the company Slack.
+ *
+ * Two proofs are accepted, because this project has two service role keys in
+ * circulation and both are legitimate:
+ *
+ *   the same value  what Supabase injects into an edge function. The newer
+ *                   sb_secret_ format is not a JWT and carries no claims, so
+ *                   the only thing to check is that it matches.
+ *   a role claim    the legacy JWT format, which Postgres holds in its vault
+ *                   and drives the nightly cron with. The gateway has already
+ *                   verified its signature, so the claim can be believed.
+ *
+ * The previous version only did the second, which worked from Postgres and
+ * silently refused every call from the DocuSeal webhook: no dots, no payload,
+ * no role, a 403 that appeared only in a log nobody reads, and six weeks of
+ * events that never reached Slack.
+ */
+function isServiceRole(header: string, serviceKey: string): boolean {
+  const token = header.replace(/^bearer\s+/i, '').trim()
+  if (!token) return false
+
+  if (matchesKey(token, serviceKey)) return true
+
+  return roleClaim(token) === 'service_role'
+}
+
+// Length first, then constant time, so a wrong key cannot be narrowed down by
+// how long the answer takes.
+function matchesKey(token: string, serviceKey: string): boolean {
+  if (!serviceKey || token.length !== serviceKey.length) return false
+
+  const a = new TextEncoder().encode(token)
+  const b = new TextEncoder().encode(serviceKey)
+  let diff = 0
+
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
+
+  return diff === 0
+}
+
+// The role out of the middle segment of a JWT. Not a signature check, which
+// the gateway has already done; it only asks what kind of credential got
+// through. Anything that is not a JWT simply has no claim.
+function roleClaim(token: string): string {
   try {
-    const token = header.replace(/^bearer\s+/i, '').trim()
     const [, payload] = token.split('.')
     if (!payload) return ''
     const padded = payload.replace(/-/g, '+').replace(/_/g, '/')
@@ -102,7 +147,7 @@ Deno.serve(async req => {
   }
 
   const auth = req.headers.get('Authorization') || ''
-  if (roleFromToken(auth) !== 'service_role') {
+  if (!isServiceRole(auth, serviceKey)) {
     return fail('This endpoint is for the service role only.', 403)
   }
 
@@ -128,7 +173,7 @@ Deno.serve(async req => {
     if (mode === 'agreement') return await handleAgreement(supabase, body, appUrl)
     if (mode === 'order') return await handleOrder(supabase, body, appUrl)
     if (mode === 'nag') return await handleNag(supabase, body, appUrl)
-    if (mode === 'drain') return await handleDrain(supabase)
+    if (mode === 'drain') return await handleDrain(supabase, appUrl)
 
     return fail(
       `Unknown mode "${mode}". Use agreement, order, send, nag, drain or health.`, 400)
@@ -355,16 +400,27 @@ async function handleNag(
 }
 
 /**
- * Retries rows that were claimed but never landed.
+ * Retries anything that has not landed.
  *
- * A failed row still holds its dedupe key, so this is the only way a message
- * whose post failed ever gets out. Nothing here can produce a duplicate: the
- * key was claimed on the first attempt and is still held by the same row.
+ * Two shapes of row end up here, and they need opposite treatment.
+ *
+ * A row this function claimed and then failed to post already holds the real
+ * message and the real dedupe key, so it is simply posted again. It cannot
+ * duplicate: the key was claimed on the first attempt and the same row still
+ * holds it.
+ *
+ * A row the webhook wrote because the notifier never ran holds no message at
+ * all, only the event. Posting its placeholder text would put a line about
+ * plumbing into a channel meant for work. Those are re-run instead, which
+ * produces the real notification under its own key, and the placeholder row is
+ * marked sent once the event has been dealt with.
  */
-async function handleDrain(supabase: ReturnType<typeof createClient>): Promise<Response> {
+async function handleDrain(
+  supabase: ReturnType<typeof createClient>, appUrl?: string,
+): Promise<Response> {
   const { data: rows, error } = await supabase
     .from('notifications')
-    .select('id, channel, message, attempts')
+    .select('id, channel, message, attempts, payload')
     .neq('status', 'sent')
     .lt('attempts', 5)
     .order('created_at', { ascending: true })
@@ -376,9 +432,25 @@ async function handleDrain(supabase: ReturnType<typeof createClient>): Promise<R
   }
 
   const pending = rows || []
-  const results = { pending: pending.length, sent: 0, failed: 0 }
+  const results = { pending: pending.length, sent: 0, replayed: 0, failed: 0 }
 
   for (const row of pending) {
+    const retry = (row.payload as Record<string, unknown> | null)?.retry as Body | undefined
+
+    if (retry && typeof retry === 'object' && retry.mode) {
+      const outcome = await replay(supabase, retry, appUrl)
+
+      if (outcome.ok) {
+        await supabase.rpc('mark_notification_sent', { p_id: row.id })
+        results.replayed += 1
+      } else {
+        await supabase.rpc('mark_notification_failed', { p_id: row.id, p_error: outcome.error })
+        results.failed += 1
+      }
+
+      continue
+    }
+
     const posted = await postToSlack(row.channel as Channel, String(row.message))
 
     if (posted.ok) {
@@ -391,4 +463,37 @@ async function handleDrain(supabase: ReturnType<typeof createClient>): Promise<R
   }
 
   return json({ ok: true, ...results })
+}
+
+/**
+ * Runs a stored event through the same handler that would have run it live.
+ *
+ * In process rather than over HTTP: this function is already the notifier, and
+ * calling itself through the gateway would only add a way for the retry to be
+ * refused the same way the original was.
+ */
+async function replay(
+  supabase: ReturnType<typeof createClient>, retry: Body, appUrl?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const mode = String(retry.mode || '')
+
+    const res = mode === 'agreement'
+      ? await handleAgreement(supabase, retry, appUrl)
+      : mode === 'order'
+        ? await handleOrder(supabase, retry, appUrl)
+        : null
+
+    if (!res) return { ok: false, error: `Cannot replay a "${mode}" event.` }
+
+    const detail = await res.json().catch(() => null) as Record<string, unknown> | null
+
+    // A duplicate is a success: it means the event has already been announced,
+    // which is exactly what this row was waiting for.
+    if (res.ok) return { ok: true }
+
+    return { ok: false, error: String(detail?.error ?? `The replay answered ${res.status}.`) }
+  } catch (caught) {
+    return { ok: false, error: `The replay threw. ${(caught as Error)?.message ?? ''}` }
+  }
 }
