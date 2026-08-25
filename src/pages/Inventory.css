@@ -143,3 +143,35 @@
   color: inherit;
   opacity: 0.75;
 }
+
+/* The catalogue cost, editable where you are already looking at the item.
+   Sits above the history rather than below it, because the number is the
+   thing you came to change and the history is the evidence for it. */
+.inv-cost {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--teal);
+  border-radius: var(--radius);
+  background: var(--raised);
+}
+
+.inv-cost-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inv-cost-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 0 1 160px;
+}
+
+.inv-cost-note {
+  flex: 1 1 260px;
+  font-size: 12.5px;
+  color: var(--muted);
+}

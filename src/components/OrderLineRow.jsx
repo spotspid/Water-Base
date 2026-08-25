@@ -46,8 +46,18 @@ export default function OrderLineRow({ line, onChanged, onNotice }) {
     }
 
     setReceiving(false)
+
+    // The catalogue cost moves to what this delivery landed at, so the shelf is
+    // valued at what was paid. Saying so beats changing a price silently, and
+    // the second sentence is there because "the cost changed" reads as an
+    // error unless it also says what did not change.
+    const moved = data?.unit_cost_changed
+      ? ` Catalogue cost moved from ${formatCurrency(data?.previous_unit_cost)}.`
+        + ' Past jobs keep the cost they were installed at.'
+      : ''
+
     onNotice(`${data?.quantity} x ${data?.sku} received at ${formatCurrency(data?.landed_unit_cost)} landed, `
-      + `${formatCurrency(data?.landed_value)} into stock.`)
+      + `${formatCurrency(data?.landed_value)} into stock.${moved}`)
     onChanged()
   }
 
@@ -94,7 +104,7 @@ export default function OrderLineRow({ line, onChanged, onNotice }) {
             : cancelled
               ? <span className="pill">Cancelled</span>
               : (
-                <button type="button" className="btn-cancel ord-mini"
+                <button type="button" className="btn-cancel btn-mini"
                   disabled={busy} onClick={() => { setReceiving(v => !v); setError('') }}>
                   Receive
                 </button>
@@ -113,10 +123,10 @@ export default function OrderLineRow({ line, onChanged, onNotice }) {
               <span className="ord-receive-note">
                 of {outstanding} outstanding, at {formatCurrency(line.landed_unit_cost)} landed
               </span>
-              <button type="button" className="btn-primary ord-mini" disabled={busy} onClick={receive}>
+              <button type="button" className="btn-primary btn-mini" disabled={busy} onClick={receive}>
                 {busy ? 'Recording...' : 'Record delivery'}
               </button>
-              <button type="button" className="btn-cancel ord-mini" disabled={busy}
+              <button type="button" className="btn-cancel btn-mini" disabled={busy}
                 onClick={() => { setReceiving(false); setError('') }}>
                 Cancel
               </button>
@@ -132,10 +142,10 @@ export default function OrderLineRow({ line, onChanged, onNotice }) {
                 <span className="agr-confirm-text">
                   Remove {line.sku} from this order? Nothing has been received against it.
                 </span>
-                <button type="button" className="btn-primary ord-mini" disabled={busy} onClick={remove}>
+                <button type="button" className="btn-primary btn-mini" disabled={busy} onClick={remove}>
                   Yes, remove it
                 </button>
-                <button type="button" className="btn-cancel ord-mini" disabled={busy}
+                <button type="button" className="btn-cancel btn-mini" disabled={busy}
                   onClick={() => setConfirmRemove(false)}>
                   Keep it
                 </button>

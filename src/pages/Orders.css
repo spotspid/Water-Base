@@ -73,11 +73,6 @@
 }
 
 /* ---- receiving ---- */
-.ord-mini {
-  padding: 5px 11px;
-  font-size: 12.5px;
-}
-
 .ord-line-action td {
   background: var(--teal-soft);
   padding: 12px 16px;

@@ -6,12 +6,11 @@ import {
   committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
 } from '../lib/inventory'
 import { atReorderPoint } from '../lib/dashboard'
-import { arrivalState } from '../lib/orderState'
-import { formatLongDate } from '../lib/schedule'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
+import InventoryOnOrderCell from '../components/InventoryOnOrderCell'
 import InventoryReorder from '../components/InventoryReorder'
 import ItemHistoryModal from '../components/ItemHistoryModal'
 import StockMeter from '../components/StockMeter'
@@ -243,22 +242,7 @@ export default function Inventory() {
                             {committedOf(row)}
                           </span>}
                     </td>
-                    <td className="col-num">
-                      {(() => {
-                        const arrival = arrivalState(row)
-                        if (arrival.state === 'none') return <span className="inv-none">0</span>
-                        return (
-                          <span className={arrival.state === 'overdue' ? 'inv-late' : 'inv-coming'}>
-                            {arrival.onOrder}
-                            <span className="cell-sub">
-                              {arrival.date
-                                ? `${arrival.state === 'overdue' ? 'due ' : ''}${formatLongDate(arrival.date)}`
-                                : 'no date'}
-                            </span>
-                          </span>
-                        )
-                      })()}
-                    </td>
+                    <td className="col-num"><InventoryOnOrderCell row={row} /></td>
                     <td className="col-num">{formatCurrency(row.unit_cost)}</td>
                     <td className="col-num col-value">{formatCurrency(row.stock_value)}</td>
                   </tr>
@@ -288,7 +272,11 @@ export default function Inventory() {
       )}
 
       {historyItem && (
-        <ItemHistoryModal item={historyItem} onClose={() => setHistoryItem(null)} />
+        <ItemHistoryModal
+          item={rows.find(r => r.id === historyItem.id) || historyItem}
+          onClose={() => setHistoryItem(null)}
+          onChanged={load}
+        />
       )}
     </AppShell>
   )

@@ -1202,3 +1202,11 @@ a {
   flex: 1 1 220px;
 }
 
+
+/* A button sized to sit inside a table row or beside a field rather than at
+   the foot of a form. Lives here because supplier orders and the inventory
+   item both use one, and routes are lazily loaded. */
+.btn-mini {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}

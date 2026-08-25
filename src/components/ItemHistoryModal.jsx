@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useSettings } from '../lib/settings'
 import { formatCurrency, formatDateTime, formatSignedQty, withRunningBalance } from '../lib/inventory'
+import ItemCostField from './ItemCostField'
 import Modal from './Modal'
 
-export default function ItemHistoryModal({ item, onClose }) {
+export default function ItemHistoryModal({ item, onClose, onChanged }) {
   const { allTxnTypes } = useSettings()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +38,8 @@ export default function ItemHistoryModal({ item, onClose }) {
 
   return (
     <Modal title={item.name} subtitle={subtitle} onClose={onClose} wide>
+      <ItemCostField item={item} onChanged={onChanged} />
+
       {loading && <p className="inv-state">Loading history...</p>}
 
       {!loading && error && (
