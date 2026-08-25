@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
 import { agreementLabel, agreementTone } from '../lib/agreements'
@@ -23,14 +23,31 @@ const JOB_MARGIN_COLUMNS =
   'agreement_last_error, agreement_send_count, ro_type, ' +
   'work_order_id, work_order_status, work_order_sent_at, work_order_completed_at, ' +
   'work_order_signed_url, work_order_audit_log_url, work_order_last_error, ' +
-  'work_order_send_count, installer_email, site_conditions'
+  'work_order_send_count, installer_email, site_conditions, ' +
+  'agreement_view_count, work_order_view_count, nag_snoozed_until'
 
 export default function Jobs() {
+  // Every Slack message links to /jobs?job=<id>, because a webhook cannot
+  // thread and a line that says "unsigned for 9 days" is only useful if one
+  // click lands on the job it is about. The id lives in the query string
+  // rather than in state alone, so the link survives a refresh and can be
+  // pasted to someone else.
+  const [params, setParams] = useSearchParams()
+  const openJobId = params.get('job') || ''
+
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [status, setStatus] = useState(ALL_STATUSES)
-  const [openJobId, setOpenJobId] = useState('')
+
+  const openJobById = useCallback(id => {
+    setParams(current => {
+      const next = new URLSearchParams(current)
+      if (id) next.set('job', id)
+      else next.delete('job')
+      return next
+    }, { replace: true })
+  }, [setParams])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -82,6 +99,10 @@ export default function Jobs() {
 
   const hasData = !loading && !error
 
+  // A link from Slack can outlive the job it points at. Saying so beats a page
+  // that silently ignores the id in the address bar.
+  const linkedJobMissing = hasData && Boolean(openJobId) && !openJob
+
   return (
     <AppShell>
       <div className="jobs-page">
@@ -117,6 +138,18 @@ export default function Jobs() {
                 ))}
               </select>
             </div>
+          </div>
+        )}
+
+        {linkedJobMissing && (
+          <div className="inv-error-box" role="alert">
+            <p className="inv-error-title">That job is not here any more.</p>
+            <p className="inv-error-detail">
+              The link pointed at a job that has since been deleted, or one you cannot see.
+            </p>
+            <button type="button" className="btn-cancel" onClick={() => openJobById('')}>
+              Show all jobs
+            </button>
           </div>
         )}
 
@@ -183,11 +216,11 @@ export default function Jobs() {
               <tbody>
                 {visible.map(job => (
                   <tr key={job.id} className="inv-row" tabIndex={0}
-                    onClick={() => setOpenJobId(job.id)}
+                    onClick={() => openJobById(job.id)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        setOpenJobId(job.id)
+                        openJobById(job.id)
                       }
                     }}>
                     <td className="td-customer">{job.customer_name}</td>
@@ -246,7 +279,7 @@ export default function Jobs() {
       {openJob && (
         <JobDetailModal
           job={openJob}
-          onClose={() => setOpenJobId('')}
+          onClose={() => openJobById('')}
           onChanged={() => load()}
         />
       )}

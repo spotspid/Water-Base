@@ -1,0 +1,233 @@
+// What each notification actually says.
+//
+// Kept apart from the sending so the wording can be tested without a webhook,
+// a database or a deploy. Every function here is pure: facts in, one string
+// out.
+//
+// Incoming webhooks cannot thread and cannot be edited, so every message has
+// to stand on its own. That means each one names the job and carries a link,
+// because a line that says "unsigned for 9 days" with no name is a line
+// nobody can act on.
+//
+// Loudness is deliberate and graded:
+//   declined  <!channel> and a siren. Someone has to phone today.
+//   signed    <!channel> and a tick. Money arrived, and it changes the day.
+//   viewed    no mention, no emoji, no bold. It is a breadcrumb, not news.
+//   nag       no mention. It arrives every morning, and a daily <!channel>
+//             would train everyone to mute the channel inside a week.
+
+export type Channel = 'new_sale' | 'scheduling' | 'stock'
+
+export type JobFacts = {
+  id: string
+  customer_name?: string | null
+  system_template?: string | null
+  sale_price?: number | string | null
+  city?: string | null
+}
+
+export type NagFacts = {
+  job_id: string
+  customer_name?: string | null
+  system_template?: string | null
+  days_until_install: number
+  agreement_unsigned: boolean
+  agreement_days_unsigned: number | null
+  agreement_status?: string | null
+  work_order_unsigned: boolean
+  work_order_days_unsigned: number | null
+  work_order_status?: string | null
+  installer_name?: string | null
+}
+
+export type Built = {
+  channel: Channel
+  event_type: string
+  message: string
+  dedupe_key: string
+  job_id: string
+  payload: Record<string, unknown>
+}
+
+const DEFAULT_APP_URL = 'https://water-base.vercel.app'
+
+export function jobLink(jobId: string, appUrl = DEFAULT_APP_URL): string {
+  const base = String(appUrl || DEFAULT_APP_URL).replace(/\/+$/, '')
+  return `${base}/jobs?job=${encodeURIComponent(jobId)}`
+}
+
+function name(job: { customer_name?: string | null }): string {
+  const n = String(job.customer_name || '').trim()
+  return n || 'An unnamed job'
+}
+
+function money(value: unknown): string {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n === 0) return ''
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+}
+
+// "Flagship Bundle, $2,999" with either half allowed to be missing
+function subtitle(job: JobFacts): string {
+  return [String(job.system_template || '').trim(), money(job.sale_price)]
+    .filter(Boolean)
+    .join(', ')
+}
+
+// "1 day" / "3 days", and the two cases a count of zero has to cover
+function days(n: number | null, zero: string): string {
+  if (n === null || !Number.isFinite(n)) return ''
+  if (n <= 0) return zero
+  return `${n} ${n === 1 ? 'day' : 'days'}`
+}
+
+const LABELS: Record<string, string> = {
+  customer_install: 'customer agreement',
+  subcontractor_service: 'work order',
+}
+
+export function documentLabel(type: string): string {
+  return LABELS[type] || 'document'
+}
+
+/* ---------------------------------------------------------------------------
+   DocuSeal events, all to the new sale channel
+--------------------------------------------------------------------------- */
+
+// Once ever, per document. A DocuSeal retry carries the same agreement, so it
+// computes the same key and is dropped rather than posted twice.
+export function buildSigned(
+  job: JobFacts, agreementId: string, agreementType: string, appUrl?: string,
+): Built {
+  const doc = documentLabel(agreementType)
+  const detail = subtitle(job)
+
+  return {
+    channel: 'new_sale',
+    event_type: 'agreement.signed',
+    dedupe_key: `agreement.signed:${agreementId}`,
+    job_id: job.id,
+    payload: { agreement_id: agreementId, agreement_type: agreementType },
+    message: [
+      `<!channel> :white_check_mark: *Signed* ${name(job)}`,
+      `The ${doc} came back signed${detail ? `. ${detail}` : ''}.`,
+      `<${jobLink(job.id, appUrl)}|Open the job>`,
+    ].join('\n'),
+  }
+}
+
+// The one that has to interrupt someone. A decline is a sale coming apart, and
+// the window to save it is hours rather than days.
+export function buildDeclined(
+  job: JobFacts, agreementId: string, agreementType: string, appUrl?: string,
+): Built {
+  const doc = documentLabel(agreementType)
+  const detail = subtitle(job)
+  const who = agreementType === 'subcontractor_service' ? 'The installer' : 'The customer'
+
+  return {
+    channel: 'new_sale',
+    event_type: 'agreement.declined',
+    dedupe_key: `agreement.declined:${agreementId}`,
+    job_id: job.id,
+    payload: { agreement_id: agreementId, agreement_type: agreementType },
+    message: [
+      `<!channel> :rotating_light: *DECLINED* ${name(job)}`,
+      `${who} declined the ${doc}${detail ? `. ${detail}` : ''}. This needs a call today.`,
+      `<${jobLink(job.id, appUrl)}|Open the job>`,
+    ].join('\n'),
+  }
+}
+
+// Quiet, and at most one a day per document.
+//
+// DocuSeal fires form.viewed every time the link is opened, so keying on the
+// agreement alone would post once and never again, and keying on the view
+// number would post six times when someone reads a contract carefully. The
+// calendar day is the middle: you hear that they looked today, once. How many
+// times in total is on the job record, which is where a count of four turns
+// into a phone call.
+export function buildViewed(
+  job: JobFacts, agreementId: string, agreementType: string,
+  viewCount: number, day: string, appUrl?: string,
+): Built {
+  const doc = documentLabel(agreementType)
+  const times = viewCount > 1 ? `, ${viewCount} times now` : ''
+
+  return {
+    channel: 'new_sale',
+    event_type: 'agreement.viewed',
+    dedupe_key: `agreement.viewed:${agreementId}:${day}`,
+    job_id: job.id,
+    payload: { agreement_id: agreementId, agreement_type: agreementType, view_count: viewCount },
+    message: [
+      `${name(job)} opened the ${doc}${times}. Not signed yet.`,
+      `<${jobLink(job.id, appUrl)}|Open the job>`,
+    ].join('\n'),
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The daily nag, to the scheduling channel
+--------------------------------------------------------------------------- */
+
+// One message per job per day. The key carries the calendar day, so the sweep
+// can run twice for daylight saving, be retried after a failure, or be fired
+// by hand during testing, and the job still hears about it once.
+export function buildNag(facts: NagFacts, day: string, appUrl?: string): Built {
+  const outstanding: string[] = []
+
+  if (facts.agreement_unsigned) {
+    outstanding.push(describeDocument(
+      'Customer agreement', facts.agreement_status, facts.agreement_days_unsigned,
+    ))
+  }
+
+  if (facts.work_order_unsigned) {
+    const label = facts.installer_name ? `Work order for ${facts.installer_name}` : 'Work order'
+    outstanding.push(describeDocument(
+      label, facts.work_order_status, facts.work_order_days_unsigned,
+    ))
+  }
+
+  const until = facts.days_until_install
+  const when = until <= 0
+    ? 'installs today'
+    : until === 1 ? 'installs tomorrow' : `installs in ${until} days`
+
+  // Two days out is the point where an unsigned document stops being a chore
+  // and starts being a problem, so that is where the message gains a marker.
+  const lead = until <= 2 ? ':warning: ' : ''
+
+  return {
+    channel: 'scheduling',
+    event_type: 'nag.unsigned',
+    dedupe_key: `nag.unsigned:${facts.job_id}:${day}`,
+    job_id: facts.job_id,
+    payload: {
+      days_until_install: until,
+      agreement_days_unsigned: facts.agreement_days_unsigned,
+      work_order_days_unsigned: facts.work_order_days_unsigned,
+    },
+    message: [
+      `${lead}*${name(facts)}* ${when}.`,
+      outstanding.join('\n'),
+      `<${jobLink(facts.job_id, appUrl)}|Open the job>`,
+    ].filter(Boolean).join('\n'),
+  }
+}
+
+// "Customer agreement unsigned for 9 days" / "never sent"
+function describeDocument(
+  label: string, status: string | null | undefined, daysUnsigned: number | null,
+): string {
+  if (!status) return `${label}: never sent.`
+  if (status === 'failed') return `${label}: the last send failed.`
+  if (status === 'declined') return `${label}: declined.`
+
+  const age = days(daysUnsigned, 'sent today')
+
+  if (!age) return `${label}: unsigned.`
+  if (age === 'sent today') return `${label}: sent today, unsigned.`
+  return `${label}: unsigned for ${age}.`
+}

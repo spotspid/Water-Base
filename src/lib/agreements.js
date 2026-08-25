@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+import { supabase } from './supabase.js'
+import { attempt } from './errors.js'
 
 // Agreement state as the UI talks about it.
 //
@@ -132,4 +133,31 @@ export function workOrderReady(job) {
 
 export function isWorkOrderOut(job) {
   return ['pending', 'sent', 'opened'].includes(workOrderStatusOf(job))
+}
+
+
+/* ---------------------------------------------------------------------------
+   Chasing signatures.
+
+   The daily sweep posts to Slack about any job installing inside the next 14
+   days with a document still unsigned. It stops on a signature and on nothing
+   else, so the only way to quieten one job without quietening the rule is to
+   pause it deliberately, which is what these two do.
+
+   The rule itself is in nag.js, which imports nothing, so the repo check can
+   run it without a database. These need Supabase, so they stay here.
+--------------------------------------------------------------------------- */
+
+export async function pauseNag(jobId, days) {
+  return attempt(
+    () => supabase.rpc('snooze_job_nag', { p_job_id: jobId, p_days: days }),
+    'Reminders could not be paused.',
+  )
+}
+
+export async function resumeNag(jobId) {
+  return attempt(
+    () => supabase.rpc('resume_job_nag', { p_job_id: jobId }),
+    'Reminders could not be turned back on.',
+  )
 }

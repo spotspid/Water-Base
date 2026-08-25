@@ -202,3 +202,33 @@
   font-size: 13px;
   font-weight: 500;
 }
+
+/* How many times a document has been opened.
+   Neutral while it is a fact, amber once it becomes a pattern: three looks
+   and no signature is hesitation rather than interest, and that is a phone
+   call rather than a note. */
+.agr-views {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.agr-views-hot {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--amber-soft);
+  color: var(--amber-ink);
+  font-weight: 500;
+}
+
+/* Pausing the morning reminder on one job. Quieter than the panels above it,
+   because it is a setting rather than an action on the document. */
+.agr-pause {
+  background: var(--raised);
+}
+
+.agr-pause-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-right: 2px;
+}

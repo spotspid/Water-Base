@@ -40,6 +40,21 @@ const STATUS_BY_EVENT: Record<string, string> = {
   'submission.expired': 'expired',
 }
 
+// which events are worth telling anyone about, and as what. form.started is
+// deliberately absent: it moves the status but nobody needs a message saying
+// somebody has begun reading.
+const NOTIFY_AS: Record<string, 'signed' | 'declined' | 'viewed'> = {
+  'form.viewed': 'viewed',
+  'form.completed': 'signed',
+  'form.declined': 'declined',
+}
+
+// A view arriving after a signature must not walk the status backwards. The
+// link still resolves once the document is done, so an opened event can turn
+// up on a completed agreement, and letting it through would un-sign a signed
+// contract in the UI.
+const OPEN_FROM = ['pending', 'sent', 'opened']
+
 function ok(body: Record<string, unknown> = { received: true }): Response {
   return new Response(JSON.stringify(body), {
     status: 200,
@@ -239,7 +254,9 @@ async function handleEvent(
       ? query.eq('docuseal_submission_id', submissionId)
       : query.eq('job_id', jobId).eq('type', agreementType)
 
-    const { data: updated, error } = await query.select('id, job_id, status')
+    if (status === 'opened') query = query.in('status', OPEN_FROM)
+
+    const { data: updated, error } = await query.select('id, job_id, type, status, view_count')
 
     if (error) {
       console.error('agreement update failed', { eventType, submissionId, jobId, error })
@@ -254,7 +271,73 @@ async function handleEvent(
     // the job columns are kept in step by the agreements_sync_job trigger,
     // so there is nothing more to write here
     console.log('agreement updated', { eventType, status, rows: updated.length })
+
+    const agreement = updated[0] as Record<string, unknown>
+    const agreementId = String(agreement.id || '')
+    const intent = NOTIFY_AS[eventType]
+
+    if (!intent || !agreementId) return
+
+    // A view is counted here rather than in the notifier, because counting is
+    // a fact about the document and the notifier's job is only to say things.
+    // The count comes back so the message can use it without a second read.
+    let viewCount: number | undefined
+
+    if (intent === 'viewed') {
+      const { data: counted, error: countError } = await supabase
+        .rpc('count_agreement_view', { p_agreement_id: agreementId })
+
+      if (countError) {
+        console.error('view count failed', { agreementId, countError })
+      } else {
+        viewCount = Number(counted) || 0
+      }
+    }
+
+    await tellNotifier(supabaseUrl, serviceKey, {
+      mode: 'agreement',
+      event: intent,
+      agreement_id: agreementId,
+      view_count: viewCount,
+    })
   } catch (caught) {
     console.error('background handling threw', caught)
+  }
+}
+
+/**
+ * Hands the event to the notifier.
+ *
+ * This function knows nothing about Slack, channels or webhook URLs, and that
+ * is the point: it translates DocuSeal, and one place decides what reaches a
+ * human. A failure here is logged and swallowed, because the database write
+ * has already succeeded and losing a Slack message is not worth making
+ * DocuSeal retry an event that was handled correctly.
+ */
+async function tellNotifier(
+  supabaseUrl: string,
+  serviceKey: string,
+  body: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    const detail = await res.json().catch(() => null)
+
+    if (!res.ok) {
+      console.error('notifier refused the event', { status: res.status, detail })
+      return
+    }
+
+    console.log('notifier handled the event', detail)
+  } catch (caught) {
+    console.error('notifier could not be reached', caught)
   }
 }

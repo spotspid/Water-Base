@@ -22,6 +22,11 @@ export default function JobAgreement({ job, onChanged }) {
   const awaiting = isAwaitingSignature(job)
   const signed = status === 'completed'
   const email = job.customer_email || ''
+  const views = Number(job.agreement_view_count) || 0
+
+  // Three or more looks with no signature stops being interest and starts
+  // being hesitation.
+  const reading = !signed && views >= 3
 
   async function run() {
     setError('')
@@ -67,6 +72,21 @@ export default function JobAgreement({ job, onChanged }) {
           {job.agreement_sent_at && <>Sent {formatDateTime(job.agreement_sent_at)}.</>}
           {job.agreement_completed_at && <> Signed {formatDateTime(job.agreement_completed_at)}.</>}
           {job.agreement_send_count > 1 && <> {job.agreement_send_count} sends.</>}
+        </p>
+      )}
+
+      {/* Opened and not signed is the thing worth acting on, and the more
+          times it has happened the more it is worth acting on. Slack hears
+          about a view once a day and quietly; the running count lives here,
+          because it is the number that turns into a phone call. */}
+      {views > 0 && (
+        <p className={reading ? 'agr-views agr-views-hot' : 'agr-views'}>
+          Opened {views} {views === 1 ? 'time' : 'times'}
+          {signed
+            ? ' before signing.'
+            : reading
+              ? '. Read and not signed, which is usually worth a call.'
+              : ' and not signed yet.'}
         </p>
       )}
 
