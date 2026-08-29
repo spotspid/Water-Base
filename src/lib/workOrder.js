@@ -49,6 +49,14 @@ export function workOrderBlocker(job) {
   if (!job?.template_id) {
     return 'This job has no build sheet, so there is no parts list to put on the work order.'
   }
+  if ((Number(job?.template_line_count) || 0) === 0) {
+    // A sheet with no lines resolves cleanly, because nothing to resolve
+    // cannot fail. The document would go out reading "No parts list on this
+    // build sheet", which looks finished and tells the installer to bring
+    // nothing. A refusal is the smaller problem.
+    return `The ${job.system_template || 'build sheet'} sheet has no parts on it, so the work `
+      + 'order would tell the installer to bring nothing. Put its parts on the sheet first.'
+  }
   if (agreedPay(job) === null) {
     // The one blocker that is about the document rather than the logistics. A
     // signed work order with no pay on it is worse than no work order: it is

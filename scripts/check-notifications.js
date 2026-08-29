@@ -417,7 +417,7 @@ for (const amount of [450, 0, null]) {
 // disagree the button offers a send the server then refuses.
 const sendable = {
   scheduled_date: '2026-09-08', installer_id: 'i1', installer_email: 'a@example.com',
-  template_id: 't1', installer_pay: 450,
+  template_id: 't1', template_line_count: 5, installer_pay: 450,
 }
 
 check('a fully priced job is sendable', workOrderBlocker(sendable) === '')
@@ -431,6 +431,22 @@ check('a zero payout blocks it too, for the same reason',
   workOrderBlocker({ ...sendable, installer_pay: 0 }) !== '')
 check('a negative payout blocks it',
   workOrderBlocker({ ...sendable, installer_pay: -50 }) !== '')
+
+// An empty sheet resolves cleanly, because nothing to resolve cannot fail, so
+// the unresolved check never catches it. The document would look finished and
+// tell the installer to bring nothing.
+check('an empty build sheet blocks the send',
+  workOrderBlocker({ ...sendable, template_line_count: 0 }) !== '')
+check('and the blocker names the sheet',
+  workOrderBlocker({ ...sendable, template_line_count: 0, system_template: 'Custom' })
+    .includes('Custom'))
+check('and says what the document would do',
+  workOrderBlocker({ ...sendable, template_line_count: 0 }).includes('bring nothing'))
+check('a missing count reads as empty rather than as fine',
+  workOrderBlocker({ ...sendable, template_line_count: undefined }) !== '')
+check('no sheet at all still reports the sheet, not the empty sheet',
+  workOrderBlocker({ ...sendable, template_id: null, template_line_count: 0 })
+    .includes('no build sheet'))
 
 check('agreedPay reads a real figure', agreedPay({ installer_pay: 450 }) === 450)
 check('and reads zero as missing', agreedPay({ installer_pay: 0 }) === null)

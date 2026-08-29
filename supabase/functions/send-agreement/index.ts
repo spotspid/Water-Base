@@ -236,6 +236,21 @@ Deno.serve(async req => {
     if (partsError) return fail(`The parts list could not be resolved. ${partsError.message}`, 500)
 
     const rows = (resolved || []) as Array<Record<string, unknown>>
+
+    // An empty sheet resolves cleanly, because nothing to resolve cannot fail,
+    // so the unresolved check below never catches it. The document would go
+    // out reading "No parts list on this build sheet": finished looking, and
+    // telling the installer to bring nothing.
+    if (rows.length === 0) {
+      return fail(
+        `The ${String(job.system_template || 'build sheet')} sheet has no parts on it, so the `
+        + 'work order would tell the installer to bring nothing. Put its parts on the sheet '
+        + 'first, or pick a different sheet for this job.',
+        422,
+        { job_id: jobId, template_id: job.template_id, system_template: job.system_template },
+      )
+    }
+
     const unresolved = rows.filter(r => !r.resolved)
 
     if (unresolved.length > 0) {
