@@ -17,7 +17,10 @@ import JobPartsPreview from './JobPartsPreview'
 import Modal from './Modal'
 
 export default function JobDetailModal({ job, onClose, onChanged }) {
-  const { installers, loading: loadingCrew } = useInstallers({ activeOnly: true })
+  const { installers, loading: loadingCrew } = useInstallers({
+    activeOnly: true,
+    keepIds: [job.installer_id, job.helper_id],
+  })
   const [actionError, setActionError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)

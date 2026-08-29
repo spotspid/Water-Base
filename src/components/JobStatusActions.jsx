@@ -1,5 +1,6 @@
 import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { formatDateTime } from '../lib/inventory'
+import { installerLabel } from '../lib/useInstallers'
 
 // The status half of the job detail modal: where it is now, the fields an
 // install needs, and the buttons that move it. Split out of JobDetailModal so
@@ -44,7 +45,9 @@ export default function JobStatusActions({
             <select id="installer_id" name="installer_id" value={install.installer_id}
               onChange={onInstallChange} disabled={busy || loadingCrew}>
               <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-              {installers.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              {installers.map(i => (
+                <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+              ))}
             </select>
           </div>
           <div className="field">

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
 import { attempt } from '../lib/errors'
 import { useSettings, withCurrent } from '../lib/settings'
-import { useInstallers } from '../lib/useInstallers'
+import { useInstallers, installerLabel } from '../lib/useInstallers'
 import { formatLongDate, isMovable } from '../lib/schedule'
 import { metaLine } from '../lib/text'
 import ScheduleConflicts from './ScheduleConflicts'
@@ -15,7 +15,10 @@ import Modal from './Modal'
 // warning is on screen while the decision is being made instead of after it.
 export default function ScheduleJobModal({ job, onClose, onSaved }) {
   const { allOptions, loading: loadingSettings } = useSettings()
-  const { installers, loading: loadingCrew, error: crewError } = useInstallers({ activeOnly: true })
+  const { installers, loading: loadingCrew, error: crewError } = useInstallers({
+    activeOnly: true,
+    keepIds: [job.installer_id, job.helper_id],
+  })
 
   const [form, setForm] = useState({
     scheduled_date: job.scheduled_date || '',
@@ -174,7 +177,9 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
               <select id="installer_id" name="installer_id" value={form.installer_id}
                 onChange={handleChange} disabled={saving || loadingCrew}>
                 <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-                {installers.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                {installers.map(i => (
+                  <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+                ))}
               </select>
               <span className="field-hint">Managed on the Settings page.</span>
             </div>
@@ -186,7 +191,9 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
                 <option value="">None</option>
                 {installers
                   .filter(i => i.id !== form.installer_id)
-                  .map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  .map(i => (
+                    <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+                  ))}
               </select>
             </div>
           </div>

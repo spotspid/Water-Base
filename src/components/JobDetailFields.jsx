@@ -1,12 +1,15 @@
 import { useSettings, withCurrent } from '../lib/settings'
-import { useInstallers } from '../lib/useInstallers'
+import { useInstallers, installerLabel } from '../lib/useInstallers'
 
 // The scheduling half of the job form. Installer and helper are picked from
 // the roster rather than typed, so the calendar can group by person and a
 // rename does not strand a job under a name nobody uses any more.
 export default function JobDetailFields({ form, onChange, disabled, payHint }) {
   const { timeWindows, loading: loadingSettings } = useSettings()
-  const { installers, loading: loadingCrew, error: crewError } = useInstallers({ activeOnly: true })
+  const { installers, loading: loadingCrew, error: crewError } = useInstallers({
+    activeOnly: true,
+    keepIds: [form.installer_id, form.helper_id],
+  })
 
   const windowOptions = withCurrent(timeWindows || [], form.time_window)
 
@@ -57,7 +60,9 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           <select id="installer_id" name="installer_id"
             value={form.installer_id} onChange={onChange} disabled={disabled || loadingCrew}>
             <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-            {installers.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            {installers.map(i => (
+              <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+            ))}
           </select>
           <span className="field-hint">Managed on the Settings page.</span>
         </div>
@@ -68,7 +73,9 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
             <option value="">None</option>
             {installers
               .filter(i => i.id !== form.installer_id)
-              .map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              .map(i => (
+                <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+              ))}
           </select>
         </div>
         <div className="field">
