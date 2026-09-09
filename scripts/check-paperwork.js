@@ -24,12 +24,24 @@ function check(name, condition, detail = '') {
 const NOW = new Date('2026-09-09T12:00:00')
 const daysAgo = n => new Date(NOW.getTime() - n * 86400000).toISOString()
 
+// A job that could send either document today. Everything workOrderBlocker
+// asks for is here on purpose, because the panel now only lists documents
+// somebody could actually send, and a fixture missing a payout would be
+// filtered rather than tested.
 const base = {
   id: 'j1',
   customer_name: 'Walter Radu',
+  customer_email: 'walter@example.com',
   status: 'scheduled',
   created_at: daysAgo(10),
   scheduled_date: '2026-09-16',
+  installer_id: 'i1',
+  installer_name: 'Jay Woodward',
+  installer_email: 'jay@example.com',
+  installer_pay: 450,
+  template_id: 't1',
+  template_line_count: 5,
+  system_template: 'Flagship Bundle',
   agreement_status: 'completed',
   work_order_status: 'completed',
 }
@@ -82,7 +94,8 @@ check('and an empty list is nobody waiting', jobsWaiting([]) === 0)
 const mixed = pendingPaperwork([
   { ...base, id: 'far', customer_name: 'Far', scheduled_date: '2026-09-30', work_order_status: null },
   { ...base, id: 'soon', customer_name: 'Soon', scheduled_date: '2026-09-10', work_order_status: null },
-  { ...base, id: 'none', customer_name: 'Undated', scheduled_date: null, created_at: daysAgo(90), work_order_status: null },
+  // undated, so its work order is gated. Its agreement is what lists.
+  { ...base, id: 'none', customer_name: 'Undated', scheduled_date: null, created_at: daysAgo(90), agreement_status: null },
   { ...base, id: 'past', customer_name: 'Overdue', scheduled_date: '2026-09-01', work_order_status: null },
 ], NOW)
 
@@ -110,6 +123,44 @@ check('inside two days is urgent', isUrgent({ untilInstall: 2 }) === true)
 check('overdue is urgent', isUrgent({ untilInstall: -1 }) === true)
 check('a fortnight out is not', isUrgent({ untilInstall: 14 }) === false)
 check('an undated job is never urgent', isUrgent({ untilInstall: null }) === false)
+
+// --- the gate: only documents somebody could actually send -------------------
+
+// The rule is not written twice. This is workOrderBlocker, the same function
+// the send button reads, so the panel can never list work the button refuses.
+
+const noDate = pendingPaperwork([{ ...base, scheduled_date: null, work_order_status: null }], NOW)
+check('an unscheduled job does not list its work order', noDate.length === 0)
+check('but it is counted as not ready rather than forgotten', noDate.notReady.length === 1)
+check('and the count carries the reason',
+  /no date/i.test(noDate.notReady[0].reason), noDate.notReady[0].reason)
+
+check('no crew means nobody is sitting on it',
+  pendingPaperwork([{ ...base, installer_id: null, installer_email: null, work_order_status: null }], NOW)
+    .length === 0)
+check('a crew with no email cannot be sent to',
+  pendingPaperwork([{ ...base, installer_email: null, work_order_status: null }], NOW).length === 0)
+check('no payout means the work order cannot go out',
+  pendingPaperwork([{ ...base, installer_pay: 0, work_order_status: null }], NOW).length === 0)
+check('an empty build sheet means the work order cannot go out',
+  pendingPaperwork([{ ...base, template_line_count: 0, work_order_status: null }], NOW).length === 0)
+check('no build sheet at all, likewise',
+  pendingPaperwork([{ ...base, template_id: null, work_order_status: null }], NOW).length === 0)
+
+check('a customer agreement with no email is not waiting on anyone',
+  pendingPaperwork([{ ...base, customer_email: null, agreement_status: null }], NOW).length === 0)
+check('with an email it is', pendingPaperwork([{ ...base, agreement_status: null }], NOW).length === 1)
+
+// The gate applies to unsent documents only. One already out is sitting in
+// somebody's inbox whatever has happened to the job since.
+const sentThenBroken = pendingPaperwork([{
+  ...base, work_order_status: 'sent', work_order_sent_at: daysAgo(4),
+  installer_id: null, installer_email: null, scheduled_date: null,
+}], NOW)
+check('a sent work order still lists after the crew is cleared', sentThenBroken.length === 1)
+check('and is not counted as not ready', sentThenBroken.notReady.length === 0)
+check('a declined document lists however unsendable the job is now',
+  pendingPaperwork([{ ...base, agreement_status: 'declined', customer_email: null }], NOW).length === 1)
 
 // --- rubbish in --------------------------------------------------------------
 

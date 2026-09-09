@@ -14,6 +14,11 @@ import { installLabel, isUrgent, jobsWaiting, waitedLabel } from '../lib/paperwo
 export default function DashboardPaperwork({ rows, jobCount }) {
   const waiting = jobsWaiting(rows)
 
+  // Documents held back because the job is not ready to send them. Counted
+  // rather than listed: the number is worth knowing, the rows are not, and
+  // putting them back in the table is what made the old panel unreadable.
+  const notReady = (rows.notReady || []).length
+
   return (
     <section className="dash-panel">
       <header className="dash-panel-head">
@@ -31,10 +36,28 @@ export default function DashboardPaperwork({ rows, jobCount }) {
         <p className="inv-state">No open jobs, so there is no paperwork to chase.</p>
       )}
 
-      {jobCount > 0 && rows.length === 0 && (
+      {jobCount > 0 && rows.length === 0 && notReady === 0 && (
         <p className="dash-clear">
           Every open job has a signed customer agreement and a signed work order.
           Nothing is waiting on a signature.
+        </p>
+      )}
+
+      {jobCount > 0 && rows.length === 0 && notReady > 0 && (
+        <p className="dash-clear">
+          Nobody is sitting on a signature. Every outstanding document belongs to a
+          job that is not ready to send it yet.
+        </p>
+      )}
+
+      {/* Only alongside a table. With no rows the empty state above already
+          says this, and printing both would say it twice. */}
+      {rows.length > 0 && notReady > 0 && (
+        <p className="dash-not-ready">
+          {notReady} more {notReady === 1 ? 'document is' : 'documents are'} waiting on the
+          job rather than on a person, so {notReady === 1 ? 'it is' : 'they are'} not listed.
+          {' '}
+          <Link to="/jobs" className="tpl-link">See what they need</Link>
         </p>
       )}
 

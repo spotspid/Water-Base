@@ -5,7 +5,10 @@
 // what makes the installer real, and either one sitting unsent or unsigned
 // stops the job just as dead as an empty shelf.
 //
-// Pure and importing nothing, so npm run check can run it under Node.
+// Pure apart from workOrder.js, which is itself pure, so npm run check can
+// still run all of it under Node.
+
+import { workOrderBlocker } from './workOrder.js'
 
 export const CUSTOMER = 'customer_install'
 export const WORK_ORDER = 'subcontractor_service'
@@ -87,6 +90,26 @@ function documentState(status, sentAt, createdAt, now) {
 }
 
 /**
+ * Why this document cannot go out yet, or '' when it can.
+ *
+ * The work order asks workOrderBlocker, which is the same function the send
+ * button reads. Writing the rule again here would give the dashboard its own
+ * opinion about what is sendable, and the first time the two drifted the panel
+ * would be listing work nobody could actually do.
+ *
+ * The customer agreement has no equivalent module because it has no equivalent
+ * rule: it needs an address to send to and nothing else, so that is checked
+ * here rather than wrapped in a file of its own.
+ */
+function sendBlocker(job, type) {
+  if (type === WORK_ORDER) return workOrderBlocker(job)
+
+  return String(job?.customer_email || '').trim()
+    ? ''
+    : 'This job has no customer email, so there is nobody to send the agreement to.'
+}
+
+/**
  * Every outstanding document across every open job, worst first.
  *
  * One row per document rather than per job, because a job can be waiting on
@@ -98,6 +121,7 @@ function documentState(status, sentAt, createdAt, now) {
  */
 export function pendingPaperwork(jobs, now = new Date()) {
   const out = []
+  const skipped = []
 
   for (const job of jobs || []) {
     const status = String(job?.status || '').toLowerCase()
@@ -114,6 +138,21 @@ export function pendingPaperwork(jobs, now = new Date()) {
       const state = documentState(docStatus, sentAt, job?.created_at, now)
       if (!state) continue
 
+      // A document already out is waiting on a person whatever the job looks
+      // like now. Clearing the crew after sending does not recall it from the
+      // installer's inbox, so a sent row is never filtered.
+      //
+      // One never sent is different. If it could not go out today then nobody
+      // is sitting on it, and listing it says somebody is being slow when the
+      // truth is the job is not ready. That is the noise this panel replaced.
+      if (state.state === 'unsent') {
+        const blocker = sendBlocker(job, type)
+        if (blocker) {
+          skipped.push({ job_id: job?.id, type, reason: blocker })
+          continue
+        }
+      }
+
       out.push({
         job_id: job?.id,
         customer_name: job?.customer_name || 'Unnamed job',
@@ -127,7 +166,13 @@ export function pendingPaperwork(jobs, now = new Date()) {
     }
   }
 
-  return out.sort(compare)
+  out.sort(compare)
+  // Carried on the array rather than returned separately, so a caller that
+  // does not care about it is unaffected and one that does can say how many
+  // documents are waiting on the job rather than on a person.
+  out.notReady = skipped
+
+  return out
 }
 
 /**

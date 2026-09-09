@@ -34,9 +34,15 @@ const BOOKING_DAYS = 14
 // both counts.
 // The document columns are what the paperwork panel is built on. They were not
 // here before, because the dashboard used to be a stock page with money on it.
+//
+// The second line is what workOrderBlocker reads. The panel only lists a
+// document somebody could actually send today, and deciding that needs the
+// same fields the send button needs: a date, a crew with an address, a build
+// sheet with parts on it, and a payout.
 const JOB_COLUMNS =
-  'id, created_at, customer_name, status, scheduled_date, install_date, sale_price, ' +
-  'parts_cost, installer_pay, margin, installer_name, ' +
+  'id, created_at, customer_name, customer_email, status, scheduled_date, install_date, ' +
+  'sale_price, parts_cost, installer_pay, margin, installer_name, ' +
+  'installer_id, installer_email, template_id, template_line_count, system_template, ' +
   'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
 
 // committed and available are what the reservation layer contributes, and the
