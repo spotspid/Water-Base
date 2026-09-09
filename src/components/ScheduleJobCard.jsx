@@ -1,4 +1,5 @@
 import { crewLabel, isMovable } from '../lib/schedule'
+import { useJobReadiness } from '../lib/readinessContext'
 
 // One job as it appears in a calendar cell. This is the thing David reads off
 // the screen, so the four facts he needs are always present and always in the
@@ -65,7 +66,10 @@ export default function ScheduleJobCard({
 function CardBody({ job, crew, compact }) {
   return (
     <>
-      <p className="sch-card-name">{job.customer_name}</p>
+      <p className="sch-card-name">
+        {job.customer_name}
+        <ReadinessBadge jobId={job.id} compact={compact} />
+      </p>
 
       {!compact && (
         <p className="sch-card-address">
@@ -85,5 +89,36 @@ function CardBody({ job, crew, compact }) {
 
       {!compact && <p className="sch-card-system">{job.system_template}</p>}
     </>
+  )
+}
+
+/**
+ * Whether the van can be loaded for this job.
+ *
+ * Sits on the name line rather than below the card, so scanning a day means
+ * reading down one column of dots instead of hunting the bottom of each card.
+ *
+ * In a month cell there is no room for a word, so it is the dot alone and the
+ * word moves into the title and the screen reader label. The dot is never the
+ * only carrier of the meaning: colour says it fastest, the text says it at
+ * all.
+ *
+ * Nothing renders when readiness is unknown. An absent badge means "not asked
+ * or not answered", which is why silence has to look like silence rather than
+ * like a pass.
+ */
+function ReadinessBadge({ jobId, compact }) {
+  const readiness = useJobReadiness(jobId)
+
+  if (!readiness) return null
+
+  return (
+    <span
+      className={`sch-ready sch-ready-${readiness.tone}${compact ? ' sch-ready-dot' : ''}`}
+      title={readiness.detail}
+    >
+      <span className="sch-ready-mark" aria-hidden="true" />
+      <span className={compact ? 'sr-only' : 'sch-ready-text'}>{readiness.label}</span>
+    </span>
   )
 }

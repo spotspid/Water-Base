@@ -173,6 +173,21 @@ a {
   color: var(--maroon);
 }
 
+/* For a word that a sighted reader gets from position or colour and everyone
+   else needs spelled out. Clipped rather than hidden, because display:none and
+   visibility:hidden take it out of the accessibility tree as well. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------------------------------------------------------------------------
    Pills. One shape for every short status word in the app.
 --------------------------------------------------------------------------- */

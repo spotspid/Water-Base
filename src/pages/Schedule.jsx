@@ -7,8 +7,10 @@ import {
   formatLongDate, isMovable, startOfWeek, toISODate, weekDays,
 } from '../lib/schedule'
 import { useCalendarDrag } from '../lib/useCalendarDrag'
+import { ReadinessProvider } from '../lib/ReadinessProvider'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
+import ReadinessNotice from '../components/ReadinessNotice'
 import ScheduleCalendar from '../components/ScheduleCalendar'
 import ScheduleDayModal from '../components/ScheduleDayModal'
 import ScheduleJobCard from '../components/ScheduleJobCard'
@@ -160,12 +162,18 @@ export default function Schedule() {
   const hasData = !loading && !error
   const nothingAnywhere = hasData && allJobs.length === 0
 
+  // Readiness is asked for every job on screen at once, scheduled or not. The
+  // unscheduled rail needs it as much as the calendar does: knowing a job is
+  // short before booking it is the point.
+  const jobIds = useMemo(() => allJobs.map(j => j.id), [allJobs])
+
   return (
+    <ReadinessProvider jobIds={jobIds}>
     <AppShell>
       <div className={drag ? 'sch-page sch-page-dragging' : 'sch-page'}>
         <div className="jobs-header">
           <h1>Schedule</h1>
-          <Link to="/jobs/new" className="btn-primary">+ New Job</Link>
+          <Link to="/jobs/new" className="btn-primary">+ New job</Link>
         </div>
 
         <ScheduleToolbar
@@ -186,6 +194,8 @@ export default function Schedule() {
         )}
 
         {moveNotice && <p className="job-notice" role="status">{moveNotice}</p>}
+
+        <ReadinessNotice />
 
         {loading && <p className="inv-state">Loading the schedule...</p>}
 
@@ -282,5 +292,6 @@ export default function Schedule() {
         />
       )}
     </AppShell>
+    </ReadinessProvider>
   )
 }

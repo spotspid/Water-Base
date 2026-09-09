@@ -10,10 +10,11 @@
     "preview": "vite preview",
     "check:dates": "node scripts/check-dates.js",
     "check:dashboard": "node scripts/check-dashboard.js",
-    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:styles",
+    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:readiness && npm run check:styles",
     "check:notifications": "node scripts/check-notifications.js",
     "check:orders": "node scripts/check-orders.js",
     "check:deposits": "node scripts/check-deposits.js",
+    "check:readiness": "node scripts/check-readiness.js",
     "check:styles": "node scripts/check-styles.js"
   },
   "dependencies": {

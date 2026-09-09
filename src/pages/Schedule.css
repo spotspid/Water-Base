@@ -219,6 +219,72 @@
   font-weight: 700;
   font-size: 14px;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ---- readiness ----
+   The one question the schedule exists to answer at a glance: can the van be
+   loaded. It sits at the end of the name line so a day of three jobs is three
+   marks in a column, read in one pass rather than three.
+
+   Colour is the fast channel and the word is the reliable one, so both are
+   always present except in a month cell, where the word moves into the title
+   and the screen reader label because there is genuinely no room for it. */
+.sch-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  padding: 0 7px 0 6px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* Never wraps and never pushes the customer name out of the card. The name is
+   what the operator is looking for; the badge is what they see on the way. */
+.sch-ready-text {
+  white-space: nowrap;
+}
+
+.sch-ready-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 7px;
+}
+
+.sch-ready-ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.sch-ready-warn {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+/* Maroon, and it has earned it. This is the van leaving without a tank. */
+.sch-ready-bad {
+  background: var(--red-soft);
+  color: var(--maroon);
+}
+
+/* A month cell is a few pixels tall. The dot alone, no pill, no padding. */
+.sch-ready-dot {
+  background: none;
+  padding: 0;
+  gap: 0;
+}
+
+.sch-ready-notice {
+  margin-bottom: 10px;
 }
 
 .sch-card-address {
