@@ -30,6 +30,7 @@ export type Opportunity = {
   contact_email: string | null
   contact_phone: string | null
   pipeline_id: string | null
+  pipeline_name: string | null
   stage_id: string | null
   stage_name: string | null
   status: string
@@ -38,7 +39,7 @@ export type Opportunity = {
   ghl_updated_at: string | null
 }
 
-export type Stage = { id: string; name: string; pipelineId: string }
+export type Stage = { id: string; name: string; pipelineId: string; pipelineName: string }
 
 function headersFor(api: Api, key: string): Record<string, string> {
   const base: Record<string, string> = {
@@ -117,10 +118,14 @@ export async function fetchStages(
 
   for (const pipeline of pipelines) {
     const pipelineId = str(pipeline.id) ?? ''
+    // Carried through so the hidden pipelines table holds something a human
+    // can check, rather than an opaque id nobody can confirm without opening
+    // GoHighLevel.
+    const pipelineName = str(pipeline.name) ?? ''
     for (const stage of (pipeline.stages ?? []) as Array<Record<string, unknown>>) {
       const id = str(stage.id)
       if (!id) continue
-      out.set(id, { id, name: str(stage.name) ?? '', pipelineId })
+      out.set(id, { id, name: str(stage.name) ?? '', pipelineId, pipelineName })
     }
   }
 
@@ -146,6 +151,7 @@ function normalise(raw: Record<string, unknown>, stages: Map<string, Stage>): Op
     contact_email: str(contact.email) ?? str(raw.email),
     contact_phone: str(contact.phone) ?? str(raw.phone),
     pipeline_id: str(raw.pipelineId) ?? stage?.pipelineId ?? null,
+    pipeline_name: stage?.pipelineName || null,
     stage_id: stageId,
     stage_name: stage?.name ?? null,
     // Never invented. A row with no status would be a row the reconcile cannot

@@ -60,6 +60,10 @@
   /* layout */
   --page-max: 1480px;
 
+  /* The gap between panels. One number, so opening the page up is one edit
+     rather than hunting sixteen margin-bottoms that had drifted apart. */
+  --stack: 22px;
+
   /* Stacking. One scale, in the order things sit in front of each other, so a
      new floating thing is a number from this list rather than a guess. The
      nav used to be picked independently of the modals and ended up above
@@ -77,6 +81,7 @@
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 16px;
+  --radius-panel: 18px;
   --radius-pill: 999px;
 
   /* Shadows are two layers each: a tight one for the edge and a wide soft one
@@ -121,8 +126,8 @@ html, body, #root {
 
 body {
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
   color: var(--body-text);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
@@ -288,28 +293,30 @@ a {
 .jobs-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 14.5px;
 }
 
-/* Desktop first density. The rows were spaced for a marketing table; these are
-   operational tables that are read by scanning down a column, and four more
-   rows on screen is worth more here than the whitespace was. */
+/* Dense still means information forward, not cramped. These rows had been
+   squeezed to 8px to fit four more on screen, and the result read as a
+   spreadsheet: nothing to rest the eye on between one job and the next. The
+   height below is enough to separate rows without turning the table into a
+   list of cards, and no column was dropped to pay for it. */
 .jobs-table th {
   background: var(--raised);
   color: var(--muted);
   font-family: var(--font-body);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 7px 14px;
+  padding: 10px 16px;
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid var(--line);
 }
 
 .jobs-table td {
-  padding: 8px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line-soft);
   color: var(--body-text);
   vertical-align: middle;
@@ -319,7 +326,7 @@ a {
 .jobs-table tbody tr:hover td { background: var(--raised); }
 
 .jobs-table tfoot td {
-  padding: 9px 14px;
+  padding: 12px 16px;
   border-top: 1px solid var(--line);
   background: var(--raised);
   font-weight: 600;
@@ -549,22 +556,33 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 14px;
+  padding: 10px 18px;
   background: var(--teal);
   color: var(--white);
   border: 1px solid var(--teal);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.13s, border-color 0.13s;
+  box-shadow: var(--shadow-sm);
+  /* The lift and the shadow are part of the hover, so they have to be in the
+     transition or the button jumps rather than responds. */
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--teal-deep);
   border-color: var(--teal-deep);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:disabled {
@@ -577,13 +595,13 @@ a {
 .btn-danger {
   display: inline-flex;
   align-items: center;
-  padding: 8px 14px;
+  padding: 10px 18px;
   background: var(--white);
   color: var(--maroon);
   border: 1px solid var(--maroon);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.13s, color 0.13s;
@@ -603,13 +621,13 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 14px;
+  padding: 10px 18px;
   background: var(--white);
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
@@ -618,9 +636,11 @@ a {
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: var(--paper);
-  border-color: var(--dash-border);
+  background: var(--teal-soft);
+  border-color: var(--teal);
+  color: var(--teal-deep);
   transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .btn-cancel:active:not(:disabled) {
