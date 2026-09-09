@@ -65,7 +65,7 @@ export default function JobWorkOrder({ job, onChanged }) {
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Work Order</h3>
+          <h3>Work order</h3>
           <p className="agr-sub">
             {job.installer_email
               ? <>Goes to <strong>{crew}</strong> at {job.installer_email}, with {carries}.</>
@@ -170,7 +170,7 @@ export default function JobWorkOrder({ job, onChanged }) {
               disabled={busy || Boolean(blocker)}
               onClick={() => { setConfirming(true); setError(''); setNotice('') }}
             >
-              {out ? 'Resend Work Order' : 'Send Work Order'}
+              {out ? 'Resend Work Order' : 'Send work order'}
             </button>
           )}
         </div>

@@ -43,7 +43,7 @@ export default function JobPartsLedger({ jobId, refreshKey }) {
 
   return (
     <section className="job-action">
-      <h3>Parts Ledger</h3>
+      <h3>Parts ledger</h3>
 
       {loading && <p className="inv-state">Loading parts...</p>}
 

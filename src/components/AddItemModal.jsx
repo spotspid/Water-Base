@@ -75,7 +75,7 @@ export default function AddItemModal({ onClose, onSaved }) {
   }
 
   return (
-    <Modal title="Add Item" subtitle="Creates a catalog item. Stock starts at zero." onClose={onClose}>
+    <Modal title="Add item" subtitle="Creates a catalog item. Stock starts at zero." onClose={onClose}>
       <form className="modal-form" onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           <div className="field">
@@ -102,12 +102,12 @@ export default function AddItemModal({ onClose, onSaved }) {
               onChange={handleChange} disabled={saving} />
           </div>
           <div className="field">
-            <label htmlFor="unit_cost">Unit Cost ($)</label>
+            <label htmlFor="unit_cost">Unit cost ($)</label>
             <input id="unit_cost" name="unit_cost" type="number" min="0" step="0.01"
               value={form.unit_cost} onChange={handleChange} disabled={saving} />
           </div>
           <div className="field">
-            <label htmlFor="reorder_threshold">Reorder Threshold</label>
+            <label htmlFor="reorder_threshold">Reorder threshold</label>
             <input id="reorder_threshold" name="reorder_threshold" type="number" min="0" step="1"
               value={form.reorder_threshold} onChange={handleChange} disabled={saving} />
             <span className="field-hint">Flagged as low stock at or below this count.</span>
@@ -131,7 +131,7 @@ export default function AddItemModal({ onClose, onSaved }) {
         <div className="modal-actions">
           <button type="button" className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Add Item'}
+            {saving ? 'Saving...' : 'Add item'}
           </button>
         </div>
       </form>

@@ -68,7 +68,7 @@ export default function JobSiteConditions({ job, onChanged }) {
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Site Conditions</h3>
+          <h3>Site conditions</h3>
           <p className="agr-sub">
             What the installer needs to know about the house before he gets there.
             Blank is fine, and prints as a blank box rather than a note saying there
@@ -93,7 +93,7 @@ export default function JobSiteConditions({ job, onChanged }) {
 
       <div className="agr-actions">
         <button type="button" className="btn-primary" disabled={busy || !dirty} onClick={save}>
-          {busy ? 'Saving...' : 'Save Site Conditions'}
+          {busy ? 'Saving...' : 'Save site conditions'}
         </button>
         {dirty && !busy && (
           <button type="button" className="btn-cancel" onClick={() => { setDraft(saved); setError('') }}>

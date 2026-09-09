@@ -29,7 +29,7 @@ export default function JobSystemFields({
 
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="system_template">System Template</label>
+          <label htmlFor="system_template">System template</label>
           <select id="system_template" name="system_template" required
             value={form.system_template} onChange={onChange}
             disabled={disabled || loadingTemplates || templates.length === 0}>
@@ -40,12 +40,12 @@ export default function JobSystemFields({
           </select>
         </div>
         <div className="field">
-          <label htmlFor="sale_price">Sale Price ($)</label>
+          <label htmlFor="sale_price">Sale price ($)</label>
           <input id="sale_price" name="sale_price" type="number" min="0" step="0.01" required
             value={form.sale_price} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field">
-          <label htmlFor="faucet_finish">Faucet Finish</label>
+          <label htmlFor="faucet_finish">Faucet finish</label>
           <select id="faucet_finish" name="faucet_finish" required
             value={form.faucet_finish} onChange={onChange}
             disabled={disabled || loadingSettings}>
@@ -57,7 +57,7 @@ export default function JobSystemFields({
           <span className="field-hint">Decides which faucet the template consumes.</span>
         </div>
         <div className="field">
-          <label htmlFor="ro_type">RO Type</label>
+          <label htmlFor="ro_type">RO type</label>
           <select id="ro_type" name="ro_type" required
             value={form.ro_type} onChange={onChange}
             disabled={disabled || loadingSettings}>
@@ -71,7 +71,7 @@ export default function JobSystemFields({
           </span>
         </div>
         <div className="field">
-          <label htmlFor="payment_type">Payment Type</label>
+          <label htmlFor="payment_type">Payment type</label>
           <select id="payment_type" name="payment_type" required
             value={form.payment_type} onChange={onChange}
             disabled={disabled || loadingSettings}>

@@ -55,7 +55,7 @@ export default function JobPartsPreview({
   if (!templateId) {
     return (
       <section className="job-parts">
-        <h3>Parts To Deduct</h3>
+        <h3>Parts to deduct</h3>
         <p className="inv-state">
           {templateLabel
             ? `No template named "${templateLabel}" exists, so nothing would be deducted.`
@@ -67,7 +67,7 @@ export default function JobPartsPreview({
 
   return (
     <section className="job-parts">
-      <h3>Parts To Deduct</h3>
+      <h3>Parts to deduct</h3>
 
       {loading && <p className="inv-state">Resolving parts...</p>}
 

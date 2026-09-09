@@ -96,14 +96,14 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
           </div>
 
           <div className="field">
-            <label htmlFor="default_price">Default Price ($) <span className="optional">(optional)</span></label>
+            <label htmlFor="default_price">Default price ($) <span className="optional">(optional)</span></label>
             <input id="default_price" name="default_price" type="number" min="0" step="0.01"
               value={form.default_price} onChange={handleChange} disabled={saving} />
             <span className="field-hint">Leave blank to price each job by hand.</span>
           </div>
 
           <div className="field">
-            <label htmlFor="sort_order">Sort Order</label>
+            <label htmlFor="sort_order">Sort order</label>
             <input id="sort_order" name="sort_order" type="number" step="10"
               value={form.sort_order} onChange={handleChange} disabled={saving} />
             <span className="field-hint">Lower numbers appear first.</span>
@@ -136,7 +136,7 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
         <div className="modal-actions">
           <button type="button" className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Save Template' : 'Create Template'}
+            {saving ? 'Saving...' : editing ? 'Save template' : 'Create template'}
           </button>
         </div>
       </form>

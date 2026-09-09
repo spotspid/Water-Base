@@ -80,7 +80,7 @@ export default function OperationSettings({ settings, onChanged }) {
       <form className="modal-form" onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           <div className="field field-full">
-            <label htmlFor="default_location">Default Stock Location</label>
+            <label htmlFor="default_location">Default stock location</label>
             <input id="default_location" name="default_location" type="text"
               value={form.default_location} onChange={handleChange} disabled={saving} />
             <span className="field-hint">Stamped on every new inventory transaction.</span>
@@ -100,7 +100,7 @@ export default function OperationSettings({ settings, onChanged }) {
 
         <div className="modal-actions">
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Operations Settings'}
+            {saving ? 'Saving...' : 'Save operations settings'}
           </button>
         </div>
       </form>

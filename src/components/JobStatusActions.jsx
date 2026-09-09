@@ -36,7 +36,7 @@ export default function JobStatusActions({
       {open && (
         <div className="form-grid job-install-grid">
           <div className="field">
-            <label htmlFor="install_date">Install Date</label>
+            <label htmlFor="install_date">Install date</label>
             <input id="install_date" name="install_date" type="date"
               value={install.install_date} onChange={onInstallChange} disabled={busy} />
           </div>
@@ -51,7 +51,7 @@ export default function JobStatusActions({
             </select>
           </div>
           <div className="field">
-            <label htmlFor="payout_amount">Installer Pay ($)</label>
+            <label htmlFor="payout_amount">Installer pay ($)</label>
             <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
               value={install.payout_amount} onChange={onInstallChange} disabled={busy} />
           </div>
@@ -85,46 +85,46 @@ export default function JobStatusActions({
         {job.status === 'sold' && (
           <button type="button" className="btn-cancel"
             onClick={() => onPlainStatus('scheduled')} disabled={busy}>
-            Mark Scheduled
+            Mark scheduled
           </button>
         )}
         {job.status === 'scheduled' && (
           <button type="button" className="btn-cancel"
             onClick={() => onPlainStatus('sold')} disabled={busy}>
-            Back to Sold
+            Back to sold
           </button>
         )}
         {open && (confirmCancel ? (
           <>
             <button type="button" className="btn-cancel"
               onClick={() => onConfirmCancel(false)} disabled={busy}>
-              Keep Job
+              Keep job
             </button>
             <button type="button" className="btn-danger"
               onClick={() => onPlainStatus(CANCELLED_STATUS)} disabled={busy}>
-              {busy ? 'Working...' : 'Cancel Job and Release Parts'}
+              {busy ? 'Working...' : 'Cancel job and release parts'}
             </button>
           </>
         ) : (
           <>
             <button type="button" className="btn-cancel" disabled={busy}
               onClick={() => onConfirmCancel(true)}>
-              Cancel Job
+              Cancel job
             </button>
             <button type="button" className="btn-primary" onClick={onMarkInstalled} disabled={busy}>
-              {busy ? 'Working...' : 'Mark Installed and Deduct Parts'}
+              {busy ? 'Working...' : 'Mark installed and deduct parts'}
             </button>
           </>
         ))}
         {cancelled && (
           <button type="button" className="btn-primary"
             onClick={() => onPlainStatus('sold')} disabled={busy}>
-            {busy ? 'Working...' : 'Reopen as Sold'}
+            {busy ? 'Working...' : 'Reopen as sold'}
           </button>
         )}
         {installed && (
           <button type="button" className="btn-primary" onClick={onRevert} disabled={busy}>
-            {busy ? 'Working...' : 'Reverse Install and Return Parts'}
+            {busy ? 'Working...' : 'Reverse install and return parts'}
           </button>
         )}
       </div>

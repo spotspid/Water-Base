@@ -157,14 +157,14 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
 
           <div className="form-grid sch-form-grid">
             <div className="field">
-              <label htmlFor="scheduled_date">Scheduled Date</label>
+              <label htmlFor="scheduled_date">Scheduled date</label>
               <input id="scheduled_date" name="scheduled_date" type="date"
                 value={form.scheduled_date} onChange={handleChange} disabled={saving} />
               <span className="field-hint">Clearing the date puts this job back in Unscheduled.</span>
             </div>
 
             <div className="field">
-              <label htmlFor="time_window">Time Window</label>
+              <label htmlFor="time_window">Time window</label>
               <select id="time_window" name="time_window" value={form.time_window}
                 onChange={handleChange} disabled={saving || loadingSettings}>
                 <option value="">{loadingSettings ? 'Loading windows...' : 'No window'}</option>
@@ -216,7 +216,7 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
         </button>
         {movable && (
           <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Schedule'}
+            {saving ? 'Saving...' : 'Save schedule'}
           </button>
         )}
       </div>

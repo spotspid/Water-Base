@@ -143,13 +143,13 @@ export default function TemplateLineModal({
 
   return (
     <Modal
-      title={editing ? 'Edit Part' : 'Add Part'}
+      title={editing ? 'Edit Part' : 'Add part'}
       subtitle={template.label}
       onClose={onClose}
     >
       <form className="modal-form" onSubmit={handleSubmit} noValidate>
         <div className="field field-full">
-          <label>Line Type</label>
+          <label>Line type</label>
           <div className="direction-toggle" role="group" aria-label="Line type">
             <button type="button" disabled={saving}
               className={form.line_type === 'fixed' ? 'dir-btn dir-in active' : 'dir-btn dir-in'}
@@ -172,7 +172,7 @@ export default function TemplateLineModal({
         <div className="form-grid">
           {form.line_type === 'fixed' && (
             <div className="field field-full">
-              <label htmlFor="item_id">Inventory Item</label>
+              <label htmlFor="item_id">Inventory item</label>
               <select id="item_id" name="item_id" value={form.item_id}
                 onChange={handleChange} disabled={saving}>
                 <option value="">Select item...</option>
@@ -188,7 +188,7 @@ export default function TemplateLineModal({
           {form.line_type === 'customer_pick' && (
             <>
               <div className="field">
-                <label htmlFor="pick_source">Customer Choice</label>
+                <label htmlFor="pick_source">Customer choice</label>
                 <select id="pick_source" name="pick_source" value={form.pick_source}
                   onChange={handleChange} disabled={saving}>
                   {PICK_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -197,7 +197,7 @@ export default function TemplateLineModal({
               </div>
 
               <div className="field">
-                <label htmlFor="pick_category">Item Category</label>
+                <label htmlFor="pick_category">Item category</label>
                 <select id="pick_category" name="pick_category" value={form.pick_category}
                   onChange={handleChange} disabled={saving}>
                   <option value="">Select category...</option>
@@ -214,7 +214,7 @@ export default function TemplateLineModal({
           </div>
 
           <div className="field">
-            <label htmlFor="sort_order">Sort Order</label>
+            <label htmlFor="sort_order">Sort order</label>
             <input id="sort_order" name="sort_order" type="number" step="10"
               value={form.sort_order} onChange={handleChange} disabled={saving} />
           </div>
@@ -266,7 +266,7 @@ export default function TemplateLineModal({
         <div className="modal-actions">
           <button type="button" className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Save Part' : 'Add Part'}
+            {saving ? 'Saving...' : editing ? 'Save part' : 'Add part'}
           </button>
         </div>
       </form>

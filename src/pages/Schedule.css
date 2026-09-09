@@ -65,9 +65,13 @@
   background: var(--gray-100);
 }
 
+/* Teal, because this is a selection and not a piece of structure. Navy is the
+   rail and the headings; using it here made the chosen range read as chrome
+   rather than as the thing you just picked, and it was the only selection
+   control in the app not in the selection colour. */
 .sch-switch-on,
 .sch-switch-on:hover:not(:disabled) {
-  background: var(--navy);
+  background: var(--teal);
   color: var(--white);
 }
 

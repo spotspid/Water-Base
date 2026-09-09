@@ -15,7 +15,7 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
 
   return (
     <section className="form-section">
-      <h2>Job Details</h2>
+      <h2>Job details</h2>
 
       {crewError && (
         <p className="form-warning" role="alert">
@@ -37,18 +37,18 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           )}
         </div>
         <div className="field">
-          <label htmlFor="invoice_number">Invoice Number</label>
+          <label htmlFor="invoice_number">Invoice number</label>
           <input id="invoice_number" name="invoice_number" type="text" required
             value={form.invoice_number} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field">
-          <label htmlFor="scheduled_date">Scheduled Date <span className="optional">(optional)</span></label>
+          <label htmlFor="scheduled_date">Scheduled date <span className="optional">(optional)</span></label>
           <input id="scheduled_date" name="scheduled_date" type="date"
             value={form.scheduled_date} onChange={onChange} disabled={disabled} />
           <span className="field-hint">The day it is promised. Puts the job on the schedule.</span>
         </div>
         <div className="field">
-          <label htmlFor="time_window">Time Window <span className="optional">(optional)</span></label>
+          <label htmlFor="time_window">Time window <span className="optional">(optional)</span></label>
           <select id="time_window" name="time_window"
             value={form.time_window} onChange={onChange} disabled={disabled || loadingSettings}>
             <option value="">{loadingSettings ? 'Loading windows...' : 'No window'}</option>
@@ -79,20 +79,20 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="install_date">Install Date <span className="optional">(optional)</span></label>
+          <label htmlFor="install_date">Install date <span className="optional">(optional)</span></label>
           <input id="install_date" name="install_date" type="date"
             value={form.install_date} onChange={onChange} disabled={disabled} />
           <span className="field-hint">The day it actually happened. Left blank until then.</span>
         </div>
         <div className="field">
-          <label htmlFor="payout_amount">Payout Amount ($) <span className="optional">(optional)</span></label>
+          <label htmlFor="payout_amount">Payout amount ($) <span className="optional">(optional)</span></label>
           <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
             value={form.payout_amount} onChange={onChange} disabled={disabled} />
           {payHint && <span className="field-hint">{payHint}</span>}
         </div>
         <div className="field field-full">
           <label htmlFor="site_conditions">
-            Site Conditions <span className="optional">(optional)</span>
+            Site conditions <span className="optional">(optional)</span>
           </label>
           <textarea id="site_conditions" name="site_conditions" rows="3"
             value={form.site_conditions} onChange={onChange} disabled={disabled} />

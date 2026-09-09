@@ -104,7 +104,7 @@ export default function Inventory() {
               Log a movement
             </button>
             <button type="button" className="btn-primary" onClick={() => setOpenModal('add')} disabled={loading}>
-              + Add Item
+              + Add item
             </button>
           </div>
         </div>

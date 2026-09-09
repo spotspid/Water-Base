@@ -9,7 +9,7 @@ export default function CustomerFields({ form, onChange, disabled }) {
       <h2>Customer</h2>
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="customer_name">Customer Name</label>
+          <label htmlFor="customer_name">Customer name</label>
           <input id="customer_name" name="customer_name" type="text" required
             value={form.customer_name} onChange={onChange} disabled={disabled} />
         </div>
@@ -39,7 +39,7 @@ export default function CustomerFields({ form, onChange, disabled }) {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="water_source">Water Source</label>
+          <label htmlFor="water_source">Water source</label>
           <select id="water_source" name="water_source" required
             value={form.water_source} onChange={onChange} disabled={disabled}>
             <option value="city">City</option>

@@ -73,7 +73,7 @@ export default function ExpenseModal({ expense, categories, onClose, onSaved }) 
 
   return (
     <Modal
-      title={editing ? 'Edit Expense' : 'Add Expense'}
+      title={editing ? 'Edit Expense' : 'Add expense'}
       subtitle={editing && expense.source === 'import'
         ? 'This row came from an import. Editing it keeps it attached to that batch.'
         : undefined}

@@ -110,7 +110,7 @@ export default function Expenses() {
             </button>
             <button type="button" className="btn-primary" disabled={loading || loadingSettings}
               onClick={() => { setEditing(null); setOpenModal('expense') }}>
-              + Add Expense
+              + Add expense
             </button>
           </div>
         </div>

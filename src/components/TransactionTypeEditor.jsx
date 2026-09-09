@@ -52,7 +52,7 @@ export default function TransactionTypeEditor({ types, onChanged }) {
     <section className="set-card">
       <header className="set-card-head">
         <div>
-          <h2>Transaction Types</h2>
+          <h2>Transaction types</h2>
           <p className="set-card-desc">
             The vocabulary of the inventory ledger. Direction decides whether logging one
             adds to or removes from stock. Built in types are written by the app itself, so
@@ -60,7 +60,7 @@ export default function TransactionTypeEditor({ types, onChanged }) {
           </p>
         </div>
         <button type="button" className="btn-primary" onClick={() => setEditing({})}>
-          + Add Type
+          + Add type
         </button>
       </header>
 

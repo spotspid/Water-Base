@@ -137,13 +137,13 @@ export default function TransactionTypeModal({ type, existing, onClose, onSaved 
           </div>
 
           <div className="field field-full">
-            <label htmlFor="help">Help Text <span className="optional">(optional)</span></label>
+            <label htmlFor="help">Help text <span className="optional">(optional)</span></label>
             <input id="help" name="help" type="text" value={form.help}
               onChange={handleChange} disabled={saving} />
           </div>
 
           <div className="field">
-            <label htmlFor="sort_order">Sort Order</label>
+            <label htmlFor="sort_order">Sort order</label>
             <input id="sort_order" name="sort_order" type="number" step="10"
               value={form.sort_order} onChange={handleChange} disabled={saving} />
           </div>
@@ -154,7 +154,7 @@ export default function TransactionTypeModal({ type, existing, onClose, onSaved 
         <div className="modal-actions">
           <button type="button" className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : editing ? 'Save Type' : 'Add Type'}
+            {saving ? 'Saving...' : editing ? 'Save type' : 'Add type'}
           </button>
         </div>
       </form>

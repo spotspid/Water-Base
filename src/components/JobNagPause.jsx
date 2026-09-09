@@ -57,7 +57,7 @@ export default function JobNagPause({ job, onChanged }) {
     <section className="agr-panel agr-pause">
       <div className="agr-head">
         <div>
-          <h3>Morning Reminders</h3>
+          <h3>Morning reminders</h3>
           <p className="agr-sub">
             {paused
               ? <>Paused until <strong>{formatLongDate(String(job.nag_snoozed_until).slice(0, 10))}</strong>. This job is not in the 8am message.</>

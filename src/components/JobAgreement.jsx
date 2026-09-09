@@ -57,7 +57,7 @@ export default function JobAgreement({ job, onChanged }) {
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Customer Agreement</h3>
+          <h3>Customer agreement</h3>
           <p className="agr-sub">
             {email
               ? <>Goes to <strong>{email}</strong> through DocuSeal.</>
@@ -148,7 +148,7 @@ export default function JobAgreement({ job, onChanged }) {
               disabled={busy || !email || !canSendAgreement(job)}
               onClick={() => { setConfirming(true); setError(''); setNotice('') }}
             >
-              {awaiting ? 'Resend Agreement' : 'Send Agreement'}
+              {awaiting ? 'Resend Agreement' : 'Send agreement'}
             </button>
           )}
         </div>

@@ -242,7 +242,7 @@ export default function NewJob() {
             </button>
             <button type="submit" className="btn-primary"
               disabled={saving || loadingTemplates || templates.length === 0}>
-              {saving ? 'Saving...' : 'Save Job'}
+              {saving ? 'Saving...' : 'Save job'}
             </button>
           </div>
 

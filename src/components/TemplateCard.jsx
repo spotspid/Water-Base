@@ -52,7 +52,7 @@ export default function TemplateCard({
             onClick={onAddLine}
             disabled={items.length === 0}
           >
-            + Add Part
+            + Add part
           </button>
         </div>
       </header>
