@@ -225,3 +225,141 @@
   font-weight: 400;
   color: var(--body-text);
 }
+
+/* ---------------------------------------------------------------------------
+   The CRM strip.
+
+   Sits above the shop's own numbers and is deliberately quieter than all of
+   them: no card, no shadow, no coloured figures. This is what sales thinks is
+   coming, and none of it reserves a part or schedules a van. The moment it
+   competes with a shortage for attention it is doing harm.
+--------------------------------------------------------------------------- */
+.dash-crm {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--raised);
+  padding: 13px 16px 14px;
+  margin-bottom: 16px;
+}
+
+.dash-crm-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.dash-crm-age {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* Amber, not maroon. A sync an hour behind is a thing to notice, not an
+   exception, and this panel is never allowed to raise an alarm. */
+.dash-crm-age-stale,
+.dash-crm-age-never {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.dash-crm-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+}
+
+.dash-crm-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dash-crm-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Inter and ink, at a size below the operating tiles on purpose. */
+.dash-crm-value {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-funnel {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dash-funnel-row {
+  display: grid;
+  grid-template-columns: minmax(0, 128px) minmax(60px, 1fr) 34px 64px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.dash-funnel-stage {
+  color: var(--body-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-funnel-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+/* One colour for every stage. Colouring stages differently would imply a
+   ranking this file does not own, and the stages are GHL's to rename. */
+.dash-funnel-bar {
+  display: block;
+  height: 100%;
+  width: var(--band, 0%);
+  background: var(--teal);
+  opacity: 0.55;
+  border-radius: 3px;
+  transition: width var(--slow) var(--ease);
+}
+
+.dash-funnel-count,
+.dash-funnel-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.dash-funnel-count {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dash-crm-error {
+  font-size: 12.5px;
+  color: var(--amber);
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .dash-funnel-row {
+    grid-template-columns: minmax(0, 1fr) 34px 64px;
+  }
+
+  .dash-funnel-track {
+    display: none;
+  }
+}

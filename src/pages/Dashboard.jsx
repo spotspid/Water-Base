@@ -11,6 +11,7 @@ import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DashboardActivity from '../components/DashboardActivity'
 import DashboardMetrics from '../components/DashboardMetrics'
+import DashboardPipeline from '../components/DashboardPipeline'
 import DashboardShortages from '../components/DashboardShortages'
 import './Dashboard.css'
 
@@ -55,6 +56,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // The CRM is context, so it loads and fails on its own. A GHL outage must
+  // never take the shortage panel down with it.
+  const [crm, setCrm] = useState(null)
+  const [crmFunnel, setCrmFunnel] = useState([])
+  const [crmError, setCrmError] = useState('')
+
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -77,6 +84,21 @@ export default function Dashboard() {
         'Recent activity could not be loaded.',
       ),
     ])
+
+    const [summaryRes, funnelRes] = await Promise.all([
+      attempt(
+        () => supabase.from('ghl_pipeline_summary').select('*').maybeSingle(),
+        'The sales pipeline could not be read.',
+      ),
+      attempt(
+        () => supabase.from('ghl_stage_funnel').select('*'),
+        'The pipeline stages could not be read.',
+      ),
+    ])
+
+    setCrmError(summaryRes.error || funnelRes.error || '')
+    setCrm(summaryRes.error ? null : summaryRes.data)
+    setCrmFunnel(funnelRes.error ? [] : (funnelRes.data || []))
 
     const firstError = jobRes.error || stockRes.error || activityRes.error
 
@@ -163,6 +185,10 @@ export default function Dashboard() {
 
         {hasData && !isEmpty && (
           <>
+            {/* Above the ops data because it is what came in, and below it in
+                weight because it is not what anyone does today. */}
+            <DashboardPipeline summary={crm} funnel={crmFunnel} error={crmError} />
+
             {/* Shortages lead. This page used to open with last month's
                 revenue and put what is missing off the shelf third, which is
                 the wrong order for a screen somebody checks before booking a
