@@ -59,16 +59,11 @@ export default function Settings() {
   return (
     <AppShell>
       <div className="set-page">
-        <div className="set-header">
-          <div>
-            <h1>Settings</h1>
-            <p className="set-sub">
-              These lists used to be fixed in the code. Editing one here changes what the
-              forms offer from now on. Records already saved keep the wording they were
-              saved with, so nothing behind you is rewritten.
-            </p>
-          </div>
-        </div>
+        <p className="set-sub">
+          These lists used to be fixed in the code. Editing one here changes what the
+          forms offer from now on. Records already saved keep the wording they were
+          saved with, so nothing behind you is rewritten.
+        </p>
 
         {loading && <p className="inv-state">Loading settings...</p>}
 

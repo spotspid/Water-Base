@@ -2,26 +2,6 @@
   width: 100%;
 }
 
-.dash-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.dash-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.dash-sub {
-  margin-top: 4px;
-  font-size: 14px;
-  color: var(--gray-500);
-}
-
 /* ---- metric tiles ---- */
 
 .dash-metrics {
@@ -132,7 +112,6 @@
   }
 }
 
-
 /* explains the meter colours where the meter first appears */
 .dash-panel-note {
   font-size: 12px;
@@ -152,7 +131,6 @@
 .dash-tile-attention .dash-tile-value {
   color: var(--amber);
 }
-
 
 /* ---------------------------------------------------------------------------
    The pipeline line.

@@ -101,25 +101,21 @@ export default function Templates() {
   const hasData = !loading && !error
 
   return (
-    <AppShell>
+    <AppShell actions={(
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={() => setEditingTemplate({})}
+        disabled={loading || !!error}
+      >
+        + New build sheet
+      </button>
+    )}>
       <div className="tpl-page">
-        <div className="tpl-header">
-          <div>
-            <h1>Build sheets</h1>
-            <p className="tpl-sub">
-              Each system carries a parts list. Marking a job installed deducts this list
-              from inventory once, and reversing the status puts it back.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setEditingTemplate({})}
-            disabled={loading || !!error}
-          >
-            + New build sheet
-          </button>
-        </div>
+        <p className="tpl-sub">
+          Each system carries a parts list. Marking a job installed deducts this list
+          from inventory once, and reversing the status puts it back.
+        </p>
 
         {hasData && templates.length > 0 && (
           <div className="inv-summary">

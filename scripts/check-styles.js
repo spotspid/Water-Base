@@ -44,8 +44,14 @@ const SHELL = ['src/components/AppShell.jsx', 'src/components/RouteBoundary.jsx'
 
 const IMPORT = /(?:^|\n)\s*import\s+(?:[^'"]*?from\s*)?['"](\.[^'"]+)['"]/g
 const CLASSNAME = /className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{([^}]*)\})/g
-const STRING = /['"`]([^'"`]*)['"`]/g
+const STRING = /['"]([^'"]*)['"]/g
 const SELECTOR = /\.(-?[A-Za-z_][A-Za-z0-9_-]*)/g
+
+// A whole template literal, and one `${...}` hole inside it. Holes are matched
+// without nesting, which is all this codebase uses and all a class expression
+// should ever need.
+const TEMPLATE = /`[^`]*`/g
+const HOLE = /\$\{[^{}]*\}/g
 
 // Strings inside a className expression that are not class names. A ternary
 // picking a class by state reads `mode === 'week' ? 'sch-on' : 'sch-off'`, and
@@ -102,6 +108,33 @@ function classesUsed(file) {
       continue
     }
     let expr = m[3] || ''
+
+    // Template literals carry classes in two places at once, and both count:
+    //
+    //   `nav-trigger${open ? ' nav-trigger-open' : ''}`
+    //
+    // "nav-trigger" is the static text and "nav-trigger-open" is inside the
+    // hole. Reading the literal as one string finds neither and reports the
+    // whole thing, braces and all, as a missing class.
+    for (const tpl of expr.match(TEMPLATE) || []) {
+      const inner = tpl.slice(1, -1)
+
+      // the text between the holes
+      for (const chunk of inner.split(HOLE)) {
+        for (const c of chunk.split(/\s+/)) if (c) out.add(c)
+      }
+
+      // and the strings inside them, minus anything being compared against
+      for (const hole of inner.match(HOLE) || []) {
+        let body = hole
+        for (const pattern of NOT_A_CLASS) body = body.replace(pattern, ' ')
+        for (const s of body.matchAll(STRING)) {
+          for (const c of s[1].split(/\s+/)) if (c) out.add(c)
+        }
+      }
+    }
+
+    expr = expr.replace(TEMPLATE, ' ')
     for (const pattern of NOT_A_CLASS) expr = expr.replace(pattern, ' ')
 
     for (const s of expr.matchAll(STRING)) {

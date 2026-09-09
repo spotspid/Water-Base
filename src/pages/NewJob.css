@@ -3,16 +3,6 @@
   width: 100%;
 }
 
-.newjob-header {
-  margin-bottom: 28px;
-}
-
-.newjob-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
 .newjob-form {
   display: flex;
   flex-direction: column;

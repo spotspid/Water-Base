@@ -58,13 +58,55 @@
   --dash-border: #C3D2DE;
 
   /* layout */
-  --rail: 236px;
-  --radius: 10px;
+  --page-max: 1480px;
+
+  /* Stacking. One scale, in the order things sit in front of each other, so a
+     new floating thing is a number from this list rather than a guess. The
+     nav used to be picked independently of the modals and ended up above
+     them, which put the bar across the top of every dialog. */
+  /* the sticky bar's height, so anything else that sticks can clear it */
+  --nav-h: 62px;
+
+  --z-nav: 40;
+  --z-nav-panel: 45;
+  --z-modal: 100;
+  --z-drag: 120;
+
+  /* One radius scale, so a button inside a card inside a panel steps down
+     rather than each picking its own curve. */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows are two layers each: a tight one for the edge and a wide soft one
+     for the lift. A single blur reads as a smudge under the card. */
+  --shadow-sm: 0 1px 2px rgba(20, 32, 44, 0.06);
   --shadow: 0 1px 2px rgba(20, 32, 44, 0.05), 0 6px 18px rgba(20, 32, 44, 0.06);
-  --shadow-lift: 0 3px 10px rgba(20, 32, 44, 0.11);
+  --shadow-lift: 0 2px 4px rgba(20, 32, 44, 0.07), 0 12px 28px rgba(20, 32, 44, 0.11);
+  --shadow-pop: 0 4px 10px rgba(20, 32, 44, 0.08), 0 20px 44px rgba(20, 32, 44, 0.16);
+
+  /* Motion. One easing everywhere, which is what makes a set of unrelated
+     transitions feel like one hand made them. It decelerates hard, so things
+     arrive quickly and settle rather than drifting in. */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 130ms;
+  --medium: 200ms;
+  --slow: 320ms;
 
   --font-body: 'Inter', system-ui, sans-serif;
   --font-heading: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+/* Somebody who has asked their system for less movement gets state changes
+   without the travel. Colour and focus still change; nothing slides. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 *, *::before, *::after {
@@ -226,14 +268,6 @@ a {
   color: var(--muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    transition: none !important;
-    animation: none !important;
-  }
-}
-
-
 /* ---------------------------------------------------------------------------
    Shared table, badge and cell primitives.
 
@@ -245,10 +279,10 @@ a {
 --------------------------------------------------------------------------- */
 .table-wrap {
   overflow-x: auto;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--white);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 
 .jobs-table {
@@ -573,17 +607,24 @@ a {
   background: var(--white);
   color: var(--ink);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.13s, border-color 0.13s;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
 }
 
 .btn-cancel:hover:not(:disabled) {
   background: var(--paper);
-  border-color: var(--gray-500);
+  border-color: var(--dash-border);
+  transform: translateY(-1px);
+}
+
+.btn-cancel:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-cancel:disabled {
@@ -752,15 +793,40 @@ a {
 }
 
 .inv-stat {
+  position: relative;
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px 18px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 15px 17px;
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  overflow: hidden;
+  transition: box-shadow var(--medium) var(--ease), transform var(--medium) var(--ease),
+    border-color var(--medium) var(--ease);
+}
+
+/* A hairline of colour along the top edge, drawn only on the cards that carry
+   a judgement. A plain figure stays plain. */
+.inv-stat-lead::before,
+.inv-stat-alert::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--teal);
+}
+
+.inv-stat-alert::before {
+  background: var(--maroon);
+}
+
+.inv-stat:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: var(--dash-border);
+  transform: translateY(-2px);
 }
 
 .inv-stat-label {
@@ -787,25 +853,6 @@ a {
 
 .inv-stat-alert .inv-stat-value {
   color: var(--maroon);
-}
-
-.inv-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 16px;
-}
-
-.inv-header h1 {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.inv-header-actions {
-  display: flex;
-  gap: 10px;
 }
 
 .inv-filter {
@@ -1100,20 +1147,6 @@ a {
   border: 1px solid rgba(44, 129, 155, 0.28);
   color: var(--teal-deep);
   font-size: 13px;
-}
-
-.jobs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.jobs-header h1 {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
 }
 
 

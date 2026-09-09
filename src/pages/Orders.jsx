@@ -79,14 +79,12 @@ export default function Orders() {
   const linkedMissing = hasData && Boolean(openOrderId) && !openOrder
 
   return (
-    <AppShell>
+    <AppShell actions={(
+      <button type="button" className="btn-primary" onClick={() => setEditing({})}>
+        + New order
+      </button>
+    )}>
       <div className="ord-page">
-        <div className="jobs-header">
-          <h1>Supplier Orders</h1>
-          <button type="button" className="btn-primary" onClick={() => setEditing({})}>
-            + New Order
-          </button>
-        </div>
 
         {hasData && orders.length > 0 && (
           <div className="inv-summary">

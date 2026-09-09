@@ -99,21 +99,19 @@ export default function Expenses() {
   const hasData = !loading && !error
 
   return (
-    <AppShell>
+    <AppShell actions={(
+      <>
+        <button type="button" className="btn-cancel" disabled={loading || loadingSettings}
+          onClick={() => setOpenModal('import')}>
+          Import
+        </button>
+        <button type="button" className="btn-primary" disabled={loading || loadingSettings}
+          onClick={() => { setEditing(null); setOpenModal('expense') }}>
+          + Add expense
+        </button>
+      </>
+    )}>
       <div className="exp-page">
-        <div className="inv-header">
-          <h1>Expenses</h1>
-          <div className="inv-header-actions">
-            <button type="button" className="btn-cancel" disabled={loading || loadingSettings}
-              onClick={() => setOpenModal('import')}>
-              Import
-            </button>
-            <button type="button" className="btn-primary" disabled={loading || loadingSettings}
-              onClick={() => { setEditing(null); setOpenModal('expense') }}>
-              + Add expense
-            </button>
-          </div>
-        </div>
 
         <div className="exp-filters">
           <div className="field">

@@ -171,10 +171,6 @@ export default function Schedule() {
     <ReadinessProvider jobIds={jobIds}>
     <AppShell>
       <div className={drag ? 'sch-page sch-page-dragging' : 'sch-page'}>
-        <div className="jobs-header">
-          <h1>Schedule</h1>
-          <Link to="/jobs/new" className="btn-primary">+ New job</Link>
-        </div>
 
         <ScheduleToolbar
           view={view} onView={setView}

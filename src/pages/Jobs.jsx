@@ -107,10 +107,6 @@ export default function Jobs() {
   return (
     <AppShell>
       <div className="jobs-page">
-        <div className="jobs-header">
-          <h1>Jobs</h1>
-          <Link to="/jobs/new" className="btn-primary">+ New Job</Link>
-        </div>
 
         {hasData && jobs.length > 0 && (
           <div className="inv-summary">

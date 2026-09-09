@@ -94,20 +94,18 @@ export default function Inventory() {
   const hasData = !loading && !error
 
   return (
-    <AppShell>
+    <AppShell actions={(
+      <>
+        <button type="button" className="btn-cancel"
+          onClick={() => setOpenModal('log')} disabled={loading || !!error || rows.length === 0}>
+          Log a movement
+        </button>
+        <button type="button" className="btn-primary" onClick={() => setOpenModal('add')} disabled={loading}>
+          + Add item
+        </button>
+      </>
+    )}>
       <div className="inv-page">
-        <div className="inv-header">
-          <h1>Inventory</h1>
-          <div className="inv-header-actions">
-            <button type="button" className="btn-cancel"
-              onClick={() => setOpenModal('log')} disabled={loading || !!error || rows.length === 0}>
-              Log a movement
-            </button>
-            <button type="button" className="btn-primary" onClick={() => setOpenModal('add')} disabled={loading}>
-              + Add item
-            </button>
-          </div>
-        </div>
 
         {hasData && (
           <div className="inv-summary">

@@ -1,192 +1,464 @@
 /* ---------------------------------------------------------------------------
-   App shell: fixed navy rail, white top bar, paper canvas.
+   App shell: a navy bar across the top, menus that drop from it, and a paper
+   canvas underneath.
 
-   The rail replaced a horizontal navy header. Seven destinations do not fit
-   across a bar without shrinking to unreadable, and grouping them vertically
-   is what lets Operations, Stock and Money read as separate concerns.
+   This replaced a fixed left rail. The rail cost 236px of width on every
+   screen to show nine links that are read once and then not looked at again,
+   and the tables underneath are the widest thing in the product. A bar gives
+   that width back and puts the destinations behind three words.
 --------------------------------------------------------------------------- */
-.app {
-  display: flex;
-  min-height: 100%;
-}
 
-/* rail */
-.rail {
-  width: var(--rail);
-  flex: 0 0 var(--rail);
-  background: var(--navy);
+.app {
+  min-height: 100%;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
 }
 
-.rail-head {
-  padding: 22px 20px 18px;
+/* ---- the bar ---- */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  background: linear-gradient(180deg, var(--navy-700) 0%, var(--navy) 62%, var(--navy-900) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: box-shadow var(--medium) var(--ease);
+}
+
+/* Earned only once there is something behind it. A shadow over an empty page
+   is separating the bar from nothing. */
+.nav-lifted {
+  box-shadow: 0 6px 24px rgba(19, 37, 56, 0.28);
+}
+
+.nav-inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 22px;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+/* ---- brand ---- */
+
+.nav-brand {
   display: flex;
   align-items: center;
   gap: 11px;
+  text-decoration: none;
+  border-radius: var(--radius);
+  padding: 4px 6px 4px 4px;
+  margin-left: -4px;
+  flex: 0 0 auto;
+  transition: background var(--fast) var(--ease);
 }
 
-/* The emblem carries its own hexagonal geometry and its own navy to teal
-   gradient, so it sits directly on the rail. The tinted rounded square it used
-   to sit inside was a second mark competing with the real one. */
-.rail-mark {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
+.nav-brand:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* On a white tile, because the emblem's own top face is navy and the bar is
+   navy: sat directly on it, the upper half of the mark disappears into the
+   background and only the teal foot reads. The tile also gives it the app icon
+   shape it already has as a favicon. */
+.nav-emblem {
+  width: 32px;
+  height: 32px;
   display: block;
   object-fit: contain;
+  background: var(--white);
+  border-radius: 9px;
+  padding: 2px;
+  box-shadow: 0 1px 2px rgba(19, 37, 56, 0.35);
 }
 
-.rail-wordmark {
+.nav-brand-text {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 15.5px;
+  font-size: 14.5px;
   letter-spacing: -0.2px;
   color: var(--white);
   line-height: 1.15;
+  display: block;
 }
 
-.rail-wordmark span {
+.nav-brand-sub {
   display: block;
   font-family: var(--font-body);
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--rail-sub);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.rail-nav {
-  padding: 6px 12px;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.rail-group {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
+  color: var(--rail-sub);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--rail-group);
-  padding: 16px 10px 7px;
+  margin-top: 1px;
 }
 
-.rail-item {
-  width: 100%;
+/* ---- the three menus ---- */
+
+.nav-groups {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  margin-bottom: 2px;
-  border-radius: 8px;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/* Full height on purpose. The panel is positioned from the bottom of this
+   element, and if it only wrapped the 34px trigger the menu would open part
+   way up the bar and cross its own bottom edge. */
+.nav-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+}
+
+.nav-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
   color: var(--rail-text);
+  font-family: var(--font-body);
   font-size: 13.5px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background 0.13s, color 0.13s;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 
-.rail-item svg {
-  width: 16px;
-  height: 16px;
-  flex: 0 0 16px;
-  opacity: 0.85;
-}
-
-.rail-item:hover {
-  background: rgba(255, 255, 255, 0.07);
+.nav-trigger:hover {
+  background: rgba(255, 255, 255, 0.09);
   color: var(--white);
 }
 
-.rail-item.on {
-  background: rgba(44, 129, 155, 0.28);
+/* The section you are in. A tinted pill rather than an underline, because the
+   panel drops from directly below and an underline would fight its edge. */
+.nav-trigger-current {
+  background: rgba(127, 196, 217, 0.16);
   color: var(--white);
 }
 
-.rail-item.on svg {
-  opacity: 1;
-  color: var(--rail-accent);
+.nav-trigger-open {
+  background: var(--white);
+  color: var(--navy);
 }
 
-.rail-item:focus-visible {
+.nav-trigger:focus-visible {
   outline: 2px solid var(--rail-accent);
+  outline-offset: 2px;
+}
+
+.nav-caret {
+  width: 12px;
+  height: 12px;
+  opacity: 0.75;
+  transition: transform var(--medium) var(--ease);
+}
+
+.nav-trigger-open .nav-caret {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ---- the panel ---- */
+
+.nav-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 286px;
+  padding: 7px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  z-index: var(--z-nav-panel);
+  animation: nav-drop var(--medium) var(--ease);
+  transform-origin: top left;
+}
+
+.nav-panel-right {
+  left: auto;
+  right: 0;
+  transform-origin: top right;
+  min-width: 244px;
+}
+
+@keyframes nav-drop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.nav-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background var(--fast) var(--ease);
+}
+
+.nav-option:hover {
+  background: var(--paper);
+}
+
+.nav-option:focus-visible {
+  outline: 2px solid var(--teal);
   outline-offset: -2px;
 }
 
-.rail-foot {
-  padding: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
+/* The page you are on. Teal, because this is a selection. */
+.nav-option-on {
+  background: var(--teal-soft);
 }
 
-.btn-signout {
-  width: 100%;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: var(--rail-text);
-  padding: 7px 14px;
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.13s, border-color 0.13s, color 0.13s;
+.nav-option-on:hover {
+  background: var(--teal-soft);
 }
 
-.btn-signout:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.35);
+.nav-option-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nav-option-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-option:hover .nav-option-icon {
+  background: var(--teal-soft);
+  color: var(--teal-deep);
+}
+
+.nav-option-on .nav-option-icon {
+  background: var(--teal);
   color: var(--white);
 }
 
-/* main column */
-.main {
-  flex: 1;
+.nav-option-text {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
 }
 
-.topbar {
-  background: var(--white);
-  border-bottom: 1px solid var(--line);
-  padding: 0 26px;
-  min-height: 62px;
+.nav-option-name {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.nav-option-hint {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* ---- right hand side ---- */
+
+.nav-right {
   display: flex;
   align-items: center;
-  gap: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  gap: 12px;
+  flex: 0 0 auto;
 }
 
-/* Had no rule at all. Harmless until the bar gains anything to its right, at
-   which point a flex child without min-width refuses to shrink and pushes it
-   off the edge instead of truncating. */
-.topbar-titles {
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  background: var(--teal);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(19, 37, 56, 0.3);
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.nav-cta:hover {
+  background: var(--teal-deep);
+  transform: translateY(-1px);
+}
+
+.nav-cta:active {
+  transform: translateY(0);
+}
+
+.nav-cta:focus-visible {
+  outline: 2px solid var(--rail-accent);
+  outline-offset: 2px;
+}
+
+.nav-cta-plus {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+/* Same reason as .nav-menu: the panel hangs off the bar, not off the avatar. */
+.nav-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+}
+
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.nav-avatar:hover {
+  background: rgba(255, 255, 255, 0.17);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.nav-avatar-open {
+  background: var(--white);
+  border-color: var(--white);
+  color: var(--navy);
+}
+
+.nav-avatar:focus-visible {
+  outline: 2px solid var(--rail-accent);
+  outline-offset: 2px;
+}
+
+.nav-whoami {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 5px;
+}
+
+.nav-whoami-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nav-whoami-email {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.nav-account-error {
+  font-size: 12px;
+  color: var(--maroon);
+  padding: 6px 10px;
+}
+
+.nav-signout {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: none;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0 0 11px 11px;
+  background: transparent;
+  color: var(--body-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nav-signout:hover:not(:disabled) {
+  background: var(--red-soft);
+  color: var(--maroon);
+}
+
+.nav-signout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- page ---- */
+
+.canvas {
+  max-width: var(--page-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: 22px 22px 72px;
+  flex: 1;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.page-head-text {
   min-width: 0;
 }
 
 .page-title {
-  font-size: 17px;
+  font-family: var(--font-heading);
+  font-size: 23px;
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
 }
 
 .page-sub {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted);
-  margin-top: 1px;
+  margin-top: 3px;
 }
 
-.canvas {
-  padding: 24px 26px 60px;
-  max-width: 1420px;
-  width: 100%;
-  flex: 1;
+.page-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
 }
 
 .shell-banner {
@@ -194,42 +466,48 @@
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  padding: 10px 26px;
+  padding: 10px 22px;
   background: var(--red-soft);
   border-bottom: 1px solid rgba(140, 47, 47, 0.3);
   color: var(--maroon);
   font-size: 13px;
 }
 
-@media (max-width: 900px) {
-  .rail {
-    position: static;
-    height: auto;
-    width: 100%;
-    flex: none;
+/* ---- narrow ----
+   The bar keeps its shape and sheds words. Brand text goes first, because the
+   emblem still says whose product this is, then the call to action, which is
+   one tap away inside Operations anyway. */
+
+@media (max-width: 860px) {
+  .nav-inner {
+    gap: 14px;
+    padding: 0 14px;
   }
 
-  .app {
-    flex-direction: column;
+  .nav-brand-text {
+    display: none;
   }
 
-  .rail-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 12px 12px;
-  }
-
-  .rail-group {
-    width: 100%;
-    padding: 10px 10px 4px;
-  }
-
-  .rail-item {
-    width: auto;
+  .nav-cta {
+    display: none;
   }
 
   .canvas {
-    padding: 16px;
+    padding: 16px 14px 60px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 620px) {
+  .nav-trigger {
+    padding: 0 9px;
+    font-size: 12.5px;
+  }
+
+  .nav-panel {
+    min-width: min(286px, calc(100vw - 28px));
   }
 }

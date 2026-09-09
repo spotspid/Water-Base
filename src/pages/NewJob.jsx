@@ -206,9 +206,6 @@ export default function NewJob() {
   return (
     <AppShell>
       <div className="newjob-page">
-        <div className="newjob-header">
-          <h1>New Job</h1>
-        </div>
 
         <form className="newjob-form" onSubmit={handleSubmit} noValidate>
 

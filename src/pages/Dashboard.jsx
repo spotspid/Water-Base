@@ -110,17 +110,15 @@ export default function Dashboard() {
   const isEmpty = hasData && jobs.length === 0 && stock.length === 0
 
   return (
-    <AppShell>
+    <AppShell
+      subtitle={`${monthLabel(start)} to date`}
+      actions={(
+        <button type="button" className="btn-cancel" onClick={load} disabled={loading}>
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      )}
+    >
       <div className="dash-page">
-        <div className="dash-header">
-          <div>
-            <h1>Dashboard</h1>
-            <p className="dash-sub">{monthLabel(start)} to date</p>
-          </div>
-          <button type="button" className="btn-cancel" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
 
         {loading && <p className="inv-state">Loading dashboard...</p>}
 

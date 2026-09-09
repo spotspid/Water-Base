@@ -95,9 +95,6 @@ export default function PnL() {
   return (
     <AppShell>
       <div className="pnl-page">
-        <div className="inv-header">
-          <h1>Profit and Loss</h1>
-        </div>
 
         <div className="exp-filters">
           <div className="field">

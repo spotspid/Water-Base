@@ -2,24 +2,12 @@
   width: 100%;
 }
 
-.tpl-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.tpl-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
+/* Sits under the page heading as a standalone note now, rather than as a
+   second line inside a header block, so its spacing hangs below it. */
 .tpl-sub {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--gray-500);
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  color: var(--muted);
   max-width: 620px;
 }
 
@@ -151,11 +139,5 @@
 @media (max-width: 720px) {
   .tpl-page {
     padding: 20px 16px;
-  }
-
-  .tpl-header,
-  .tpl-card-head {
-    flex-direction: column;
-    gap: 14px;
   }
 }

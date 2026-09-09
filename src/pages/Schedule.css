@@ -345,13 +345,15 @@
 
 /* ---- unscheduled panel ---- */
 
+/* Clears the sticky bar. Sticking at 12px put the top of this panel, and its
+   heading, underneath the nav as soon as the page scrolled. */
 .sch-unscheduled {
   border: 1px solid var(--gray-300);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px;
   background: var(--gray-100);
   position: sticky;
-  top: 12px;
+  top: calc(var(--nav-h) + 12px);
 }
 
 .sch-unscheduled-head {
@@ -519,7 +521,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 60;
+  z-index: var(--z-drag);
   width: 220px;
   margin: -22px 0 0 -110px;
   pointer-events: none;
