@@ -1,5 +1,5 @@
 import { CANCELLED_STATUS, STATUS_LABELS } from './constants.js'
-import { availableOf, isLowStock } from './inventory.js'
+import { availableOf, committedOf, isLowStock } from './inventory.js'
 
 // A local ISO day, so date comparisons never touch a timezone. scheduled_date
 // is a plain YYYY-MM-DD, and ISO dates sort lexicographically in date order,
@@ -172,11 +172,25 @@ function stockable(rows) {
   return rows.filter(row => row.active !== false)
 }
 
-// Nothing free to sell. The worse the number, the higher it sits, so an
-// oversold part leads a merely exhausted one.
+/**
+ * Parts a booked job needs and cannot get.
+ *
+ * The rule used to be "nothing free to sell", which counted anything at zero.
+ * That is not a shortage, it is a part you do not stock: 14 SKUs from an
+ * unreceived supplier order filled this panel while not one of them blocked a
+ * single job, and the whole table became something to scroll past.
+ *
+ * A shortage needs two things to be true at once. Something has to want the
+ * part, which is committed above zero, and the shelf has to be unable to
+ * supply it, which is available below zero. Either alone is ordinary: a part
+ * nobody has claimed can sit at zero forever, and a part with stock free is
+ * fine however popular it is.
+ *
+ * Worst first, so the part that is furthest oversold leads.
+ */
 export function stockShortages(stockRows) {
   return stockable(stockRows)
-    .filter(row => availableOf(row) <= 0)
+    .filter(row => committedOf(row) > 0 && availableOf(row) < 0)
     .map(decorate)
     .sort((a, b) => {
       if (a.free !== b.free) return a.free - b.free

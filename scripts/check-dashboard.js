@@ -62,8 +62,13 @@ check('an empty book is zero, not an error',
 // --- stock, mirroring the live catalog -------------------------------------
 
 const stock = [
-  // every bag promised to a booked job: short, even though 8 is well over the line
+  // every bag promised to a booked job, and every bag physically here. Fully
+  // allocated is not short: the booked jobs can have their salt.
   { id: 'salt', name: 'Softener salt', on_hand: 8, committed: 8, available: 0, reorder_threshold: 2, active: true },
+  // nothing on the shelf and nobody asking. This is the case that used to fill
+  // the dashboard: 14 SKUs from an unreceived order, none of them blocking a
+  // job. It is something the business does not stock, not a shortage.
+  { id: 'unstocked', name: 'Never stocked part', on_hand: 0, committed: 0, available: 0, reorder_threshold: 0, active: true },
   // promised beyond what exists: the worst case, and it must sort first
   { id: 'over', name: 'Oversold part', on_hand: 1, committed: 3, available: -2, reorder_threshold: 1, active: true },
   // at the line, with stock still free. A purchasing note, not an alarm.
@@ -77,8 +82,15 @@ const stock = [
 const short = stockShortages(stock)
 const line = atReorderPoint(stock)
 
-check('only parts with nothing free are short', short.length === 2, short.map(r => r.id).join(','))
-check('the oversold part leads the list', short[0]?.id === 'over', short[0]?.id)
+// A shortage needs both halves: something wants the part, and the shelf cannot
+// supply it. Either alone is ordinary, and treating "nothing free" as a
+// shortage is what put 14 unblocking SKUs on the dashboard.
+check('only a part promised beyond the shelf is short', short.length === 1, short.map(r => r.id).join(','))
+check('and that is the oversold one', short[0]?.id === 'over', short[0]?.id)
+check('fully allocated is not short, the parts are here',
+  !short.some(r => r.id === 'salt'))
+check('a part nobody wants is not short however empty the shelf',
+  !short.some(r => r.id === 'unstocked'))
 check('an inactive part is never short', !short.some(r => r.id === 'off'))
 check('at the line is its own list', line.length === 1 && line[0].id === 'line',
   line.map(r => r.id).join(','))

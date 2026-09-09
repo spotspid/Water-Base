@@ -1,0 +1,134 @@
+import {
+  CUSTOMER, WORK_ORDER,
+  installLabel, isUrgent, jobsWaiting, pendingPaperwork, waitedLabel,
+} from '../src/lib/paperwork.js'
+
+// Checks the panel that replaced the stock table on the dashboard.
+//
+// The failure that matters is the same one the stock table had: showing rows
+// that are not really problems until nobody reads the panel. So the tests
+// below care most about what must NOT appear. A signed document, an installed
+// job and a cancelled job all have to be silent, or this becomes another list
+// of everything.
+//
+// Run with: npm run check:paperwork
+// No database and no browser, so it runs anywhere.
+
+let failed = 0
+
+function check(name, condition, detail = '') {
+  console.log((condition ? '  PASS  ' : '  FAIL  ') + name + (detail !== '' ? `  ${detail}` : ''))
+  if (!condition) failed++
+}
+
+const NOW = new Date('2026-09-09T12:00:00')
+const daysAgo = n => new Date(NOW.getTime() - n * 86400000).toISOString()
+
+const base = {
+  id: 'j1',
+  customer_name: 'Walter Radu',
+  status: 'scheduled',
+  created_at: daysAgo(10),
+  scheduled_date: '2026-09-16',
+  agreement_status: 'completed',
+  work_order_status: 'completed',
+}
+
+// --- silence, which is the whole point --------------------------------------
+
+check('both signed says nothing', pendingPaperwork([base], NOW).length === 0)
+check('an installed job says nothing',
+  pendingPaperwork([{ ...base, status: 'installed', work_order_status: 'sent' }], NOW).length === 0)
+check('a cancelled job says nothing',
+  pendingPaperwork([{ ...base, status: 'cancelled', work_order_status: null }], NOW).length === 0)
+check('no jobs at all does not throw', pendingPaperwork(undefined, NOW).length === 0)
+check('a null list does not throw', pendingPaperwork(null, NOW).length === 0)
+
+// --- the states that do speak -----------------------------------------------
+
+const unsent = pendingPaperwork([{ ...base, work_order_status: null }], NOW)
+check('a work order never sent is one row', unsent.length === 1)
+check('and is named as never sent', unsent[0].label === 'Never sent')
+check('and is the work order, not the agreement', unsent[0].type === WORK_ORDER)
+check('its wait is measured from when the job was written up',
+  unsent[0].waitedDays === 10 && unsent[0].waitedFrom === 'written up')
+
+const sent = pendingPaperwork([{ ...base, work_order_status: 'sent', work_order_sent_at: daysAgo(3) }], NOW)
+check('sent and unsigned reads as such', sent[0].label === 'Sent, unsigned')
+check('and its wait is measured from the send', sent[0].waitedDays === 3 && sent[0].waitedFrom === 'sent')
+
+const declined = pendingPaperwork([{ ...base, agreement_status: 'declined', agreement_sent_at: daysAgo(2) }], NOW)
+check('a decline is outstanding, not settled', declined.length === 1)
+check('and is toned as an exception', declined[0].tone === 'bad' && declined[0].label === 'Declined')
+check('and is the customer agreement', declined[0].type === CUSTOMER)
+
+const failedSend = pendingPaperwork([{ ...base, work_order_status: 'failed', work_order_sent_at: daysAgo(1) }], NOW)
+check('a failed send is an exception too', failedSend[0].tone === 'bad')
+
+check('the literal string none counts as never sent',
+  pendingPaperwork([{ ...base, work_order_status: 'none' }], NOW)[0].label === 'Never sent')
+check('an unknown status is treated as outstanding rather than dropped',
+  pendingPaperwork([{ ...base, work_order_status: 'weird' }], NOW).length === 1)
+
+// --- a job can be waiting on both -------------------------------------------
+
+const both = pendingPaperwork([{ ...base, agreement_status: null, work_order_status: null }], NOW)
+check('two unsigned documents are two rows', both.length === 2)
+check('but that is one job waiting', jobsWaiting(both) === 1)
+check('and an empty list is nobody waiting', jobsWaiting([]) === 0)
+
+// --- order, which decides what gets read ------------------------------------
+
+const mixed = pendingPaperwork([
+  { ...base, id: 'far', customer_name: 'Far', scheduled_date: '2026-09-30', work_order_status: null },
+  { ...base, id: 'soon', customer_name: 'Soon', scheduled_date: '2026-09-10', work_order_status: null },
+  { ...base, id: 'none', customer_name: 'Undated', scheduled_date: null, created_at: daysAgo(90), work_order_status: null },
+  { ...base, id: 'past', customer_name: 'Overdue', scheduled_date: '2026-09-01', work_order_status: null },
+], NOW)
+
+check('the overdue install leads', mixed[0].customer_name === 'Overdue')
+check('then the nearest date', mixed[1].customer_name === 'Soon')
+check('then the furthest date', mixed[2].customer_name === 'Far')
+check('and an undated job sorts last however long it has waited',
+  mixed[3].customer_name === 'Undated', 'nothing is booked against it')
+
+// --- the words on screen ----------------------------------------------------
+
+check('a wait of one day is singular', waitedLabel({ waitedDays: 1 }) === '1 day')
+check('a wait of three days is plural', waitedLabel({ waitedDays: 3 }) === '3 days')
+check('a wait of zero is today, not "0 days"', waitedLabel({ waitedDays: 0 }) === 'today')
+check('an unknown wait is blank, not zero', waitedLabel({ waitedDays: null }) === '')
+
+check('an install today says so', installLabel({ untilInstall: 0 }) === 'Installs today')
+check('tomorrow says so', installLabel({ untilInstall: 1 }) === 'Installs tomorrow')
+check('further out counts days', installLabel({ untilInstall: 5 }) === 'In 5 days')
+check('a past date is overdue, not negative',
+  installLabel({ untilInstall: -2 }) === '2 days overdue')
+check('no date says no date', installLabel({ untilInstall: null }) === 'No date yet')
+
+check('inside two days is urgent', isUrgent({ untilInstall: 2 }) === true)
+check('overdue is urgent', isUrgent({ untilInstall: -1 }) === true)
+check('a fortnight out is not', isUrgent({ untilInstall: 14 }) === false)
+check('an undated job is never urgent', isUrgent({ untilInstall: null }) === false)
+
+// --- rubbish in --------------------------------------------------------------
+
+check('a bad sent date is unknown rather than NaN',
+  pendingPaperwork([{ ...base, work_order_status: 'sent', work_order_sent_at: 'nonsense' }], NOW)[0]
+    .waitedDays === null)
+check('a bad scheduled date does not throw',
+  pendingPaperwork([{ ...base, scheduled_date: 'nonsense', work_order_status: null }], NOW)[0]
+    .untilInstall === null)
+check('a future sent date never reads as negative days',
+  pendingPaperwork([{ ...base, work_order_status: 'sent', work_order_sent_at: daysAgo(-5) }], NOW)[0]
+    .waitedDays === 0)
+check('a job with no name still renders',
+  pendingPaperwork([{ ...base, customer_name: null, work_order_status: null }], NOW)[0]
+    .customer_name === 'Unnamed job')
+
+console.log('')
+if (failed > 0) {
+  console.error(`${failed} paperwork check(s) failed.`)
+  process.exit(1)
+}
+console.log('All paperwork checks passed.')

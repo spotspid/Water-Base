@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  atReorderPoint, bookedWithin, groupActivity, inventoryUnits, inventoryValue,
+  bookedWithin, groupActivity, inventoryUnits, inventoryValue,
   monthLabel, monthStart, pipelineSummary, soldNotBooked, splitMonthRevenue,
   stockShortages,
 } from '../lib/dashboard'
+import { pendingPaperwork } from '../lib/paperwork'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DashboardActivity from '../components/DashboardActivity'
 import DashboardMetrics from '../components/DashboardMetrics'
 import DashboardPipeline from '../components/DashboardPipeline'
+import DashboardPaperwork from '../components/DashboardPaperwork'
 import DashboardShortages from '../components/DashboardShortages'
 import './Dashboard.css'
 
@@ -30,9 +32,12 @@ const BOOKING_DAYS = 14
 // the day a job was written, installed revenue by the day it happened, so a
 // job sold in one month and installed in the next lands in the right month on
 // both counts.
+// The document columns are what the paperwork panel is built on. They were not
+// here before, because the dashboard used to be a stock page with money on it.
 const JOB_COLUMNS =
-  'id, created_at, status, scheduled_date, install_date, sale_price, parts_cost, ' +
-  'installer_pay, margin'
+  'id, created_at, customer_name, status, scheduled_date, install_date, sale_price, ' +
+  'parts_cost, installer_pay, margin, installer_name, ' +
+  'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
 
 // committed and available are what the reservation layer contributes, and the
 // meter is meaningless without them. They were missing here, and because
@@ -124,7 +129,11 @@ export default function Dashboard() {
   const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const shortages = useMemo(() => stockShortages(stock), [stock])
-  const atLine = useMemo(() => atReorderPoint(stock), [stock])
+  const paperwork = useMemo(() => pendingPaperwork(jobs), [jobs])
+  const openJobs = useMemo(
+    () => jobs.filter(j => !['installed', 'cancelled'].includes(String(j.status || ''))).length,
+    [jobs],
+  )
   const allEntries = useMemo(() => groupActivity(activity), [activity])
   const entries = useMemo(() => allEntries.slice(0, ACTIVITY_LIMIT), [allEntries])
 
@@ -189,15 +198,13 @@ export default function Dashboard() {
                 weight because it is not what anyone does today. */}
             <DashboardPipeline summary={crm} funnel={crmFunnel} error={crmError} />
 
-            {/* Shortages lead. This page used to open with last month's
-                revenue and put what is missing off the shelf third, which is
-                the wrong order for a screen somebody checks before booking a
-                van: money is a report, a shortage is a decision today. */}
-            <DashboardShortages
-              rows={shortages}
-              itemCount={stock.length}
-              atLineCount={atLine.length}
-            />
+            {/* Paperwork leads. A job stalls on a signature far more often
+                than on a shelf, and this panel has the room the stock table
+                used to take. Shortages follow it as one line unless something
+                booked is genuinely short. */}
+            <DashboardPaperwork rows={paperwork} jobCount={openJobs} />
+
+            <DashboardShortages rows={shortages} itemCount={stock.length} />
 
             <DashboardMetrics
               sold={revenue.sold}
