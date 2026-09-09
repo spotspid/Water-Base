@@ -418,6 +418,10 @@ for (const amount of [450, 0, null]) {
 const sendable = {
   scheduled_date: '2026-09-08', installer_id: 'i1', installer_email: 'a@example.com',
   template_id: 't1', template_line_count: 5, installer_pay: 450,
+  // job_number is required on the DocuSeal template and maps to this. Without
+  // it the send returns 422, so the button had been claiming ready when it
+  // was not.
+  invoice_number: 'MWP-0007',
 }
 
 check('a fully priced job is sendable', workOrderBlocker(sendable) === '')

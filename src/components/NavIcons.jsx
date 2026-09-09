@@ -107,3 +107,14 @@ export function IconOrders() {
     </svg>
   )
 }
+
+// A sheet with a signature line, for the paperwork a job needs signed.
+export function IconDocuments() {
+  return (
+    <svg {...base}>
+      <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M8.5 16.5c1.2-1.6 2-2.4 2.6-2.4.9 0 .6 2.4 1.5 2.4.6 0 1.2-.7 1.9-1.6" />
+    </svg>
+  )
+}

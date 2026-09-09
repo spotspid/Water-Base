@@ -61,45 +61,6 @@
   color: var(--gray-500);
 }
 
-/* ---- panels ---- */
-
-.dash-panel {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
-  background: var(--white);
-  box-shadow: var(--shadow);
-  padding: 0 0 18px;
-  margin-bottom: var(--stack);
-  overflow: hidden;
-}
-
-.dash-panel-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line-soft);
-  margin-bottom: 4px;
-}
-
-.dash-panel-head h2 {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.dash-panel-foot {
-  margin-top: 12px;
-  padding: 0 18px;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.dash-panel .inv-state {
-  padding: 26px 0;
-}
-
 /* ---- status breakdown ---- */
 
 @media (max-width: 1000px) {
@@ -116,29 +77,6 @@
   .dash-metrics {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-/* explains the meter colours where the meter first appears */
-.dash-panel-note {
-  font-size: 12px;
-  color: var(--muted);
-  flex: 1;
-}
-
-/* tables sit flush inside a panel, the panel already has the border */
-.dash-panel .table-wrap {
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  box-shadow: none;
-  border-top: 0;
-}
-
-/* Anything in a panel that is not a table needs its own breathing room, since
-   the head's margin was taken away so a table could sit flush under it. */
-.dash-panel > p,
-.dash-panel > ul {
-  margin-top: 10px;
 }
 
 /* a tile holding a queue that is not empty, nudged rather than alarmed */
@@ -158,19 +96,6 @@
   font-size: 13px;
   color: var(--muted);
   margin: -2px 0 18px;
-}
-
-/* Nothing wrong, said plainly. An empty panel reads as broken, and a green
-   tick reads as a celebration, so this is a quiet statement of fact on the
-   same ground as the tables it stands in for. */
-.dash-clear {
-  margin: 0 18px 4px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 13px;
-  font-weight: 500;
 }
 
 /* ---------------------------------------------------------------------------
@@ -476,4 +401,523 @@
   font-size: 12.5px;
   color: var(--muted);
   padding: 8px 2px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   The today block.
+
+   The one bold thing on the page, and the only element in the app with this
+   much weight. It has to be earned: when nothing is blocked it says so and
+   carries no cards, so the page moves straight on to the money.
+
+   The two circles in the corner are drawn from the block itself rather than
+   added as elements, so nothing in the markup exists purely to be decorative.
+--------------------------------------------------------------------------- */
+.today {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 26px 28px;
+  margin-bottom: var(--stack);
+  color: var(--white);
+  background:
+    radial-gradient(900px 300px at 88% -20%, rgba(44, 129, 155, 0.42), transparent 62%),
+    linear-gradient(158deg, #1C3651 0%, #16293D 58%, #132538 100%);
+  box-shadow: 0 14px 34px rgba(19, 37, 56, 0.24);
+}
+
+.today::after {
+  content: '';
+  position: absolute;
+  right: -90px;
+  top: -150px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(127, 196, 217, 0.20);
+  pointer-events: none;
+}
+
+.today::before {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(127, 196, 217, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.today-lead {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.today-k {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rail-sub);
+}
+
+/* Only drawn when something is genuinely past its install date. A siren that
+   runs every morning is furniture. */
+.beat {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E4948F;
+  flex: 0 0 8px;
+}
+
+.beat::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(228, 148, 143, 0.45);
+  animation: today-ping 2.4s ease-out infinite;
+}
+
+@keyframes today-ping {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.today-h {
+  font-family: var(--font-heading);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+}
+
+.today-h em {
+  font-style: normal;
+  color: var(--rail-accent);
+}
+
+.today-sub {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #B7CBD9;
+}
+
+.blockers {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.bk {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #16293D;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.bk:hover {
+  background: #1B324B;
+  transform: translateY(-2px);
+}
+
+/* The rail is the whole signal: red for a date already gone, amber for today,
+   teal for anything still ahead. */
+.bk::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.bk-late::before { background: #E4948F; }
+.bk-now::before  { background: #F0C878; }
+.bk-soon::before { background: var(--rail-accent); }
+
+.bk-link {
+  display: block;
+  padding: 16px 18px 17px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bk-link:focus-visible {
+  outline: 2px solid var(--rail-accent);
+  outline-offset: -2px;
+}
+
+.bk-when {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bk-when-late { color: #E4948F; }
+.bk-when-now  { color: #F0C878; }
+.bk-when-soon { color: var(--rail-sub); }
+
+.bk-who {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--white);
+}
+
+.bk-need {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #9DB6C7;
+}
+
+.today-acts {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.19);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ---- money tiles: a rail and a corner wash ---- */
+
+.dash-tile {
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-tile > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* The wash is a circle bleeding out of the top right corner. It tints the tile
+   without putting a second border on it. */
+.dash-tile::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--teal-soft);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.dash-tile::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--teal);
+  opacity: 0.85;
+}
+
+/* A zero is a fact, not a warning, so it loses the colour rather than gaining
+   a different one. */
+.dash-tile-quiet::before { background: var(--line); }
+.dash-tile-quiet::after  { background: var(--line-soft); }
+
+.dash-tile-attention::before { background: var(--amber); }
+.dash-tile-attention::after  { background: var(--amber-soft); }
+
+.dash-foot-note {
+  margin: -10px 0 var(--stack) 2px;
+}
+
+/* ---- parts clear line, washing green ---- */
+
+.dash-oneline {
+  background: linear-gradient(90deg, var(--green-soft), var(--white) 46%);
+  border-color: #CFE5DA;
+}
+
+/* ---- the pipeline, dark ---- */
+
+.dash-panel-dark {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+  box-shadow: 0 12px 30px rgba(19, 37, 56, 0.20);
+}
+
+.dash-panel-dark .dash-panel-head {
+  border-bottom-color: #2A4A6B;
+}
+
+.dash-panel-dark .dash-panel-head h2 { color: var(--white); }
+.dash-panel-dark .dash-panel-note    { color: var(--rail-sub); }
+.dash-panel-dark .tpl-link           { color: var(--rail-accent); }
+
+.pipe {
+  padding: 20px 24px 24px;
+}
+
+.pipe-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: #2A4A6B;
+  border-radius: 13px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+
+.pf {
+  position: relative;
+  display: block;
+  padding: 15px 18px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.pf::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: rgba(127, 196, 217, 0.35);
+}
+
+.pf-k {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rail-sub);
+}
+
+.pf-v {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-heading);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-v-hi { color: var(--rail-accent); }
+
+.pipe-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 0;
+}
+
+.st-n {
+  flex: 0 0 110px;
+  font-size: 13.5px;
+  color: #C2D5E2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage:hover .st-n { color: var(--white); }
+
+.st-bar {
+  flex: 1;
+  height: 11px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+/* The glow is what makes a thin bar read on a dark ground. Without it the fill
+   and the track are the same shape in two greys. */
+.st-fill {
+  display: block;
+  height: 100%;
+  width: var(--band, 0%);
+  border-radius: 7px;
+  background: linear-gradient(90deg, #256E85, var(--rail-accent));
+  box-shadow: 0 0 14px rgba(127, 196, 217, 0.34);
+  transition: width var(--slow) var(--ease);
+}
+
+.st-c {
+  flex: 0 0 40px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+
+.st-v {
+  flex: 0 0 84px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--rail-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.pipe-error {
+  font-size: 13.5px;
+  color: #F0C878;
+  margin: 0;
+}
+
+.dash-age-stale,
+.dash-age-never {
+  color: #F0C878;
+  font-weight: 600;
+}
+
+/* ---- stock movement, as a feed ---- */
+
+.mv-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mv {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mv:last-child { border-bottom: 0; }
+.mv:hover { background: var(--raised); }
+
+/* Direction first, because that is the fact you want before the part name.
+   Colour says it fastest and the sign says it at all. */
+.mv-i {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(19, 37, 56, 0.08);
+}
+
+.mv-i-out { background: var(--red-soft);   color: var(--maroon); }
+.mv-i-in  { background: var(--green-soft); color: var(--green); }
+.mv-i-adj { background: var(--amber-soft); color: var(--amber); }
+
+.mv-b {
+  flex: 1;
+  min-width: 0;
+}
+
+.mv-t {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mv-s {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.mv-r {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.mv-q {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mv-q-out { color: var(--maroon); }
+.mv-q-in  { color: var(--green); }
+.mv-q-adj { color: var(--amber); }
+
+.mv-v {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mv-w {
+  flex: 0 0 62px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .today { padding: 20px 18px; }
+  .today-h { font-size: 19px; }
+  .mv { flex-wrap: wrap; }
+  .mv-w { flex: 1 0 auto; text-align: left; }
 }

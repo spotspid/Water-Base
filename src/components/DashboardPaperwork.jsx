@@ -22,7 +22,7 @@ export default function DashboardPaperwork({ rows, jobCount }) {
   return (
     <section className="dash-panel">
       <header className="dash-panel-head">
-        <h2>Waiting on paperwork</h2>
+        <h2>Out for signature</h2>
         <span className="dash-panel-note">
           {rows.length > 0
             ? `${rows.length} document${rows.length === 1 ? '' : 's'} across `

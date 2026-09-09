@@ -8,12 +8,14 @@ import {
   stockShortages,
 } from '../lib/dashboard'
 import { pendingPaperwork } from '../lib/paperwork'
+import { todayBlockers } from '../lib/today'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DashboardActivity from '../components/DashboardActivity'
 import DashboardMetrics from '../components/DashboardMetrics'
 import DashboardPipeline from '../components/DashboardPipeline'
 import DashboardPaperwork from '../components/DashboardPaperwork'
+import DashboardToday from '../components/DashboardToday'
 import DashboardShortages from '../components/DashboardShortages'
 import './Dashboard.css'
 
@@ -41,6 +43,7 @@ const BOOKING_DAYS = 14
 // sheet with parts on it, and a payout.
 const JOB_COLUMNS =
   'id, created_at, customer_name, customer_email, status, scheduled_date, install_date, ' +
+  'invoice_number, ' +
   'sale_price, parts_cost, installer_pay, margin, installer_name, ' +
   'installer_id, installer_email, template_id, template_line_count, system_template, ' +
   'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
@@ -136,6 +139,7 @@ export default function Dashboard() {
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const shortages = useMemo(() => stockShortages(stock), [stock])
   const paperwork = useMemo(() => pendingPaperwork(jobs), [jobs])
+  const blocked = useMemo(() => todayBlockers(jobs), [jobs])
   const openJobs = useMemo(
     () => jobs.filter(j => !['installed', 'cancelled'].includes(String(j.status || ''))).length,
     [jobs],
@@ -200,17 +204,15 @@ export default function Dashboard() {
 
         {hasData && !isEmpty && (
           <>
-            {/* Above the ops data because it is what came in, and below it in
-                weight because it is not what anyone does today. */}
-            <DashboardPipeline summary={crm} funnel={crmFunnel} error={crmError} />
-
-            {/* Paperwork leads. A job stalls on a signature far more often
-                than on a shelf, and this panel has the room the stock table
-                used to take. Shortages follow it as one line unless something
-                booked is genuinely short. */}
-            <DashboardPaperwork rows={paperwork} jobCount={openJobs} />
-
-            <DashboardShortages rows={shortages} itemCount={stock.length} />
+            {/* Today, money, parts, signatures, pipeline, movement. The one
+                bold thing goes first and everything under it gets quieter, so
+                the page reads as an answer followed by its context. */}
+            <DashboardToday
+              cards={blocked}
+              paperworkNote={paperwork.length === 0
+                ? 'Nobody is sitting on a signature. Every document that could be sent has been.'
+                : `${paperwork.length} document${paperwork.length === 1 ? ' is' : 's are'} out for signature.`}
+            />
 
             <DashboardMetrics
               sold={revenue.sold}
@@ -228,7 +230,7 @@ export default function Dashboard() {
             {/* What used to be a panel with two bars in it. The counts were
                 the whole content, so they are a sentence now. */}
             {pipeline.total > 0 && (
-              <p className="dash-pipeline">
+              <p className="dash-pipeline dash-foot-note">
                 <Link to="/jobs" className="tpl-link">{pipeline.total} {pipeline.total === 1 ? 'job' : 'jobs'}</Link>
                 {' '}all time:
                 {' '}{pipeline.used.map(row => `${row.count} ${row.label.toLowerCase()}`).join(', ')}.
@@ -237,6 +239,12 @@ export default function Dashboard() {
                 )}
               </p>
             )}
+
+            <DashboardShortages rows={shortages} itemCount={stock.length} />
+
+            <DashboardPaperwork rows={paperwork} jobCount={openJobs} />
+
+            <DashboardPipeline summary={crm} funnel={crmFunnel} error={crmError} />
 
             <DashboardActivity
               entries={entries}

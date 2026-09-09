@@ -1,24 +1,25 @@
 import { freshness, funnelBands, hasPipeline, pipelineMoney } from '../lib/pipeline'
 
-// What sales thinks is coming, above the shop's own numbers.
+// What sales thinks is coming.
 //
-// Deliberately quieter than everything below it. No card, no shadow, no teal
-// figures the size of the revenue tiles: one line of counts and a funnel drawn
-// in a single muted colour. Shortages and readiness are what somebody acts on
-// this morning, and a pipeline strip that outshouted them would be the tail
-// wagging the dog.
+// A dark panel, which is the second and last thing on this page allowed any
+// weight. It sits below the money and the paperwork on purpose: none of it
+// reserves a part or schedules a van, so it is the last thing an operator
+// needs and the first thing they might want.
 //
-// It is also read only in the strongest sense. Nothing here can be clicked
-// through to an action, because there is no action to take: jobs are written
-// by hand and the overnight reconcile is what catches the gap.
+// Read only in the strongest sense. Nothing here can be clicked through to an
+// action, because there is no action to take: jobs are written by hand and the
+// overnight reconcile catches the gap.
 export default function DashboardPipeline({ summary, funnel, error }) {
   if (error) {
     return (
-      <section className="dash-crm" aria-label="Sales pipeline">
-        <p className="dash-crm-error" role="status">
-          The GoHighLevel pipeline could not be read, so the figures below are
-          the shop's own only. {error}
-        </p>
+      <section className="dash-panel dash-panel-dark" aria-label="Sales pipeline">
+        <div className="pipe">
+          <p className="pipe-error" role="status">
+            The GoHighLevel pipeline could not be read, so the figures above are the
+            shop&apos;s own only. {error}
+          </p>
+        </div>
       </section>
     )
   }
@@ -29,44 +30,46 @@ export default function DashboardPipeline({ summary, funnel, error }) {
   const age = freshness(summary.last_synced_at)
 
   return (
-    <section className="dash-crm" aria-label="Sales pipeline">
-      <div className="dash-crm-head">
-        <span className="eyebrow">Pipeline</span>
-        <span className={`dash-crm-age dash-crm-age-${age.state}`}>
+    <section className="dash-panel dash-panel-dark" aria-label="Sales pipeline">
+      <header className="dash-panel-head">
+        <h2>Pipeline</h2>
+        <span className={`dash-panel-note dash-age-${age.state}`}>
           GoHighLevel, synced {age.label}
         </span>
-      </div>
+      </header>
 
-      <div className="dash-crm-figures">
-        <Figure label="Open" value={summary.open_count} />
-        <Figure label="Open value" value={pipelineMoney(summary.open_value)} />
-        <Figure label="Won" value={summary.won_count} />
-        <Figure label="Won value" value={pipelineMoney(summary.won_value)} />
-      </div>
+      <div className="pipe">
+        <div className="pipe-row">
+          <Figure label="Open" value={summary.open_count} />
+          <Figure label="Open value" value={pipelineMoney(summary.open_value)} />
+          <Figure label="Won" value={summary.won_count} high />
+          <Figure label="Won value" value={pipelineMoney(summary.won_value)} high />
+        </div>
 
-      {bands.length > 0 && (
-        <ul className="dash-funnel">
-          {bands.map(band => (
-            <li key={band.stage} className="dash-funnel-row">
-              <span className="dash-funnel-stage" title={band.stage}>{band.stage}</span>
-              <span className="dash-funnel-track">
-                <span className="dash-funnel-bar" style={{ '--band': `${band.width}%` }} />
-              </span>
-              <span className="dash-funnel-count">{band.count}</span>
-              <span className="dash-funnel-value">{pipelineMoney(band.value)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+        {bands.length > 0 && (
+          <ul className="pipe-stages">
+            {bands.map(band => (
+              <li key={band.stage} className="stage">
+                <span className="st-n" title={band.stage}>{band.stage}</span>
+                <span className="st-bar">
+                  <span className="st-fill" style={{ '--band': `${band.width}%` }} />
+                </span>
+                <span className="st-c">{band.count}</span>
+                <span className="st-v">{pipelineMoney(band.value)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }
 
-function Figure({ label, value }) {
+function Figure({ label, value, high }) {
   return (
-    <span className="dash-crm-figure">
-      <span className="dash-crm-label">{label}</span>
-      <span className="dash-crm-value">{value}</span>
+    <span className="pf">
+      <span className="pf-k">{label}</span>
+      <span className={high ? 'pf-v pf-v-hi' : 'pf-v'}>{value}</span>
     </span>
   )
 }

@@ -35,7 +35,9 @@ export default function DashboardMetrics({
         </span>
       </article>
 
-      <article className="dash-tile">
+      {/* A zero here is a fact, not a warning. The quiet rail keeps it from
+          reading as a problem next to four tiles that are doing fine. */}
+      <article className={installed.revenue > 0 ? 'dash-tile' : 'dash-tile dash-tile-quiet'}>
         <span className="dash-tile-label">Installed in {monthName}</span>
         <span className="dash-tile-value">{formatCurrency(installed.revenue)}</span>
         <span className="dash-tile-foot">

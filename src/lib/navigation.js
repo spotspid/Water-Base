@@ -19,6 +19,7 @@ export const GROUPS = [
       { to: '/dashboard', text: 'Dashboard', hint: 'Shortages, revenue, recent activity' },
       { to: '/schedule', text: 'Schedule', hint: 'Crew, dates, parts readiness' },
       { to: '/jobs', text: 'Jobs', hint: 'Status, documents, margin' },
+      { to: '/documents', text: 'Documents', hint: 'Agreements and work orders' },
     ],
   },
   {
@@ -55,6 +56,7 @@ const TITLES = {
   '/inventory': ['Inventory', 'On hand, promised, on order'],
   '/orders': ['Supplier orders', 'On order and arrival dates'],
   '/templates': ['Build sheets', 'Parts per system'],
+  '/documents': ['Documents', 'Agreements and work orders'],
   '/expenses': ['Expenses', 'Overheads and one-offs'],
   '/pnl': ['Profit and loss', 'Revenue, parts, pay, expenses'],
   '/settings': ['Settings', 'Lists, crew, agreements'],

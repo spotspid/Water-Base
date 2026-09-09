@@ -1,0 +1,294 @@
+/* ---------------------------------------------------------------------------
+   Documents: every install agreement and work order in the business.
+
+   Rows rather than a table. A document is a thing with a state and one action,
+   not a set of columns to compare across, and a table would have made the
+   disabled send button look like a cell rather than a button somebody cannot
+   press yet.
+--------------------------------------------------------------------------- */
+
+.doc-page {
+  padding: 2px 0 40px;
+}
+
+/* ---- summary cards ---- */
+
+.doc-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
+  margin-bottom: var(--stack);
+}
+
+.doc-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--medium) var(--ease), transform var(--medium) var(--ease);
+}
+
+.doc-card:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+/* Same rail and corner wash as the money tiles, so the two pages read as one
+   product rather than as two designs that happen to share a palette. */
+.doc-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.doc-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.doc-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.doc-card-bad::before   { background: var(--maroon); }
+.doc-card-bad::after    { background: var(--red-soft); }
+.doc-card-warn::before  { background: var(--amber); }
+.doc-card-warn::after   { background: var(--amber-soft); }
+.doc-card-good::before  { background: var(--green); }
+.doc-card-good::after   { background: var(--green-soft); }
+.doc-card-quiet::before { background: var(--line); }
+.doc-card-quiet::after  { background: var(--line-soft); }
+
+.doc-card-k {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.doc-card-v {
+  font-family: var(--font-body);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.7px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-card-quiet .doc-card-v { color: var(--muted); }
+
+.doc-card-n {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---- filter tabs ---- */
+
+.doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--stack);
+  padding: 5px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.doc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--body-text);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.doc-tab:hover { background: var(--paper); }
+
+.doc-tab-on,
+.doc-tab-on:hover {
+  background: var(--teal);
+  color: var(--white);
+}
+
+.doc-tab:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.doc-tab-n {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--line-soft);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-tab-on .doc-tab-n {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--white);
+}
+
+/* ---- sections ---- */
+
+.doc-count {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--line-soft);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The backlog is not fourteen separate problems, it is three. The group head
+   says which one, and the count says how much of it there is. */
+.doc-group + .doc-group {
+  border-top: 1px solid var(--line);
+}
+
+.doc-group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 22px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--raised);
+}
+
+.doc-group-n {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--body-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- rows ---- */
+
+.doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.doc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 148px 130px 110px 104px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.doc-row:last-child { border-bottom: 0; }
+.doc-row:hover { background: var(--raised); }
+
+.doc-main { min-width: 0; }
+
+.doc-who {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.doc-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.doc-reason {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--maroon);
+}
+
+.doc-when,
+.doc-install {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-install-soon {
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+.doc-act {
+  text-align: right;
+}
+
+/* Disabled rather than hidden. A dead button with the reason on its title says
+   "this is the thing you would press"; a missing one says the row is inert. */
+.btn-small {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+.doc-done {
+  font-size: 12.5px;
+  color: var(--green);
+  font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+  .doc-row {
+    grid-template-columns: minmax(0, 1fr) 130px 104px;
+    row-gap: 8px;
+  }
+
+  .doc-when { display: none; }
+}
+
+@media (max-width: 620px) {
+  .doc-row {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+
+  .doc-install { display: none; }
+}

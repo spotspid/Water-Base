@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { GROUPS, groupForPath } from '../lib/navigation'
 import {
   IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconJobs, IconMoney, IconOrders, IconSchedule,
+  IconDocuments, IconJobs, IconMoney, IconOrders, IconSchedule,
 } from './NavIcons'
 import NavMenu from './NavMenu'
 import AccountMenu from './AccountMenu'
@@ -20,6 +20,7 @@ const ICONS = {
   '/dashboard': IconDashboard,
   '/schedule': IconSchedule,
   '/jobs': IconJobs,
+  '/documents': IconDocuments,
   '/inventory': IconInventory,
   '/orders': IconOrders,
   '/templates': IconBuildSheets,

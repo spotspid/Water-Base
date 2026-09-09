@@ -42,6 +42,8 @@ const base = {
   template_id: 't1',
   template_line_count: 5,
   system_template: 'Flagship Bundle',
+  // required by the work order document, so a fixture without it is blocked
+  invoice_number: 'MWP-0007',
   agreement_status: 'completed',
   work_order_status: 'completed',
 }
@@ -146,6 +148,9 @@ check('an empty build sheet means the work order cannot go out',
   pendingPaperwork([{ ...base, template_line_count: 0, work_order_status: null }], NOW).length === 0)
 check('no build sheet at all, likewise',
   pendingPaperwork([{ ...base, template_id: null, work_order_status: null }], NOW).length === 0)
+
+check('no job number means the work order cannot go out',
+  pendingPaperwork([{ ...base, invoice_number: null, work_order_status: null }], NOW).length === 0)
 
 check('a customer agreement with no email is not waiting on anyone',
   pendingPaperwork([{ ...base, customer_email: null, agreement_status: null }], NOW).length === 0)
