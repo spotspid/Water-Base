@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import wordmark from '../assets/wordmark.png'
 import './Login.css'
 import './AuthCallback.css'
 
@@ -15,8 +16,8 @@ function IconLock() {
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
       <circle cx="10" cy="13" r="1" fill="currentColor" />
     </svg>
   )
@@ -142,14 +143,14 @@ export default function AuthCallback() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-logo" aria-label="Water Base logo placeholder">
-          <span className="login-logo-mark">WB</span>
-        </div>
+        <p className="login-mark">
+          <img className="login-wordmark" src={wordmark} alt="Water Base" width="232" height="29" />
+        </p>
 
         {phase === 'verifying' && (
           <>
-            <h1 className="login-heading">Water Base</h1>
-            <p className="login-subheading">Checking your link...</p>
+            <h1 className="login-heading">Checking your link</h1>
+            <p className="login-subheading">One moment</p>
             <p className="auth-status">One moment while we verify this sign in link.</p>
           </>
         )}

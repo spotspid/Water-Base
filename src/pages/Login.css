@@ -16,36 +16,39 @@
   text-align: center;
 }
 
-.login-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--navy);
-  margin-bottom: 24px;
+/* The wordmark stands in for the product name. Setting "Water Base" in Poppins
+   underneath the mark put the same two words on screen twice in two different
+   faces, which is the thing a logo system exists to stop.
+
+   line-height is zeroed on the wrapper only, so it hugs the image. The text
+   heading below keeps its own metrics, because the callback screen uses it for
+   real headings like "Set a password". */
+.login-mark {
+  margin-bottom: 18px;
+  line-height: 0;
 }
 
-.login-logo-mark {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 22px;
-  color: var(--sky);
-  letter-spacing: 0.5px;
+.login-wordmark {
+  width: 232px;
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
 }
 
 .login-heading {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--navy);
   margin-bottom: 4px;
 }
 
 .login-subheading {
-  color: var(--gray-500);
-  font-size: 14px;
-  margin-bottom: 32px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 30px;
 }
 
 .login-form {
@@ -136,10 +139,12 @@
   padding: 10px 14px;
 }
 
+/* Teal, because signing in is the most ordinary action in the app. It was
+   maroon, which made the alarm colour the first thing anyone saw. */
 .btn-signin {
   margin-top: 4px;
   padding: 11px 0;
-  background: var(--maroon);
+  background: var(--teal);
   color: var(--white);
   border: none;
   border-radius: 6px;
@@ -151,7 +156,7 @@
 }
 
 .btn-signin:hover:not(:disabled) {
-  background: var(--maroon-hover);
+  background: var(--teal-deep);
 }
 
 .btn-signin:disabled {

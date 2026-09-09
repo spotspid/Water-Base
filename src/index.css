@@ -242,6 +242,9 @@ a {
   font-size: 13.5px;
 }
 
+/* Desktop first density. The rows were spaced for a marketing table; these are
+   operational tables that are read by scanning down a column, and four more
+   rows on screen is worth more here than the whitespace was. */
 .jobs-table th {
   background: var(--raised);
   color: var(--muted);
@@ -250,14 +253,14 @@ a {
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  padding: 9px 16px;
+  padding: 7px 14px;
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid var(--line);
 }
 
 .jobs-table td {
-  padding: 11px 16px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--line-soft);
   color: var(--body-text);
   vertical-align: middle;
@@ -267,9 +270,11 @@ a {
 .jobs-table tbody tr:hover td { background: var(--raised); }
 
 .jobs-table tfoot td {
-  padding: 10px 16px;
+  padding: 9px 14px;
   border-top: 1px solid var(--line);
   background: var(--raised);
+  font-weight: 600;
+  color: var(--ink);
 }
 
 /* the name of the thing a row is about */
@@ -293,9 +298,19 @@ a {
   font-style: italic;
 }
 
-.col-num { text-align: right; white-space: nowrap; }
+/* Counts and money. Tabular figures so a column of numbers lines up digit over
+   digit: without it a 1 is narrower than a 7 and the column edge wanders,
+   which is the difference between scanning a column and reading it. */
+.col-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink);
+}
+
 .col-nowrap { white-space: nowrap; }
-.col-value { font-weight: 600; }
+.col-value { font-weight: 600; color: var(--ink); }
 .col-meter { width: 168px; min-width: 168px; }
 
 .col-sku {
@@ -474,28 +489,33 @@ a {
 /* ---- buttons ---- */
 
 /* ---- buttons ----
-   Maroon is reserved for the primary action on a view. Everything else is a
-   neutral outline, so the one thing worth clicking is never ambiguous. */
+   Teal is action. Maroon is exception.
+
+   This used to be the other way round, with maroon as the primary action on
+   every view, so saving a job and deleting one were the same colour and the
+   alarm colour appeared on screens where nothing was wrong. Teal now carries
+   every ordinary action, which leaves maroon free to mean what it should:
+   a shortage, a decline, a destructive confirm. */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 8px 14px;
-  background: var(--maroon);
+  background: var(--teal);
   color: var(--white);
-  border: 1px solid var(--maroon);
+  border: 1px solid var(--teal);
   border-radius: 8px;
   font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.13s, border-color 0.13s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--maroon-hover);
-  border-color: var(--maroon-hover);
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
 }
 
 .btn-primary:disabled {

@@ -165,6 +165,16 @@ export default function Dashboard() {
 
         {hasData && !isEmpty && (
           <>
+            {/* Shortages lead. This page used to open with last month's
+                revenue and put what is missing off the shelf third, which is
+                the wrong order for a screen somebody checks before booking a
+                van: money is a report, a shortage is a decision today. */}
+            <DashboardShortages
+              rows={shortages}
+              itemCount={stock.length}
+              atLineCount={atLine.length}
+            />
+
             <DashboardMetrics
               sold={revenue.sold}
               installed={revenue.installed}
@@ -190,12 +200,6 @@ export default function Dashboard() {
                 )}
               </p>
             )}
-
-            <DashboardShortages
-              rows={shortages}
-              itemCount={stock.length}
-              atLineCount={atLine.length}
-            />
 
             <DashboardActivity
               entries={entries}

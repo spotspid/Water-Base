@@ -2,9 +2,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSettings } from '../lib/settings'
 import {
-  IconBuildSheets, IconDashboard, IconDrop, IconExpenses, IconInventory,
+  IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
   IconJobs, IconMoney, IconOrders, IconSchedule, IconSettings,
 } from './NavIcons'
+import emblem from '../assets/emblem.png'
 import './AppShell.css'
 
 // Nav is grouped, because seven flat links read as a list to search rather
@@ -39,17 +40,21 @@ const GROUPS = [
 
 // The top bar says where you are. Deriving it from the route means no page had
 // to change to gain a title.
+//
+// Subtitles are operational labels, not explanations. They name the columns
+// the page is about, so the bar tells you what you can read here rather than
+// selling you the feature.
 const TITLES = {
-  '/dashboard': ['Dashboard', 'Today at a glance'],
-  '/schedule': ['Schedule', 'Who is going where, and what they need'],
-  '/jobs': ['Jobs', 'Every job, and what it earned'],
-  '/jobs/new': ['New job', 'Parts are claimed as soon as it is saved'],
-  '/inventory': ['Inventory', 'On hand is added up from the ledger, never typed in'],
-  '/orders': ['Supplier orders', 'What is bought and not here yet, and when it lands'],
-  '/templates': ['Build sheets', 'Pick the parts once, every job using it draws them'],
-  '/expenses': ['Expenses', 'Everything that is not parts or installer pay'],
-  '/pnl': ['Profit and loss', 'Revenue less parts, pay and expenses, by month'],
-  '/settings': ['Settings', 'Lists, crew and agreements'],
+  '/dashboard': ['Dashboard', 'Today'],
+  '/schedule': ['Schedule', 'Crew and dates'],
+  '/jobs': ['Jobs', 'Status and margin'],
+  '/jobs/new': ['New job', 'Parts are claimed when it is scheduled'],
+  '/inventory': ['Inventory', 'On hand, promised, on order'],
+  '/orders': ['Supplier orders', 'On order and arrival dates'],
+  '/templates': ['Build sheets', 'Parts per system'],
+  '/expenses': ['Expenses', 'Overheads and one-offs'],
+  '/pnl': ['Profit and loss', 'Revenue, parts, pay, expenses'],
+  '/settings': ['Settings', 'Lists, crew, agreements'],
 }
 
 export default function AppShell({ children }) {
@@ -70,7 +75,7 @@ export default function AppShell({ children }) {
     <div className="app">
       <aside className="rail">
         <div className="rail-head">
-          <span className="rail-mark"><IconDrop /></span>
+          <img className="rail-mark" src={emblem} alt="" width="34" height="34" />
           <span className="rail-wordmark">
             Water Base
             <span>Michigan Water Pros</span>

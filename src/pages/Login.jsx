@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import wordmark from '../assets/wordmark.png'
 import './Login.css'
 
 function IconMail() {
@@ -12,8 +13,8 @@ function IconMail() {
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M2 7l8 5 8-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M2 7l8 5 8-5" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -27,8 +28,8 @@ function IconLock() {
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M7 9V6a3 3 0 0 1 6 0v3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
       <circle cx="10" cy="13" r="1" fill="currentColor" />
     </svg>
   )
@@ -63,12 +64,10 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-logo" aria-label="Water Base logo placeholder">
-          <span className="login-logo-mark">WB</span>
-        </div>
-
-        <h1 className="login-heading">Water Base</h1>
-        <p className="login-subheading">Sign in to your account</p>
+        <h1 className="login-mark">
+          <img className="login-wordmark" src={wordmark} alt="Water Base" width="232" height="29" />
+        </h1>
+        <p className="login-subheading">Operations platform</p>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
           <div className="field">

@@ -1,11 +1,20 @@
 // Nav and shell icons, kept together so AppShell stays about layout.
+//
 // All 24 by 24, stroke only, inheriting currentColor from the nav item.
+//
+// One stroke weight across the whole set. Three of these used to differ, and
+// at 18px in a rail that reads as some icons being bolder than others rather
+// than as a deliberate difference. Every icon spends its weight on the same
+// line, so the row reads as one set.
+//
+// Geometric and functional rather than illustrative: a shape that says what
+// the destination holds, drawn with the fewest lines that still name it.
 
 const base = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 2,
+  strokeWidth: 1.75,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': 'true',
@@ -74,20 +83,16 @@ export function IconMoney() {
   )
 }
 
+// Three sliders rather than a cogwheel. The gear was a twelve tooth path that
+// turned to mush at 18px and was the one decorative shape in an otherwise
+// geometric set. Settings here are lists and values, which is what this draws.
 export function IconSettings() {
   return (
     <svg {...base}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 13.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.7 7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3A1.6 1.6 0 0 0 10.4 3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1h.1a2 2 0 1 1 0 4H21a1.6 1.6 0 0 0-1.5 1Z" />
-    </svg>
-  )
-}
-
-export function IconDrop() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 2.7 5.8 9.9a8.2 8.2 0 1 0 12.4 0Z" />
+      <path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h10M18 17h2" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="16" cy="17" r="2" />
     </svg>
   )
 }
@@ -95,8 +100,7 @@ export function IconDrop() {
 // A delivery box, for stock that is bought but not yet here
 export function IconOrders() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg {...base}>
       <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z" />
       <path d="M3 7.5 12 12l9-4.5" />
       <path d="M12 12v9" />

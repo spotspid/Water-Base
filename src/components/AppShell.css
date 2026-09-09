@@ -29,19 +29,15 @@
   gap: 11px;
 }
 
+/* The emblem carries its own hexagonal geometry and its own navy to teal
+   gradient, so it sits directly on the rail. The tinted rounded square it used
+   to sit inside was a second mark competing with the real one. */
 .rail-mark {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(150deg, var(--teal), var(--teal-shade));
-  display: grid;
-  place-items: center;
   flex: 0 0 34px;
-}
-
-.rail-mark svg {
-  width: 18px;
-  height: 18px;
+  display: block;
+  object-fit: contain;
 }
 
 .rail-wordmark {
@@ -164,6 +160,13 @@
   position: sticky;
   top: 0;
   z-index: 20;
+}
+
+/* Had no rule at all. Harmless until the bar gains anything to its right, at
+   which point a flex child without min-width refuses to shrink and pushes it
+   off the edge instead of truncating. */
+.topbar-titles {
+  min-width: 0;
 }
 
 .page-title {
