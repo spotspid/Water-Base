@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
-import { attempt } from '../lib/errors'
+import { CANCELLED_STATUS } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
 import { useInstallers } from '../lib/useInstallers'
 import { crewLabel, formatLongDate } from '../lib/schedule'
 import { metaLine } from '../lib/text'
+import {
+  changeStatus, markInstalled, revertInstall, setScheduledDate,
+} from '../lib/jobActions'
 import JobAgreement from './JobAgreement'
 import JobWorkOrder from './JobWorkOrder'
 import JobPartsLedger from './JobPartsLedger'
@@ -34,6 +35,11 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
     // promised, so the date it was booked for is the sensible starting point
     install_date: job.install_date || job.scheduled_date || '',
   })
+  // Sold and scheduled are decided by the date, so marking a job scheduled
+  // from here asks for one. Prefilled from the booking if it already has one.
+  const [schedule, setSchedule] = useState({
+    scheduled_date: job.scheduled_date || '',
+  })
 
   const installed = job.status === 'installed'
   const cancelled = job.status === CANCELLED_STATUS
@@ -44,39 +50,19 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
     setInstall(f => ({ ...f, [name]: value }))
   }
 
-  function finish(message) {
-    setNotice(message)
-    setLedgerKey(k => k + 1)
-    setConfirmCancel(false)
-    onChanged()
+  function handleScheduleChange(e) {
+    const { name, value } = e.target
+    setSchedule(f => ({ ...f, [name]: value }))
   }
 
-  async function runMarkInstalled() {
-    // The button is disabled while this is true, so reaching here means
-    // something raced it. Refusing is cheaper than recording stale values.
-    if (crewDirty) {
-      setActionError('Save or undo the crew and pay changes above before marking this installed.')
-      return
-    }
-
+  // Every button in the status section runs through here, so one busy flag
+  // stops two of them firing at once and every outcome lands the same way.
+  async function perform(work) {
     setActionError('')
     setNotice('')
     setBusy(true)
 
-    // Crew and pay are already on the row, saved by the section above through
-    // schedule_job and its roster rules. This used to write installer_id with
-    // a plain update first, which skipped those rules and could hand an
-    // installer switched off in Settings a finished job. A null payout tells
-    // the function to keep the saved one.
-    const { data, error } = await attempt(
-      () => supabase.rpc('mark_job_installed', {
-        p_job_id: job.id,
-        p_install_date: install.install_date || null,
-        p_installer: null,
-        p_payout: null,
-      }),
-      'The job could not be marked installed.',
-    )
+    const { error, message } = await work()
 
     setBusy(false)
 
@@ -87,66 +73,20 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
       return
     }
 
-    const lines = data?.lines_deducted ?? 0
-    finish(lines === 0
-      ? 'Marked installed. This template has no parts, so nothing was deducted from inventory.'
-      : `Marked installed. ${lines} ${lines === 1 ? 'item' : 'items'} deducted, ${formatCurrency(data?.parts_cost || 0)} of parts.`)
+    setNotice(message)
+    setLedgerKey(k => k + 1)
+    setConfirmCancel(false)
+    onChanged()
   }
 
-  async function runRevert() {
-    setActionError('')
-    setNotice('')
-    setBusy(true)
-
-    const { data, error } = await attempt(
-      () => supabase.rpc('revert_job_install', { p_job_id: job.id, p_new_status: revertTo }),
-      'The install could not be reversed.',
-    )
-
-    setBusy(false)
-
-    if (error) {
-      setActionError(error)
-      onChanged()
+  function runMarkInstalled() {
+    // The button is disabled while this is true, so reaching here means
+    // something raced it. Refusing is cheaper than recording stale values.
+    if (crewDirty) {
+      setActionError('Save or undo the crew and pay changes above before marking this installed.')
       return
     }
-
-    const lines = data?.lines_reversed ?? 0
-    finish(`Install reversed. ${lines} ${lines === 1 ? 'item was' : 'items were'} returned to inventory, and the job is now ${STATUS_LABELS[revertTo] || revertTo} with its parts committed again.`)
-  }
-
-  // What a plain status change means for the reservation layer. The database
-  // trigger does the work, so this only has to say what happened.
-  function statusNotice(next) {
-    if (next === CANCELLED_STATUS) {
-      return 'Job cancelled. Every part it had committed is released and back in available. '
-        + 'Nothing moved in the ledger, because a cancelled job never consumed anything.'
-    }
-    if (cancelled) {
-      return `Job reopened as ${STATUS_LABELS[next] || next}. Its parts are committed again.`
-    }
-    return `Job moved to ${STATUS_LABELS[next] || next}.`
-  }
-
-  async function runPlainStatus(next) {
-    setActionError('')
-    setNotice('')
-    setBusy(true)
-
-    const { error } = await attempt(
-      () => supabase.from('jobs').update({ status: next }).eq('id', job.id),
-      'The status could not be changed.',
-    )
-
-    setBusy(false)
-
-    if (error) {
-      setActionError(error)
-      onChanged()
-      return
-    }
-
-    finish(statusNotice(next))
+    perform(() => markInstalled(job, install.install_date))
   }
 
   const subtitle = metaLine([
@@ -248,6 +188,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         job={job}
         install={install}
         onInstallChange={handleInstallChange}
+        schedule={schedule}
+        onScheduleChange={handleScheduleChange}
         busy={busy}
         crewDirty={open && crewDirty}
         revertTo={revertTo}
@@ -260,8 +202,9 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         actionError={actionError}
         notice={notice}
         onMarkInstalled={runMarkInstalled}
-        onRevert={runRevert}
-        onPlainStatus={runPlainStatus}
+        onRevert={() => perform(() => revertInstall(job, revertTo))}
+        onSchedule={date => perform(() => setScheduledDate(job, date))}
+        onPlainStatus={next => perform(() => changeStatus(job, next))}
       />
 
       <JobPartsLedger jobId={job.id} refreshKey={ledgerKey} />

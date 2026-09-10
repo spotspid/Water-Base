@@ -31,6 +31,7 @@ export default function PnL() {
   const [toMonth, setToMonth] = useState(toMonthInput(todayIso()))
   const [months, setMonths] = useState([])
   const [categories, setCategories] = useState([])
+  const [categoryError, setCategoryError] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -62,8 +63,12 @@ export default function PnL() {
       setError(summaryRes.error)
       setMonths([])
       setCategories([])
+      setCategoryError('')
     } else {
       setMonths(summaryRes.data || [])
+      // A failed breakdown used to become an empty list, which the category
+      // card read as no expenses in the range. Kept apart so it can say so.
+      setCategoryError(categoryRes.error || '')
       setCategories(categoryRes.error ? [] : (categoryRes.data || []))
     }
 
@@ -226,7 +231,8 @@ export default function PnL() {
         {hasData && months.length > 0 && <PnlCash months={months} />}
 
         {hasData && months.length > 0 && (
-          <PnlCategories months={monthKeys} rows={categories} />
+          <PnlCategories months={monthKeys} rows={categories}
+            loadError={categoryError} onRetry={load} />
         )}
       </div>
     </AppShell>

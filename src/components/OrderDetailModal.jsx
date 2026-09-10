@@ -14,11 +14,15 @@ import OrderLineRow from './OrderLineRow'
 // The entry balance sits at the top rather than the bottom, because the moment
 // it matters is while you are still typing lines off a paper invoice, and a
 // figure you have to scroll to is a figure nobody checks.
-export default function OrderDetailModal({ order, items, onClose, onChanged }) {
+export default function OrderDetailModal({
+  order, items, notice: pageNotice, onClose, onEdit, onChanged,
+}) {
   const [lines, setLines] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  // starts with whatever the page has to say, usually that the header was
+  // just edited, and is replaced by whatever the lines do next
+  const [notice, setNotice] = useState(pageNotice || '')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -84,6 +88,15 @@ export default function OrderDetailModal({ order, items, onClose, onChanged }) {
       )}
 
       {order.notes && <p className="inv-ledger-note">{order.notes}</p>}
+
+      {/* Supplier, dates, freight, tax and the invoice total are typed off a
+          paper invoice, and a wrong freight figure skews the landed cost of
+          every line, so they have to be correctable after the fact. */}
+      <div className="modal-actions">
+        <button type="button" className="btn-cancel" onClick={onEdit}>
+          Edit order details
+        </button>
+      </div>
 
       {notice && <p className="set-notice" role="status">{notice}</p>}
 

@@ -48,7 +48,7 @@ const LISTS = [
 
 export default function Settings() {
   const settings = useSettings()
-  const { loading, error, reload, allOptions, allTxnTypes } = settings
+  const { loading, loaded, error, reload, allOptions, allTxnTypes } = settings
   const {
     installers,
     loading: loadingCrew,
@@ -79,7 +79,10 @@ export default function Settings() {
           </div>
         )}
 
-        {!loading && !error && (
+        {/* Gated on loaded rather than on loading, so a reload after a save
+            leaves every card mounted with whatever is typed in it. A refresh
+            that fails shows the error above cards that still hold data. */}
+        {loaded && (
           <>
             <OperationSettings settings={settings} onChanged={reload} />
 

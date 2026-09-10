@@ -6,7 +6,11 @@ import { formatDateTime } from '../lib/inventory'
 // Every import that has been committed, newest first, with the one action a
 // batch supports. A reversed batch keeps its row so the history stays honest
 // rather than leaving an unexplained gap.
-export default function ExpenseBatches({ batches, onChanged }) {
+//
+// loadError is the page telling this card its query failed. An empty list
+// and a failed query are different facts, and only one of them means nothing
+// has been imported.
+export default function ExpenseBatches({ batches, loadError, onRetry, onChanged }) {
   const [confirmId, setConfirmId] = useState('')
   const [busyId, setBusyId] = useState('')
   const [error, setError] = useState('')
@@ -26,6 +30,26 @@ export default function ExpenseBatches({ batches, onChanged }) {
     }
 
     onChanged()
+  }
+
+  if (loadError) {
+    return (
+      <section className="set-card">
+        <header className="set-card-head">
+          <div>
+            <h2>Imports</h2>
+            <p className="set-card-desc">
+              The import history could not be loaded, so nothing here can be reversed until
+              it can.
+            </p>
+          </div>
+        </header>
+        <div className="form-error" role="alert">
+          <p>{loadError}</p>
+          <button type="button" className="btn-cancel" onClick={onRetry}>Try again</button>
+        </div>
+      </section>
+    )
   }
 
   if (batches.length === 0) {

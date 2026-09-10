@@ -41,6 +41,7 @@ export default function Documents() {
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [sendError, setSendError] = useState('')
+  const [sendDetails, setSendDetails] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,18 +72,24 @@ export default function Documents() {
     setBusy(row.key)
     setNotice('')
     setSendError('')
+    setSendDetails(null)
 
-    const { error: err } = await attempt(
-      () => sendAgreement(row.job_id, row.type),
-      `The ${row.document.toLowerCase()} could not be sent.`,
-    )
+    // sendAgreement reads the edge function's body and returns the reason as
+    // a sentence of its own, with no error code. It used to be wrapped in
+    // attempt(), whose translator found no code on a plain string and swapped
+    // the reason for the generic fallback, so every failure read the same.
+    const { data, error: err, details } = await sendAgreement(row.job_id, row.type)
 
     setBusy('')
 
     // Reload either way. A failure still writes a failed row on the agreement,
     // and leaving the old state on screen would hide that.
-    if (err) setSendError(err)
-    else setNotice(`${row.document} sent to ${row.customer_name}.`)
+    if (err) {
+      setSendError(err)
+      setSendDetails(details)
+    } else {
+      setNotice(`${row.document} sent to ${data?.sent_to || row.customer_name}.`)
+    }
 
     await load()
   }, [load])
@@ -171,7 +178,14 @@ export default function Documents() {
             </div>
 
             {notice && <p className="job-notice" role="status">{notice}</p>}
-            {sendError && <p className="form-error" role="alert">{sendError}</p>}
+            {sendError && (
+              <p className="form-error" role="alert">
+                {sendError}
+                {sendDetails?.template_fields && (
+                  <> The template has these fields: {sendDetails.template_fields.join(', ')}.</>
+                )}
+              </p>
+            )}
 
             {SECTIONS.map(section => {
               if (showing && showing !== section.key) return null

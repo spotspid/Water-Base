@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
+import { describeStatusShift } from '../lib/jobActions'
 import { installerLabel } from '../lib/useInstallers'
 import { gapsSentence } from '../lib/workOrder'
 import './Agreement.css'
@@ -87,6 +88,10 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     setError('')
     setNotice('')
     let conflicts = 0
+    // schedule_job decides sold or scheduled from the date. The date is
+    // passed back unchanged, so this only moves when the status and the date
+    // already disagreed, and then it is said rather than hidden.
+    let status = job.status
 
     if (crewDirty) {
       const { data, error: err } = await attempt(
@@ -108,6 +113,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         return
       }
       conflicts = Number(data?.conflict_count) || 0
+      status = data?.status || job.status
     }
 
     if (detailsDirty) {
@@ -133,13 +139,13 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     const next = { ...draft, invoice_number: draft.invoice_number.trim() }
     setDraft(next)
     setSaved(next)
-    setNotice(describe(next, conflicts))
+    setNotice(describe(next, conflicts, status))
     onChanged()
   }
 
   // What saving did to the work order, read from the same rule the send
   // button uses, so this note and the button can never disagree.
-  function describe(next, conflicts) {
+  function describe(next, conflicts, status) {
     const crew = installers.find(i => i.id === next.installer_id)
     const after = {
       ...job,
@@ -151,13 +157,14 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     const short = conflicts > 0
       ? ` ${conflicts} ${conflicts === 1 ? 'part is' : 'parts are'} short for this date.`
       : ''
+    const lead = `Saved.${describeStatusShift(job.status, status)}${short}`
 
     if (isWorkOrderOut(job) || job.work_order_status === 'completed') {
-      return `Saved.${short} The work order already sent still shows the old values, so resend it if this matters.`
+      return `${lead} The work order already sent still shows the old values, so resend it if this matters.`
     }
     const needs = gapsSentence(after)
-    return needs ? `Saved.${short} The work order still ${needs.charAt(0).toLowerCase()}${needs.slice(1)}.`
-      : `Saved.${short} The work order can be sent now.`
+    return needs ? `${lead} The work order still ${needs.charAt(0).toLowerCase()}${needs.slice(1)}.`
+      : `${lead} The work order can be sent now.`
   }
 
   return (

@@ -20,6 +20,7 @@ export default function Expenses() {
 
   const [rows, setRows] = useState([])
   const [batches, setBatches] = useState([])
+  const [batchError, setBatchError] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [from, setFrom] = useState(monthsAgoIso(5))
@@ -55,6 +56,10 @@ export default function Expenses() {
       setRows(expenseRes.data || [])
     }
 
+    // A failed history query used to become an empty list, which the imports
+    // card then reported as nothing ever imported. The error is its own
+    // state so the card can say what actually happened.
+    setBatchError(batchRes.error || '')
     setBatches(batchRes.error ? [] : (batchRes.data || []))
     setLoading(false)
   }, [from, to])
@@ -248,7 +253,10 @@ export default function Expenses() {
           </p>
         )}
 
-        {hasData && <ExpenseBatches batches={batches} onChanged={load} />}
+        {hasData && (
+          <ExpenseBatches batches={batches} loadError={batchError}
+            onRetry={load} onChanged={load} />
+        )}
       </div>
 
       {openModal === 'expense' && (

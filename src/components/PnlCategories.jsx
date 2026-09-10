@@ -2,7 +2,27 @@ import { formatCurrency, formatMonthShort } from '../lib/expenses'
 
 // Expenses by category, one column per month. This is the expense_total column
 // of the monthly table opened up, so the two always agree by construction.
-export default function PnlCategories({ months, rows }) {
+//
+// loadError is the page saying the breakdown query failed. That is not the
+// same as no expenses, and the card must not pretend it is.
+export default function PnlCategories({ months, rows, loadError, onRetry }) {
+  if (loadError) {
+    return (
+      <section className="set-card">
+        <header className="set-card-head">
+          <div>
+            <h2>Expenses by category</h2>
+            <p className="set-card-desc">The breakdown could not be loaded.</p>
+          </div>
+        </header>
+        <div className="form-error" role="alert">
+          <p>{loadError}</p>
+          <button type="button" className="btn-cancel" onClick={onRetry}>Try again</button>
+        </div>
+      </section>
+    )
+  }
+
   if (rows.length === 0) {
     return (
       <section className="set-card">

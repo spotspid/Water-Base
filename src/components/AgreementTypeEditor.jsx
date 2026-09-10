@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import './Agreement.css'
@@ -7,6 +7,12 @@ import './Agreement.css'
 // operator needs to change without a deploy. The API key is not here and never
 // will be: it lives as an edge function secret, because anything this page can
 // read Vite would inline into the published bundle.
+//
+// Every save reloads the rows. The first load shows a loading line; later
+// ones refresh in place, and a template id somebody is still typing in one
+// row survives a save on the other. It used to be replaced from the database
+// on every reload, so ticking Active on one row wiped the id pasted into the
+// other.
 export default function AgreementTypeEditor() {
   const [rows, setRows] = useState([])
   const [drafts, setDrafts] = useState({})
@@ -14,9 +20,11 @@ export default function AgreementTypeEditor() {
   const [busyType, setBusyType] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const rowsRef = useRef([])
 
   const load = useCallback(async () => {
-    setLoading(true)
+    const first = rowsRef.current.length === 0
+    if (first) setLoading(true)
     setError('')
 
     const { data, error: err } = await attempt(
@@ -28,10 +36,21 @@ export default function AgreementTypeEditor() {
 
     if (err) {
       setError(err)
-      setRows([])
+      if (first) setRows([])
     } else {
-      setRows(data || [])
-      setDrafts(Object.fromEntries((data || []).map(r => [r.type, r.docuseal_template_id || ''])))
+      const next = data || []
+      const before = new Map(rowsRef.current.map(r => [r.type, r.docuseal_template_id || '']))
+      rowsRef.current = next
+      setRows(next)
+      // keep a draft that differs from what it was loaded against, follow the
+      // database for everything else
+      setDrafts(prev => Object.fromEntries(next.map(r => {
+        const stored = r.docuseal_template_id || ''
+        const typed = prev[r.type]
+        const dirty = typed !== undefined && before.has(r.type)
+          && typed.trim() !== before.get(r.type)
+        return [r.type, dirty ? typed : stored]
+      })))
     }
 
     setLoading(false)

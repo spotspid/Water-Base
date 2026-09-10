@@ -44,6 +44,11 @@ export default function OrderModal({ order, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Receiving writes the landed cost into the ledger at the time. Changing
+  // freight or tax afterwards changes the share for what is still to come and
+  // nothing else, and saying so beats somebody expecting the margin to move.
+  const received = Boolean(order) && (Number(order.units_received) || 0) > 0
+
   function change(e) {
     const { name, value } = e.target
     setForm(f => ({ ...f, [name]: value }))
@@ -108,6 +113,14 @@ export default function OrderModal({ order, onClose, onSaved }) {
       onClose={onClose}
     >
       <form onSubmit={submit} noValidate>
+        {received && (
+          <p className="form-warning" role="status">
+            Part of this order has already been received. Those ledger rows keep the landed
+            cost they were received at. Changing freight or tax here only changes the share
+            spread over what is still to come.
+          </p>
+        )}
+
         <div className="form-grid">
           <div className="field">
             <label htmlFor="supplier">Supplier</label>

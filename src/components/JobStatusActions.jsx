@@ -11,12 +11,17 @@ import { formatDateTime } from '../lib/inventory'
 // stays on purpose: it is the day the work actually happened, so it belongs to
 // the act of marking the job installed and has no meaning before that.
 //
+// "Mark scheduled" asks for a date for the same reason. A job with a date is
+// scheduled and one without is sold, decided by schedule_job, which is also
+// where parts are claimed. Writing the word without the date used to leave a
+// job that the next crew save quietly put back to sold.
+//
 // Every action here is presentational. The work itself lives in the parent,
 // which owns the one busy flag so two buttons cannot fire at once.
 export default function JobStatusActions({
-  job, install, onInstallChange, busy, crewDirty,
+  job, install, onInstallChange, schedule, onScheduleChange, busy, crewDirty,
   revertTo, onRevertTo, confirmCancel, onConfirmCancel,
-  actionError, notice, onMarkInstalled, onRevert, onPlainStatus,
+  actionError, notice, onMarkInstalled, onRevert, onSchedule, onPlainStatus,
 }) {
   const installed = job.status === 'installed'
   const cancelled = job.status === CANCELLED_STATUS
@@ -40,6 +45,17 @@ export default function JobStatusActions({
 
       {open && (
         <div className="form-grid job-install-grid">
+          {job.status === 'sold' && (
+            <div className="field">
+              <label htmlFor="scheduled_date">Scheduled for</label>
+              <input id="scheduled_date" name="scheduled_date" type="date"
+                value={schedule.scheduled_date} onChange={onScheduleChange} disabled={busy} />
+              <span className="field-hint">
+                Pick the day, then mark it scheduled. That puts it on the calendar and
+                claims its parts for the day. The crew stays as it is.
+              </span>
+            </div>
+          )}
           <div className="field">
             <label htmlFor="install_date">Installed on</label>
             <input id="install_date" name="install_date" type="date"
@@ -49,6 +65,13 @@ export default function JobStatusActions({
             </span>
           </div>
         </div>
+      )}
+
+      {job.status === 'scheduled' && (
+        <p className="field-hint">
+          Back to sold clears the date, takes the job off the calendar and releases the
+          parts it claimed. To move it instead, change the date on the schedule.
+        </p>
       )}
 
       {installed && (
@@ -86,13 +109,15 @@ export default function JobStatusActions({
       <div className="modal-actions job-action-buttons">
         {job.status === 'sold' && (
           <button type="button" className="btn-cancel"
-            onClick={() => onPlainStatus('scheduled')} disabled={busy}>
+            onClick={() => onSchedule(schedule.scheduled_date)}
+            disabled={busy || !schedule.scheduled_date}
+            title={schedule.scheduled_date ? undefined : 'Pick a scheduled date first.'}>
             Mark scheduled
           </button>
         )}
         {job.status === 'scheduled' && (
           <button type="button" className="btn-cancel"
-            onClick={() => onPlainStatus('sold')} disabled={busy}>
+            onClick={() => onSchedule('')} disabled={busy}>
             Back to sold
           </button>
         )}

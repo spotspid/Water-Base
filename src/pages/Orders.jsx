@@ -24,9 +24,12 @@ export default function Orders() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // null when no form is open, {} for a new order, or the order being edited.
   const [editing, setEditing] = useState(null)
+  const [notice, setNotice] = useState('')
 
   const openById = useCallback(id => {
+    setNotice('')
     setParams(current => {
       const next = new URLSearchParams(current)
       if (id) next.set('order', id)
@@ -215,15 +218,24 @@ export default function Orders() {
         <OrderModal
           order={editing.id ? editing : null}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load() }}
+          onSaved={() => {
+            setNotice(editing.id ? 'Order details saved.' : '')
+            setEditing(null)
+            load()
+          }}
         />
       )}
 
-      {openOrder && (
+      {/* The edit form takes the detail modal's place rather than stacking on
+          it, so one Escape closes one thing. Saving or cancelling brings the
+          detail back, reloaded. */}
+      {openOrder && !editing && (
         <OrderDetailModal
           order={openOrder}
           items={items}
+          notice={notice}
           onClose={() => openById('')}
+          onEdit={() => setEditing(openOrder)}
           onChanged={load}
         />
       )}

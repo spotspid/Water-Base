@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase'
 import { attempt } from './errors'
 
@@ -36,13 +36,17 @@ export function useInstallers({ activeOnly = false, keepIds } = {}) {
   const [installers, setInstallers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // loading is for the first load only. The settings editor reloads after
+  // every save, and flipping loading each time swapped the editor for a
+  // loading line, taking any half typed row with it.
+  const loadedRef = useRef(false)
 
   // A caller passing a fresh array literal every render would otherwise
   // reload the roster forever, so the dependency is the contents, not the array.
   const keepKey = [...new Set((keepIds || []).filter(Boolean))].sort().join(',')
 
   const reload = useCallback(async () => {
-    setLoading(true)
+    if (!loadedRef.current) setLoading(true)
     setError('')
 
     // The whole roster, always. It is a handful of rows, and filtering here
@@ -63,6 +67,7 @@ export function useInstallers({ activeOnly = false, keepIds } = {}) {
         row => !activeOnly || row.active || keep.has(row.id),
       )
       setInstallers(sortInstallers(rows))
+      loadedRef.current = true
     }
 
     setLoading(false)
