@@ -1,4 +1,4 @@
-import { PICK_SOURCES, PICK_SOURCE_LABELS } from './constants'
+import { PICK_SOURCES, PICK_SOURCE_LABELS } from './constants.js'
 
 export function pickSourceMeta(value) {
   return PICK_SOURCES.find(s => s.value === value) || null
@@ -77,19 +77,51 @@ export function templateCost(lines, items) {
   }
 }
 
-// Which finishes this template can actually be installed with. A finish with
-// no matching inventory item will block the deduct, so the UI warns early.
-export function unsupportedFinishes(lines, items, finishes) {
-  const pickLines = lines.filter(l => l.line_type === 'customer_pick')
-  if (pickLines.length === 0) return []
+// Which customer choices this template can actually be installed with.
+//
+// A pick line resolves on the job field its pick_source names, and only on
+// that one. A faucet line is matched against the faucet finishes and an RO
+// line against the RO types, which is what resolve_template_parts does in the
+// database. Checking every finish against every pick line, as this used to,
+// flagged all four finishes on any template that carried an RO line, because
+// no RO item has a variant called Chrome.
+//
+// `choices` maps a pick_source to the active settings values for it, so a
+// source with no list at all reports nothing rather than everything.
+//
+// Returns one entry per pick source that has a gap, each naming the values
+// with no active item in the line's category whose variant equals the value.
+// A choice with no matching item will block the deduct, so the card warns
+// early.
+export function unsupportedPicks(lines, items, choices) {
+  const out = []
+  const lists = choices && typeof choices === 'object' ? choices : {}
 
-  return finishes.filter(finish =>
-    pickLines.some(line =>
-      !items.some(i =>
-        i.active !== false && i.category === line.pick_category && i.variant === finish,
+  for (const line of Array.isArray(lines) ? lines : []) {
+    if (!line || line.line_type !== 'customer_pick') continue
+
+    const values = lists[line.pick_source]
+    if (!Array.isArray(values) || values.length === 0) continue
+
+    const missing = values.filter(value =>
+      !(Array.isArray(items) ? items : []).some(i =>
+        i && i.active !== false
+          && i.category === line.pick_category
+          && String(i.variant ?? '') === String(value ?? ''),
       ),
-    ),
-  )
+    )
+
+    if (missing.length > 0) {
+      out.push({
+        source: line.pick_source,
+        label: pickSourceLabel(line.pick_source),
+        category: line.pick_category,
+        missing,
+      })
+    }
+  }
+
+  return out
 }
 
 export function lineLabel(line) {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { installLabel, isUrgent, jobsWaiting, waitedLabel } from '../lib/paperwork'
+import { installLabel, isOverdue, isUrgent, jobsWaiting, waitedLabel } from '../lib/paperwork'
 
 // What is stopping jobs from happening.
 //
@@ -57,7 +57,7 @@ export default function DashboardPaperwork({ rows, jobCount }) {
           {notReady} more {notReady === 1 ? 'document is' : 'documents are'} waiting on the
           job rather than on a person, so {notReady === 1 ? 'it is' : 'they are'} not listed.
           {' '}
-          <Link to="/jobs" className="tpl-link">See what they need</Link>
+          <Link to="/documents" className="tpl-link">See what they need</Link>
         </p>
       )}
 
@@ -97,7 +97,7 @@ export default function DashboardPaperwork({ rows, jobCount }) {
                       <span className="cell-sub">since {row.waitedFrom}</span>
                     )}
                   </td>
-                  <td className={isUrgent(row) ? 'col-nowrap dash-due' : 'col-nowrap'}>
+                  <td className={dueClass(row)}>
                     {installLabel(row)}
                   </td>
                 </tr>
@@ -108,4 +108,12 @@ export default function DashboardPaperwork({ rows, jobCount }) {
       )}
     </section>
   )
+}
+
+// Overdue is maroon and soon is amber. They used to share the maroon, which
+// flattened "in 2 days" and "1 day overdue" into the same alarm.
+function dueClass(row) {
+  if (isOverdue(row)) return 'col-nowrap dash-due'
+  if (isUrgent(row)) return 'col-nowrap dash-due-soon'
+  return 'col-nowrap'
 }

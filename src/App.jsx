@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
+import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/ProtectedRoute'
 import RouteBoundary from './components/RouteBoundary'
 import './App.css'
@@ -50,7 +51,8 @@ export default function App() {
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </RouteBoundary>

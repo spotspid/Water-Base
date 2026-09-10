@@ -9,6 +9,7 @@ import { formatCurrency } from '../lib/inventory'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import JobDetailModal from '../components/JobDetailModal'
+import JobsSummary from '../components/JobsSummary'
 import './Jobs.css'
 
 const ALL_STATUSES = 'all'
@@ -86,6 +87,13 @@ export default function Jobs() {
 
   const cancelledCount = visible.length - counted.length
 
+  // Jobs in the totals whose parts have not been drawn yet. Their margin is
+  // their whole price until they install, which is what the caveat says.
+  const undeducted = useMemo(
+    () => counted.filter(j => !j.parts_deducted_at).length,
+    [counted],
+  )
+
   const totals = useMemo(() => counted.reduce((acc, j) => ({
     revenue: acc.revenue + (Number(j.sale_price) || 0),
     parts: acc.parts + (Number(j.parts_cost) || 0),
@@ -109,23 +117,11 @@ export default function Jobs() {
       <div className="jobs-page">
 
         {hasData && jobs.length > 0 && (
-          <div className="inv-summary">
-            <div className="inv-stat inv-stat-lead">
-              <span className="inv-stat-label">Margin</span>
-              <span className="inv-stat-value">{formatCurrency(totals.margin)}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">Revenue</span>
-              <span className="inv-stat-value">{formatCurrency(totals.revenue)}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">Parts</span>
-              <span className="inv-stat-value">{formatCurrency(totals.parts)}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">Installer Pay</span>
-              <span className="inv-stat-value">{formatCurrency(totals.pay)}</span>
-            </div>
+          <JobsSummary totals={totals} undeducted={undeducted} />
+        )}
+
+        {hasData && jobs.length > 0 && (
+          <div className="inv-toolbar">
             <div className="inv-filter">
               <label htmlFor="status-filter">Status</label>
               <select id="status-filter" value={status} onChange={e => setStatus(e.target.value)}>
@@ -193,13 +189,15 @@ export default function Jobs() {
           </EmptyState>
         )}
 
+        {/* Nine columns, not ten. The city sits under the customer name,
+            which is where the eye looks for it anyway, and the table fits the
+            page instead of hiding the date behind a scrollbar. */}
         {hasData && visible.length > 0 && (
           <div className="table-wrap">
-            <table className="jobs-table">
+            <table className="jobs-table jobs-list">
               <thead>
                 <tr>
                   <th>Customer</th>
-                  <th>City</th>
                   <th>System</th>
                   <th className="col-num">Price</th>
                   <th className="col-num">Parts</th>
@@ -220,8 +218,12 @@ export default function Jobs() {
                         openJobById(job.id)
                       }
                     }}>
-                    <td className="td-customer">{job.customer_name}</td>
-                    <td>{job.city || <span className="cell-unset">not set</span>}</td>
+                    <td className="td-customer">
+                      {job.customer_name}
+                      <span className="cell-sub">
+                        {job.city || <span className="cell-unset">City not set</span>}
+                      </span>
+                    </td>
                     <td>{job.system_template}</td>
                     <td className="col-num">{formatCurrency(job.sale_price)}</td>
                     <td className="col-num">

@@ -303,7 +303,9 @@ a {
    list of cards, and no column was dropped to pay for it. */
 .jobs-table th {
   background: var(--raised);
-  color: var(--muted);
+  /* Body text rather than muted. Muted uppercase at 11px on the near white
+     ground measured about 3.6 to 1, under the 4.5 that small text needs. */
+  color: var(--body-text);
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
@@ -873,6 +875,29 @@ a {
 
 .inv-stat-alert .inv-stat-value {
   color: var(--maroon);
+}
+
+/* A footnote under a figure: what it counts, or what it leaves out. */
+.inv-stat-note {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* The filter for the table below, on its own line. It used to sit in the
+   card row, where a dropdown in a card sized slot read as one more figure. */
+.inv-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.inv-toolbar .inv-filter {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .inv-filter {

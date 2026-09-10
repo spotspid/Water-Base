@@ -1,6 +1,6 @@
 import {
   CUSTOMER, WORK_ORDER,
-  installLabel, isUrgent, jobsWaiting, pendingPaperwork, waitedLabel,
+  installLabel, isOverdue, isUrgent, jobsWaiting, pendingPaperwork, waitedLabel,
 } from '../src/lib/paperwork.js'
 
 // Checks the panel that replaced the stock table on the dashboard.
@@ -125,6 +125,9 @@ check('inside two days is urgent', isUrgent({ untilInstall: 2 }) === true)
 check('overdue is urgent', isUrgent({ untilInstall: -1 }) === true)
 check('a fortnight out is not', isUrgent({ untilInstall: 14 }) === false)
 check('an undated job is never urgent', isUrgent({ untilInstall: null }) === false)
+check('overdue is past the date, not merely close', isOverdue({ untilInstall: -1 }) === true
+  && isOverdue({ untilInstall: 0 }) === false && isOverdue({ untilInstall: 2 }) === false)
+check('an undated job is never overdue', isOverdue({ untilInstall: null }) === false)
 
 // --- the gate: only documents somebody could actually send -------------------
 

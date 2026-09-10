@@ -3,19 +3,7 @@
 }
 
 .pnl-summary {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
   margin-bottom: 22px;
-}
-
-.pnl-summary .inv-stat {
-  flex: 1 1 160px;
-}
-
-.pnl-stat-note {
-  font-size: 11px;
-  color: var(--gray-500);
 }
 
 .pnl-net .inv-stat-value {
@@ -38,8 +26,11 @@
   background: var(--white);
 }
 
+/* The header row went light everywhere else and the sticky month cell kept
+   the navy from before, so one cell in seven read as selected. Same ground as
+   the rest of the row. */
 .pnl-table thead th:first-child {
-  background: var(--navy);
+  background: var(--raised);
 }
 
 .pnl-total-row td {
@@ -62,9 +53,6 @@
     padding: 20px 16px;
   }
 
-  .pnl-summary .inv-stat {
-    flex: 1 1 132px;
-  }
 }
 
 /* ---------------------------------------------------------------------------

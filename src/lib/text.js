@@ -26,6 +26,12 @@ const IRREGULAR = {
   species: 'species',
 }
 
+// A short run of capitals is said letter by letter, and the article follows
+// the first letter's name: "an RO type" because R is "arr", "a UV lamp"
+// because U is "you". These are the letters whose names open on a vowel.
+const ACRONYM = /^[A-Z]{2,4}(?=\s|$)/
+const VOWEL_NAMED_LETTER = /^[AEFHILMNORSX]/
+
 // Vowel letters that open with a consonant sound, so they take "a" not "an".
 // A leading "u" is the common one: a unit, a user, a uniform.
 const CONSONANT_SOUNDED = /^(?:u(?:n[aeiou]|s|t|ni)|eu|one\b|once\b)/i
@@ -88,10 +94,27 @@ export function indefiniteArticle(phrase) {
   const text = String(phrase ?? '').trim()
   if (!text) return 'a'
 
+  if (ACRONYM.test(text)) return VOWEL_NAMED_LETTER.test(text) ? 'an' : 'a'
   if (VOWEL_SOUNDED.test(text)) return 'an'
   if (CONSONANT_SOUNDED.test(text)) return 'a'
 
   return /^[aeiou]/i.test(text) ? 'an' : 'a'
+}
+
+/**
+ * A title in sentence case, keeping any acronym in capitals.
+ *
+ * "RO Types" becomes "RO types", not "ro types". Lowercasing the whole title
+ * is what turned the placeholder into "Add a ro type": once the capitals were
+ * gone nothing could tell that it was said letter by letter.
+ */
+export function lowerLabel(phrase) {
+  return String(phrase ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(word => (/^[A-Z]{2,4}$/.test(word) ? word : word.toLowerCase()))
+    .join(' ')
 }
 
 /**

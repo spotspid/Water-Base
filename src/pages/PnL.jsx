@@ -5,6 +5,7 @@ import { formatCurrency, formatMonth, monthsAgoIso, todayIso } from '../lib/expe
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import PnlCash from '../components/PnlCash'
+import StatGrid from '../components/StatGrid'
 import PnlCategories from '../components/PnlCategories'
 import './PnL.css'
 
@@ -131,11 +132,11 @@ export default function PnL() {
         )}
 
         {hasData && months.length > 0 && (
-          <div className="pnl-summary">
+          <StatGrid count={6} className="inv-summary pnl-summary">
             <div className="inv-stat">
               <span className="inv-stat-label">Revenue</span>
               <span className="inv-stat-value">{formatCurrency(totals.revenue)}</span>
-              <span className="pnl-stat-note">{totals.job_count} installed</span>
+              <span className="inv-stat-note">{totals.job_count} installed</span>
             </div>
             <div className="inv-stat">
               <span className="inv-stat-label">Parts</span>
@@ -156,9 +157,9 @@ export default function PnL() {
             <div className="inv-stat pnl-cash-stat">
               <span className="inv-stat-label">Cash in</span>
               <span className="inv-stat-value">{formatCurrency(totals.cash_in)}</span>
-              <span className="pnl-stat-note">not income, see below</span>
+              <span className="inv-stat-note">not income, see below</span>
             </div>
-          </div>
+          </StatGrid>
         )}
 
         {hasData && months.length === 0 && (

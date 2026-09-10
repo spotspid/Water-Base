@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react'
 import { formatCurrency } from '../lib/inventory'
-import { lineDetail, lineLabel, templateCost, unsupportedFinishes } from '../lib/templates'
+import { lineDetail, lineLabel, templateCost, unsupportedPicks } from '../lib/templates'
 import { useSettings } from '../lib/settings'
 
 export default function TemplateCard({
   template, lines, items, onEditTemplate, onAddLine, onEditLine, onDeleteLine,
 }) {
-  const { finishes } = useSettings()
+  const { finishes, roTypes } = useSettings()
   const [confirmingId, setConfirmingId] = useState('')
 
   const cost = useMemo(() => templateCost(lines, items), [lines, items])
+
+  // Each pick line is checked against its own list: faucet lines against the
+  // finishes, RO lines against the RO types. One warning per list with a gap.
   const gaps = useMemo(
-    () => unsupportedFinishes(lines, items, finishes),
-    [lines, items, finishes],
+    () => unsupportedPicks(lines, items, { faucet_finish: finishes, ro_type: roTypes }),
+    [lines, items, finishes, roTypes],
   )
 
   const price = template.default_price == null ? null : Number(template.default_price)
@@ -57,12 +60,14 @@ export default function TemplateCard({
         </div>
       </header>
 
-      {gaps.length > 0 && (
-        <p className="form-warning" role="status">
-          No active inventory item matches these finishes: {gaps.join(', ')}.
-          A job using one of them will refuse to install until the item exists.
+      {gaps.map(gap => (
+        <p className="form-warning" role="status" key={gap.source}>
+          No active {gap.category} item matches {gap.missing.length === 1 ? 'this' : 'these'}
+          {' '}{gap.label.toLowerCase()}{gap.missing.length === 1 ? '' : 's'}: {gap.missing.join(', ')}.
+          A job using {gap.missing.length === 1 ? 'it' : 'one of them'} will refuse to install
+          until the item exists.
         </p>
-      )}
+      ))}
 
       {cost.unpricedPickLines > 0 && (
         <p className="form-warning" role="status">

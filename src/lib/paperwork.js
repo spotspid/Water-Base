@@ -9,6 +9,7 @@
 // still run all of it under Node.
 
 import { workOrderBlocker } from './workOrder.js'
+import { BLOCKED, documentRows } from './documents.js'
 
 export const CUSTOMER = 'customer_install'
 export const WORK_ORDER = 'subcontractor_service'
@@ -170,9 +171,27 @@ export function pendingPaperwork(jobs, now = new Date()) {
   // Carried on the array rather than returned separately, so a caller that
   // does not care about it is unaffected and one that does can say how many
   // documents are waiting on the job rather than on a person.
-  out.notReady = skipped
+  //
+  // Counted by the Documents page's own rule rather than from the rows this
+  // loop skipped. The loop only walks open jobs, and the Documents page also
+  // holds a work order on an installed job that nobody can send, so the two
+  // counts read 7 and 8 for the same backlog. One rule, one number.
+  out.notReady = notReadyDocuments(jobs, now, skipped)
 
   return out
+}
+
+// The documents the Documents page files under "Cannot send yet". Falls back
+// to what this module skipped if that page's rule cannot answer, so a fault
+// there never blanks the footnote here.
+function notReadyDocuments(jobs, now, fallback) {
+  try {
+    return documentRows(jobs, now)
+      .filter(row => row.section === BLOCKED)
+      .map(row => ({ job_id: row.job_id, type: row.type, reason: row.reason }))
+  } catch {
+    return fallback
+  }
 }
 
 /**
@@ -216,11 +235,19 @@ export function installLabel(row) {
   return `In ${n} days`
 }
 
-// A dated job inside a fortnight, or one already past its date, is the set
+// A dated job inside two days, or one already past its date, is the set
 // worth colouring. Everything else is a queue, not a problem.
 export function isUrgent(row) {
   const n = row?.untilInstall
   return n !== null && n !== undefined && n <= 2
+}
+
+// Past its date. Coloured harder than merely soon, because a van that has
+// already been and gone with paperwork unsigned is a different problem from
+// one leaving on Thursday.
+export function isOverdue(row) {
+  const n = row?.untilInstall
+  return n !== null && n !== undefined && n < 0
 }
 
 // How many jobs, as opposed to how many documents. Two rows for one customer

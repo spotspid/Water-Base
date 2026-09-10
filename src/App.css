@@ -58,7 +58,8 @@
   align-items: center;
 }
 
-.route-error-actions .btn-cancel {
+.route-error-actions .btn-cancel,
+.route-error-actions .btn-primary {
   text-decoration: none;
   display: inline-flex;
   align-items: center;

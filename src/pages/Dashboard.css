@@ -4,9 +4,12 @@
 
 /* ---- metric tiles ---- */
 
+/* The column count is set inline from the tile count once the row has been
+   measured, so five tiles are never four and an orphan. auto-fit is the
+   fallback until then. */
 .dash-metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 18px;
   margin-bottom: var(--stack);
 }
@@ -381,6 +384,13 @@
    put in front of somebody. */
 .dash-due {
   color: var(--maroon);
+  font-weight: 600;
+}
+
+/* A date inside two days, still ahead. Amber, so that "in 2 days" and "1 day
+   overdue" stop wearing the same red and the overdue one stands out. */
+.dash-due-soon {
+  color: var(--amber-ink);
   font-weight: 600;
 }
 

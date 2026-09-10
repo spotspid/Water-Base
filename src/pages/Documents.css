@@ -254,7 +254,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Ahead but close: amber. Past: maroon. Two colours because they are two
+   different problems, and one red for both hid which was which. */
 .doc-install-soon {
+  color: var(--amber-ink);
+  font-weight: 600;
+}
+
+.doc-install-late {
   color: var(--maroon);
   font-weight: 600;
 }

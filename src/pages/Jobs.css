@@ -22,6 +22,36 @@
   color: var(--maroon);
 }
 
+/* The list is nine columns wide and has to fit a 993px page without a
+   horizontal scrollbar, which nobody noticed and which hid the date. Tighter
+   cell padding than the shared table, and the system name may wrap. */
+.jobs-list th,
+.jobs-list td {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.jobs-list .td-customer {
+  min-width: 140px;
+}
+
+/* The percentage and the Manual badge go under their figure rather than
+   beside it. Inline they made Parts and Margin the two widest columns on the
+   page, and the width they took was the width the Date column lost. */
+.jobs-list .job-margin-pct {
+  display: block;
+  margin-left: 0;
+}
+
+.jobs-list .inv-low {
+  margin: 3px 0 0 auto;
+}
+
+.jobs-list .col-num .inv-low {
+  display: flex;
+  width: fit-content;
+}
+
 /* ---- job margin and install controls ---- */
 .job-margin-grid {
   display: grid;

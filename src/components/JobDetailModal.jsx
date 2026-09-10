@@ -201,10 +201,18 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         item cost later does not rewrite the margin on a job that already installed.
       </p>
 
+      {/* An installed job is dated by the day it happened, not by the day it
+          was booked for. Walter Radu was written up after the fact with an
+          install date and no booking, and "Not scheduled yet" on an installed
+          job read as a job with no date at all. */}
       <p className="job-schedule-line">
-        {job.scheduled_date
-          ? `Scheduled for ${formatLongDate(job.scheduled_date)}${job.time_window ? `, ${job.time_window}` : ''}.`
-          : 'Not scheduled yet.'}
+        {installed
+          ? (job.install_date
+            ? `Installed on ${formatLongDate(job.install_date)}.`
+            : 'Installed, but no install date was recorded.')
+          : job.scheduled_date
+            ? `Scheduled for ${formatLongDate(job.scheduled_date)}${job.time_window ? `, ${job.time_window}` : ''}.`
+            : 'Not scheduled yet.'}
         {' '}
         {crewLabel(job) ? `Crew: ${crewLabel(job)}.` : 'No crew assigned.'}
         {' '}

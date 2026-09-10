@@ -11,7 +11,7 @@ import EmptyState from '../components/EmptyState'
 import DocumentRow from '../components/DocumentRow'
 import './Documents.css'
 
-// Every install agreement and work order in the business, in one place.
+// Every customer agreement and work order in the business, in one place.
 //
 // The dashboard shows only what somebody is sitting on. This is the whole
 // book, so the backlog that is nobody's fault yet has somewhere to live rather

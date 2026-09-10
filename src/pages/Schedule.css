@@ -222,7 +222,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
+  /* A week column can be under 100px wide, and the badge must not be
+     clipped to "Empt" beside a long name. When both do not fit on one line
+     the badge drops under the name instead. */
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 /* ---- readiness ----
@@ -244,6 +249,7 @@
   padding: 0 7px 0 6px;
   border-radius: 20px;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 /* Never wraps and never pushes the customer name out of the card. The name is

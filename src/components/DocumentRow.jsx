@@ -34,10 +34,7 @@ export default function DocumentRow({ row, busy, onSend, showReason }) {
           : ''}
       </span>
 
-      <span className={row.untilInstall !== null && row.untilInstall <= 2
-        ? 'doc-install doc-install-soon'
-        : 'doc-install'}
-      >
+      <span className={installClass(row)}>
         {installLabel(row)}
       </span>
 
@@ -58,4 +55,14 @@ export default function DocumentRow({ row, busy, onSend, showReason }) {
       </span>
     </li>
   )
+}
+
+// Overdue is maroon and soon is amber. Both used to be maroon, which put
+// "in 2 days" and "1 day overdue" in the same alarm and flattened the urgency.
+function installClass(row) {
+  const n = row?.untilInstall
+  if (n === null || n === undefined) return 'doc-install'
+  if (n < 0) return 'doc-install doc-install-late'
+  if (n <= 2) return 'doc-install doc-install-soon'
+  return 'doc-install'
 }

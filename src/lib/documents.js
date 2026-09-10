@@ -1,4 +1,4 @@
-// Every install agreement and work order, across every job.
+// Every customer agreement and work order, across every job.
 //
 // The dashboard answers "what needs me today" and deliberately shows only what
 // somebody is actually sitting on. This is the other half: the whole book,
@@ -27,8 +27,11 @@ export const SECTIONS = [
   { key: SIGNED, title: 'Signed', note: 'Done and on file' },
 ]
 
+// The same words the job modal, the dashboard and the Slack messages use.
+// This page called it an install agreement for a while, which made one
+// document look like two.
 const LABELS = {
-  [CUSTOMER]: 'Install agreement',
+  [CUSTOMER]: 'Customer agreement',
   [WORK_ORDER]: 'Work order',
 }
 

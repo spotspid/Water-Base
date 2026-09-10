@@ -12,6 +12,7 @@ import AddItemModal from '../components/AddItemModal'
 import LogTransactionModal from '../components/LogTransactionModal'
 import InventoryOnOrderCell from '../components/InventoryOnOrderCell'
 import InventoryReorder from '../components/InventoryReorder'
+import InventorySummary from '../components/InventorySummary'
 import ItemHistoryModal from '../components/ItemHistoryModal'
 import StockMeter from '../components/StockMeter'
 import './Inventory.css'
@@ -108,31 +109,20 @@ export default function Inventory() {
       <div className="inv-page">
 
         {hasData && (
-          <div className="inv-summary">
-            <div className="inv-stat inv-stat-lead">
-              <span className="inv-stat-label">Value on hand</span>
-              <span className="inv-stat-value">{formatCurrency(totalValue)}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">Items</span>
-              <span className="inv-stat-value">{visible.length}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">Promised to booked jobs</span>
-              <span className="inv-stat-value">{committedUnits}</span>
-            </div>
-            <div className={lowCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
-              <span className="inv-stat-label">Needs reordering</span>
-              <span className="inv-stat-value">{lowCount}</span>
-            </div>
-            <div className={shortCount > 0 ? 'inv-stat inv-stat-alert' : 'inv-stat'}>
-              <span className="inv-stat-label">Short</span>
-              <span className="inv-stat-value">{shortCount}</span>
-            </div>
-            <div className="inv-stat">
-              <span className="inv-stat-label">On order</span>
-              <span className="inv-stat-value">{onOrderUnits}</span>
-            </div>
+          <InventorySummary
+            totalValue={totalValue}
+            itemCount={visible.length}
+            committedUnits={committedUnits}
+            lowCount={lowCount}
+            shortCount={shortCount}
+            onOrderUnits={onOrderUnits}
+          />
+        )}
+
+        {hasData && <InventoryReorder rows={reorderRows} />}
+
+        {hasData && rows.length > 0 && (
+          <div className="inv-toolbar">
             <div className="inv-filter">
               <label htmlFor="category-filter">Category</label>
               <select id="category-filter" value={category} onChange={e => setCategory(e.target.value)}>
@@ -142,8 +132,6 @@ export default function Inventory() {
             </div>
           </div>
         )}
-
-        {hasData && <InventoryReorder rows={reorderRows} />}
 
         {loading && <p className="inv-state">Loading inventory...</p>}
 

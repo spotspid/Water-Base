@@ -1,4 +1,7 @@
 import { formatCurrency } from '../lib/inventory'
+import StatGrid from './StatGrid'
+
+const TILES = 5
 
 // Five figures that answer "what needs doing", not "how did we do".
 //
@@ -24,7 +27,7 @@ export default function DashboardMetrics({
   inventoryValue, inventoryUnits, itemCount,
 }) {
   return (
-    <div className="dash-metrics">
+    <StatGrid count={TILES} minWidth={180} gap={18} className="dash-metrics">
       <article className="dash-tile">
         <span className="dash-tile-label">Sold in {monthName}</span>
         <span className="dash-tile-value">{formatCurrency(sold.revenue)}</span>
@@ -76,6 +79,6 @@ export default function DashboardMetrics({
             : `${inventoryUnits} ${inventoryUnits === 1 ? 'unit' : 'units'} across ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
         </span>
       </article>
-    </div>
+    </StatGrid>
   )
 }
