@@ -94,7 +94,7 @@ export default function Templates() {
       return
     }
 
-    setNotice('Part removed from the template.')
+    setNotice('Part removed from the template. Jobs booked on this sheet have released it.')
     load()
   }
 

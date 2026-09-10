@@ -139,7 +139,12 @@ export default function TemplateLineModal({
       return
     }
 
-    onSaved(editing ? 'Part updated.' : 'Part added to the template.')
+    // The database resyncs every open booking on this sheet with the edit,
+    // so the shelf's committed figures already reflect it by the time this
+    // reads. Saying so is what stops somebody going to check.
+    onSaved(editing
+      ? 'Part updated. Jobs booked on this sheet now claim the new quantity.'
+      : 'Part added to the template. Jobs booked on this sheet now claim it too.')
   }
 
   const sourceMeta = pickSourceMeta(form.pick_source)
