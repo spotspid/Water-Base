@@ -1,15 +1,20 @@
 import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { formatDateTime } from '../lib/inventory'
-import { installerLabel } from '../lib/useInstallers'
 
-// The status half of the job detail modal: where it is now, the fields an
-// install needs, and the buttons that move it. Split out of JobDetailModal so
-// that file stays about loading and saving rather than about layout.
+// The status half of the job detail modal: where it is now, and the buttons
+// that move it. Split out of JobDetailModal so that file stays about loading
+// and saving rather than about layout.
+//
+// Installer and pay used to live here, feeding only "Mark installed", which
+// meant a payout could be typed and never saved. They moved to the crew and
+// pay section, which has its own save. What stays is the install date, and it
+// stays on purpose: it is the day the work actually happened, so it belongs to
+// the act of marking the job installed and has no meaning before that.
 //
 // Every action here is presentational. The work itself lives in the parent,
 // which owns the one busy flag so two buttons cannot fire at once.
 export default function JobStatusActions({
-  job, install, onInstallChange, installers, loadingCrew, busy,
+  job, install, onInstallChange, busy, crewDirty,
   revertTo, onRevertTo, confirmCancel, onConfirmCancel,
   actionError, notice, onMarkInstalled, onRevert, onPlainStatus,
 }) {
@@ -36,24 +41,12 @@ export default function JobStatusActions({
       {open && (
         <div className="form-grid job-install-grid">
           <div className="field">
-            <label htmlFor="install_date">Install date</label>
+            <label htmlFor="install_date">Installed on</label>
             <input id="install_date" name="install_date" type="date"
               value={install.install_date} onChange={onInstallChange} disabled={busy} />
-          </div>
-          <div className="field">
-            <label htmlFor="installer_id">Installer</label>
-            <select id="installer_id" name="installer_id" value={install.installer_id}
-              onChange={onInstallChange} disabled={busy || loadingCrew}>
-              <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-              {installers.map(i => (
-                <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="payout_amount">Installer pay ($)</label>
-            <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
-              value={install.payout_amount} onChange={onInstallChange} disabled={busy} />
+            <span className="field-hint">
+              Recorded when you mark it installed. Crew and pay come from the section above.
+            </span>
           </div>
         </div>
       )}
@@ -75,6 +68,15 @@ export default function JobStatusActions({
           Cancelling releases every part this job has committed and returns it to
           available. The job stays in the list as cancelled and stops counting toward
           revenue and margin. Nothing is deducted or returned in the ledger.
+        </p>
+      )}
+
+      {/* Marking installed records the crew and pay on the job. Doing it over
+          unsaved changes would record the old values while the screen showed
+          new ones, so it waits until they are saved or undone. */}
+      {open && crewDirty && (
+        <p className="form-warning" role="status">
+          Save or undo the crew and pay changes above before marking this installed.
         </p>
       )}
 
@@ -111,7 +113,8 @@ export default function JobStatusActions({
               onClick={() => onConfirmCancel(true)}>
               Cancel job
             </button>
-            <button type="button" className="btn-primary" onClick={onMarkInstalled} disabled={busy}>
+            <button type="button" className="btn-primary" onClick={onMarkInstalled}
+              disabled={busy || crewDirty}>
               {busy ? 'Working...' : 'Mark installed and deduct parts'}
             </button>
           </>

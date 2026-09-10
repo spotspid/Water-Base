@@ -12,6 +12,7 @@ import JobPartsLedger from './JobPartsLedger'
 import JobDeposits from './JobDeposits'
 import JobNagPause from './JobNagPause'
 import JobSiteConditions from './JobSiteConditions'
+import JobCrewPay from './JobCrewPay'
 import JobStatusActions from './JobStatusActions'
 import JobPartsPreview from './JobPartsPreview'
 import Modal from './Modal'
@@ -27,12 +28,11 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   const [ledgerKey, setLedgerKey] = useState(0)
   const [revertTo, setRevertTo] = useState('scheduled')
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [crewDirty, setCrewDirty] = useState(false)
   const [install, setInstall] = useState({
     // an install that happened today usually happened on the day it was
     // promised, so the date it was booked for is the sensible starting point
     install_date: job.install_date || job.scheduled_date || '',
-    installer_id: job.installer_id || '',
-    payout_amount: job.installer_pay == null ? '' : String(job.installer_pay),
   })
 
   const installed = job.status === 'installed'
@@ -52,43 +52,28 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   }
 
   async function runMarkInstalled() {
-    if (install.payout_amount !== '') {
-      const payout = Number(install.payout_amount)
-      if (!Number.isFinite(payout) || payout < 0) {
-        setActionError('Installer pay must be zero or greater, or left blank.')
-        return
-      }
+    // The button is disabled while this is true, so reaching here means
+    // something raced it. Refusing is cheaper than recording stale values.
+    if (crewDirty) {
+      setActionError('Save or undo the crew and pay changes above before marking this installed.')
+      return
     }
 
     setActionError('')
     setNotice('')
     setBusy(true)
 
-    // the roster id is the source of truth for who did the job, and a trigger
-    // writes the name onto the row from it, so the crew is saved before the
-    // deduction rather than passed through as free text.
-    if (install.installer_id && install.installer_id !== job.installer_id) {
-      const { error: crewErr } = await attempt(
-        () => supabase.from('jobs')
-          .update({ installer_id: install.installer_id })
-          .eq('id', job.id),
-        'The installer could not be assigned.',
-      )
-
-      if (crewErr) {
-        setBusy(false)
-        setActionError(crewErr)
-        onChanged()
-        return
-      }
-    }
-
+    // Crew and pay are already on the row, saved by the section above through
+    // schedule_job and its roster rules. This used to write installer_id with
+    // a plain update first, which skipped those rules and could hand an
+    // installer switched off in Settings a finished job. A null payout tells
+    // the function to keep the saved one.
     const { data, error } = await attempt(
       () => supabase.rpc('mark_job_installed', {
         p_job_id: job.id,
         p_install_date: install.install_date || null,
         p_installer: null,
-        p_payout: install.payout_amount === '' ? null : Number(install.payout_amount),
+        p_payout: null,
       }),
       'The job could not be marked installed.',
     )
@@ -216,7 +201,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         {' '}
         {crewLabel(job) ? `Crew: ${crewLabel(job)}.` : 'No crew assigned.'}
         {' '}
-        <a href="/schedule" className="tpl-link">Open the schedule</a>
+        <a href="/schedule" className="tpl-link">Change the date on the schedule</a>
       </p>
 
       {!cancelled && <JobDeposits job={job} onChanged={onChanged} />}
@@ -224,6 +209,19 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 
       {!cancelled && <JobSiteConditions job={job} onChanged={onChanged} />}
+
+      {/* Beside the work order because it is three of the things the work
+          order refuses to go without. Open jobs only: an installed job's crew
+          and pay are a record, and schedule_job refuses to touch one. */}
+      {open && (
+        <JobCrewPay
+          job={job}
+          installers={installers}
+          loadingCrew={loadingCrew}
+          onChanged={onChanged}
+          onDirtyChange={setCrewDirty}
+        />
+      )}
 
       {!cancelled && <JobWorkOrder job={job} onChanged={onChanged} />}
 
@@ -250,9 +248,8 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         job={job}
         install={install}
         onInstallChange={handleInstallChange}
-        installers={installers}
-        loadingCrew={loadingCrew}
         busy={busy}
+        crewDirty={open && crewDirty}
         revertTo={revertTo}
         onRevertTo={setRevertTo}
         confirmCancel={confirmCancel}
