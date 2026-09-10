@@ -18,6 +18,7 @@ const Schedule = lazy(() => import('./pages/Schedule'))
 const Inventory = lazy(() => import('./pages/Inventory'))
 const Orders = lazy(() => import('./pages/Orders'))
 const Templates = lazy(() => import('./pages/Templates'))
+const Warranty = lazy(() => import('./pages/Warranty'))
 const Documents = lazy(() => import('./pages/Documents'))
 const Expenses = lazy(() => import('./pages/Expenses'))
 const PnL = lazy(() => import('./pages/PnL'))
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+            <Route path="/warranty" element={<ProtectedRoute><Warranty /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />

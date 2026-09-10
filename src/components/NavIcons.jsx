@@ -49,6 +49,16 @@ export function IconJobs() {
   )
 }
 
+// A shield with a crack down it: a part that was covered, and failed.
+export function IconWarranty() {
+  return (
+    <svg {...base}>
+      <path d="M12 3 4 6v6c0 4.4 3.4 8.1 8 9 4.6-.9 8-4.6 8-9V6Z" />
+      <path d="M12 8l-1.5 3.5H13L11 16" />
+    </svg>
+  )
+}
+
 export function IconInventory() {
   return (
     <svg {...base}>

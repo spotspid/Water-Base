@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { attempt } from '../lib/errors'
 import { useSettings } from '../lib/settings'
 import { effectiveDirection, signedQuantity, txnTypeMeta } from '../lib/inventory'
+import { isWarranty } from '../lib/warranty'
 import Modal from './Modal'
+import WarrantyJobField from './WarrantyJobField'
 
 export default function LogTransactionModal({ items, presetItemId, onClose, onSaved }) {
   const { txnTypes, defaultLocation, loading: loadingSettings } = useSettings()
@@ -13,6 +16,8 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
     adjust_direction: 'add',
     reference: '',
     note: '',
+    // the install a warranty replacement traces back to; ignored otherwise
+    warranty_job_id: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -34,6 +39,7 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
   const signed = signedQuantity(txnTypes, form.txn_type, form.quantity, form.adjust_direction)
   const projected = selected ? Number(selected.on_hand) + signed : null
   const goesNegative = projected !== null && projected < 0
+  const warranty = isWarranty(form.txn_type)
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -48,6 +54,9 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
     if (!Number.isFinite(size) || size <= 0) return 'Quantity must be greater than zero.'
     if (!Number.isInteger(size)) return 'Quantity must be a whole number.'
     if (signed === 0) return 'This transaction would not change stock.'
+    if (warranty && !form.warranty_job_id) {
+      return 'Pick the job the failed part was installed on. A warranty replacement is always traced to its install.'
+    }
     return ''
   }
 
@@ -70,20 +79,22 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
       location: defaultLocation || null,
       reference: form.reference.trim() || null,
       note: form.note.trim() || null,
+      // the database refuses a warranty row without this, and any other row with it
+      warranty_job_id: warranty ? form.warranty_job_id : null,
     }
 
-    try {
-      const { error: err } = await supabase.from('inventory_transactions').insert(payload)
-      if (err) {
-        setError(err.message)
-        setSaving(false)
-        return
-      }
-      onSaved()
-    } catch (caught) {
-      setError(caught?.message || 'Could not reach the database. Check your connection and try again.')
+    const { error: err } = await attempt(
+      () => supabase.from('inventory_transactions').insert(payload),
+      'The movement could not be logged.',
+    )
+
+    if (err) {
+      setError(err)
       setSaving(false)
+      return
     }
+
+    onSaved()
   }
 
   return (
@@ -118,6 +129,11 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
             </select>
             {meta && <span className="field-hint">{meta.help}</span>}
           </div>
+
+          {warranty && (
+            <WarrantyJobField value={form.warranty_job_id} onChange={handleChange}
+              disabled={saving} />
+          )}
 
           <div className="field">
             <label htmlFor="quantity">Quantity</label>

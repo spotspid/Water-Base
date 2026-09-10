@@ -1,0 +1,6 @@
+/* Warranty page. Everything else it draws is a shared rule in index.css,
+   so this only sets the page rhythm. */
+
+.wty-page {
+  padding: 2px 0 40px;
+}

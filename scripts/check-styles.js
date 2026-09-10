@@ -33,6 +33,7 @@ const ROUTES = [
   ['/inventory', 'src/pages/Inventory.jsx'],
   ['/orders', 'src/pages/Orders.jsx'],
   ['/templates', 'src/pages/Templates.jsx'],
+  ['/warranty', 'src/pages/Warranty.jsx'],
   ['/documents', 'src/pages/Documents.jsx'],
   ['/expenses', 'src/pages/Expenses.jsx'],
   ['/pnl', 'src/pages/PnL.jsx'],

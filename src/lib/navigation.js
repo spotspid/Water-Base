@@ -29,6 +29,7 @@ export const GROUPS = [
       { to: '/inventory', text: 'Inventory', hint: 'On hand, promised, on order' },
       { to: '/orders', text: 'Supplier orders', hint: 'What is coming, and when' },
       { to: '/templates', text: 'Build sheets', hint: 'Parts per system' },
+      { to: '/warranty', text: 'Warranty', hint: 'Failures by part and supplier' },
     ],
   },
   {
@@ -56,6 +57,7 @@ const TITLES = {
   '/inventory': ['Inventory', 'On hand, promised, on order'],
   '/orders': ['Supplier orders', 'On order and arrival dates'],
   '/templates': ['Build sheets', 'Parts per system'],
+  '/warranty': ['Warranty', 'Failures by part and supplier'],
   '/documents': ['Documents', 'Agreements and work orders'],
   '/expenses': ['Expenses', 'Overheads and one-offs'],
   '/pnl': ['Profit and loss', 'Revenue, parts, pay, expenses'],
