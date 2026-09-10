@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attemptRows } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
 import './Agreement.css'
 
@@ -39,7 +39,7 @@ export default function JobSiteConditions({ job, onChanged }) {
 
     const value = draft.trim()
 
-    const { error: err } = await attempt(
+    const { error: err } = await attemptRows(
       () => supabase
         .from('jobs')
         .update({ site_conditions: value || null })

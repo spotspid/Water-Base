@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
 import { describeStatusShift } from '../lib/jobActions'
 import { useSettings, withCurrent } from '../lib/settings'
@@ -138,7 +138,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     }
 
     if (detailsDirty) {
-      const { error: err } = await attempt(
+      const { error: err } = await attemptRows(
         () => supabase.from('jobs').update({
           payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
           invoice_number: draft.invoice_number.trim() || null,

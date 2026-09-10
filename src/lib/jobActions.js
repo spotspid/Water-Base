@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { attempt } from './errors'
+import { attempt, attemptRows } from './errors'
 import { CANCELLED_STATUS, STATUS_LABELS } from './constants'
 import { formatCurrency } from './inventory'
 import { formatLongDate } from './schedule'
@@ -61,7 +61,7 @@ export async function revertInstall(job, revertTo) {
 // cannot go through schedule_job, and the database trigger does the
 // reservation work either way. This only has to say what happened.
 export async function changeStatus(job, next) {
-  const { error } = await attempt(
+  const { error } = await attemptRows(
     () => supabase.from('jobs').update({ status: next }).eq('id', job.id),
     'The status could not be changed.',
   )

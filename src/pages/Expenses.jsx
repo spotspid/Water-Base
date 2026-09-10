@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { useSettings } from '../lib/settings'
 import {
   EXPENSE_SOURCES, formatCurrency, formatDate, monthsAgoIso, sumAmounts, todayIso,
@@ -91,7 +91,7 @@ export default function Expenses() {
     setError('')
     setRemovingId(row.id)
 
-    const { error: err } = await attempt(
+    const { error: err } = await attemptRows(
       () => supabase.from('expenses').delete().eq('id', row.id),
       'That expense could not be removed.',
     )

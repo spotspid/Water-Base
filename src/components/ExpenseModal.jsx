@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { parseAmount, todayIso } from '../lib/expenses'
 import Modal from './Modal'
 
@@ -54,12 +54,17 @@ export default function ExpenseModal({ expense, categories, onClose, onSaved }) 
       description: form.description.trim() || null,
     }
 
-    const { error: err } = await attempt(
-      () => (editing
-        ? supabase.from('expenses').update(payload).eq('id', expense.id)
-        : supabase.from('expenses').insert({ ...payload, source: 'manual' })),
-      editing ? 'That expense could not be saved.' : 'That expense could not be added.',
-    )
+    // An edit has to land on the row; a blocked or vanished row must not
+    // close the modal as though it saved.
+    const { error: err } = editing
+      ? await attemptRows(
+        () => supabase.from('expenses').update(payload).eq('id', expense.id),
+        'That expense could not be saved.',
+      )
+      : await attempt(
+        () => supabase.from('expenses').insert({ ...payload, source: 'manual' }),
+        'That expense could not be added.',
+      )
 
     setSaving(false)
 

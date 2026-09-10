@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import './Agreement.css'
 
 // The template id per agreement type, which is the one thing about DocuSeal an
@@ -63,7 +63,7 @@ export default function AgreementTypeEditor() {
     setNotice('')
     setBusyType(row.type)
 
-    const { error: err } = await attempt(
+    const { error: err } = await attemptRows(
       () => supabase.from('agreement_types')
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq('type', row.type),

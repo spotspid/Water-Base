@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attemptRows } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 
 // The catalogue cost, editable in place.
@@ -47,7 +47,7 @@ export default function ItemCostField({ item, onChanged }) {
     setNotice('')
     setBusy(true)
 
-    const { error: err } = await attempt(
+    const { error: err } = await attemptRows(
       () => supabase.from('inventory_items').update({ unit_cost: value }).eq('id', item.id),
       'The unit cost could not be saved.',
     )

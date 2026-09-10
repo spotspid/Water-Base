@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attemptRows } from '../lib/errors'
 import { DIRECTION_LABELS } from '../lib/settings'
 import TransactionTypeModal from './TransactionTypeModal'
 
@@ -15,7 +15,7 @@ export default function TransactionTypeEditor({ types, onChanged }) {
     setNotice('')
     setBusyValue(value)
 
-    const { error: err } = await attempt(work, 'That transaction type could not be saved.')
+    const { error: err } = await attemptRows(work, 'That transaction type could not be saved.')
 
     if (err) {
       setError(err)

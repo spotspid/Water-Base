@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { groupLinesByTemplate, sortTemplates } from '../lib/templates'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
@@ -84,7 +84,7 @@ export default function Templates() {
     setNotice('')
     setActionError('')
 
-    const { error: err } = await attempt(
+    const { error: err } = await attemptRows(
       () => supabase.from('template_lines').delete().eq('id', line.id),
       'That part could not be removed.',
     )

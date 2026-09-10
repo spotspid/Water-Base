@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { DIRECTION_LABELS } from '../lib/settings'
 import Modal from './Modal'
 
@@ -76,12 +76,15 @@ export default function TransactionTypeModal({ type, existing, onClose, onSaved 
           sort_order: form.sort_order === '' ? 0 : Number(form.sort_order),
         }
 
-    const { error: err } = await attempt(
-      () => (editing
-        ? supabase.from('transaction_types').update(payload).eq('value', type.value)
-        : supabase.from('transaction_types').insert({ ...payload, value: form.value.trim() })),
-      'That transaction type could not be saved.',
-    )
+    const { error: err } = editing
+      ? await attemptRows(
+        () => supabase.from('transaction_types').update(payload).eq('value', type.value),
+        'That transaction type could not be saved.',
+      )
+      : await attempt(
+        () => supabase.from('transaction_types').insert({ ...payload, value: form.value.trim() }),
+        'That transaction type could not be saved.',
+      )
 
     if (err) {
       setError(err)

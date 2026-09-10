@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { attempt } from './errors.js'
+import { attempt, attemptRows } from './errors.js'
 
 // Reading and writing deposits. How they read on screen is in depositState.js,
 // which imports nothing so the repo check can run it.
@@ -24,7 +24,7 @@ export async function addDeposit(deposit) {
 }
 
 export async function removeDeposit(id) {
-  return attempt(
+  return attemptRows(
     () => supabase.from('job_deposits').delete().eq('id', id),
     'That deposit could not be removed.',
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attemptRows } from '../lib/errors'
 
 const DEFAULT_COLOR = '#2C819B'
 
@@ -21,7 +21,8 @@ export default function InstallerEditor({ installers, onChanged }) {
     setNotice('')
     setBusyId(id)
 
-    const { error: err } = await attempt(work, 'That roster change could not be saved.')
+    // one row every time, and a change that matched nothing is a failure
+    const { error: err } = await attemptRows(work, 'That roster change could not be saved.')
 
     if (err) {
       setError(err)

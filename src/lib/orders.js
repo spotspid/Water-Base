@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { attempt } from './errors.js'
+import { attempt, attemptRows } from './errors.js'
 
 // Reading and writing supplier orders.
 //
@@ -33,11 +33,15 @@ export async function fetchOrderLines(orderId) {
 }
 
 export async function saveOrder(order, id) {
+  if (id) {
+    return attemptRows(
+      () => supabase.from('supplier_orders').update(order).eq('id', id),
+      'The order could not be saved.',
+    )
+  }
   return attempt(
-    () => (id
-      ? supabase.from('supplier_orders').update(order).eq('id', id).select('id').single()
-      : supabase.from('supplier_orders').insert(order).select('id').single()),
-    id ? 'The order could not be saved.' : 'The order could not be created.',
+    () => supabase.from('supplier_orders').insert(order).select('id').single(),
+    'The order could not be created.',
   )
 }
 
@@ -49,7 +53,7 @@ export async function addOrderLine(line) {
 }
 
 export async function removeOrderLine(id) {
-  return attempt(
+  return attemptRows(
     () => supabase.from('supplier_order_lines').delete().eq('id', id),
     'That line could not be removed.',
   )

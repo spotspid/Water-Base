@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PICK_SOURCES } from '../lib/constants'
 import { useSettings, withCurrent } from '../lib/settings'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import { pickCandidates, pickSourceMeta } from '../lib/templates'
 import Modal from './Modal'
@@ -123,12 +123,15 @@ export default function TemplateLineModal({
       note: form.note.trim() || null,
     }
 
-    const { error: err } = await attempt(
-      () => (editing
-        ? supabase.from('template_lines').update(payload).eq('id', line.id)
-        : supabase.from('template_lines').insert(payload)),
-      'That part could not be saved.',
-    )
+    const { error: err } = editing
+      ? await attemptRows(
+        () => supabase.from('template_lines').update(payload).eq('id', line.id),
+        'That part could not be saved.',
+      )
+      : await attempt(
+        () => supabase.from('template_lines').insert(payload),
+        'That part could not be saved.',
+      )
 
     if (err) {
       setError(err)

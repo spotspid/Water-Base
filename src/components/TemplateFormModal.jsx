@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import Modal from './Modal'
 
 function initialForm(template) {
@@ -62,12 +62,15 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
       notes: form.notes.trim() || null,
     }
 
-    const { error: err } = await attempt(
-      () => (editing
-        ? supabase.from('system_templates').update(payload).eq('id', template.id)
-        : supabase.from('system_templates').insert(payload)),
-      'The template could not be saved.',
-    )
+    const { error: err } = editing
+      ? await attemptRows(
+        () => supabase.from('system_templates').update(payload).eq('id', template.id),
+        'The template could not be saved.',
+      )
+      : await attempt(
+        () => supabase.from('system_templates').insert(payload),
+        'The template could not be saved.',
+      )
 
     if (err) {
       setError(err.includes('already exists')

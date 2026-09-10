@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { attempt } from '../lib/errors'
+import { attempt, attemptRows } from '../lib/errors'
 import { lowerLabel, singularise, withArticle } from '../lib/text'
 
 // One editable pick list. The same component drives inventory categories,
@@ -28,7 +28,9 @@ export default function OptionListEditor({ listKey, title, description, rows, on
     setNotice('')
     setBusyId(id)
 
-    const { error: err } = await attempt(
+    // Every change here is an insert, update or delete on one row, and a
+    // rename or removal that matched nothing must not report success.
+    const { error: err } = await attemptRows(
       work,
       `That ${singularise(lowerLabel(title))} change could not be saved.`,
     )
