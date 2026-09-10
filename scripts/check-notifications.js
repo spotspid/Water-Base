@@ -356,6 +356,34 @@ check('locked, like every other prefilled field', woBy.get('balance_due')?.reado
 check('and it sits beside the collected by boxes',
   woBy.get('collected_by_company')?.default_value === 'X')
 
+// --- who collects it ---------------------------------------------------------
+
+// Exactly one box is ticked and the other is sent blank and locked. A job
+// with no collected_by, which is every job written before the column, is the
+// company, because that is what every work order sent before this said.
+const boxesOf = ctx => {
+  const by = new Map(matchFields(woSpec, WO_TEMPLATE, ctx).fields.map(f => [f.name, f]))
+  return [by.get('collected_by_company'), by.get('collected_by_subcontractor')]
+}
+
+const [noneCo, noneSub] = boxesOf(woCtx)
+check('no collected_by ticks the company', noneCo?.default_value === 'X')
+check('and sends the subcontractor box blank and locked',
+  noneSub?.default_value === '' && noneSub?.readonly === true)
+
+const [coCo, coSub] = boxesOf({ ...woCtx, job: { ...woCtx.job, collected_by: 'company' } })
+check('company ticks the company', coCo?.default_value === 'X' && coSub?.default_value === '')
+
+const [subCo, subSub] = boxesOf({ ...woCtx, job: { ...woCtx.job, collected_by: 'subcontractor' } })
+check('subcontractor ticks the subcontractor',
+  subSub?.default_value === 'X' && subSub?.readonly === true)
+check('and leaves the company box blank and locked',
+  subCo?.default_value === '' && subCo?.readonly === true)
+
+const [junkCo, junkSub] = boxesOf({ ...woCtx, job: { ...woCtx.job, collected_by: 'nonsense' } })
+check('an unknown value is the company rather than nobody',
+  junkCo?.default_value === 'X' && junkSub?.default_value === '')
+
 const paidInFull = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], {
   ...woCtx, job: { ...woCtx.job, deposits_taken: 2999, balance_due: 0 },
 })

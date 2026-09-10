@@ -19,6 +19,17 @@ import './Agreement.css'
 // is where the roster rules live: nobody switched off in Settings can be given
 // new work, and the installer cannot also be the helper. The date and window
 // are passed back unchanged, so saving a crew never moves a booking.
+//
+// Who collects the balance lives here too. The work order has a box for the
+// company and one for the subcontractor, and the X used to be hardcoded to
+// the company, so an installer who took the payment signed a sheet saying he
+// had not. Company is the default because that is what every sheet so far
+// has said.
+const COLLECTED_BY = [
+  { value: 'company', label: 'The company' },
+  { value: 'subcontractor', label: 'The subcontractor' },
+]
+
 function baselineOf(job) {
   const pay = Number(job.installer_pay)
   return {
@@ -28,6 +39,7 @@ function baselineOf(job) {
     // payout, so both read as an empty box rather than a confident zero.
     payout_amount: Number.isFinite(pay) && pay > 0 ? String(job.installer_pay) : '',
     invoice_number: job.invoice_number || '',
+    collected_by: job.collected_by === 'subcontractor' ? 'subcontractor' : 'company',
   }
 }
 
@@ -55,6 +67,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
   const crewDirty = draft.installer_id !== saved.installer_id || draft.helper_id !== saved.helper_id
   const detailsDirty = draft.payout_amount !== saved.payout_amount
     || draft.invoice_number.trim() !== saved.invoice_number.trim()
+    || draft.collected_by !== saved.collected_by
   const dirty = crewDirty || detailsDirty
 
   // The status section holds "Mark installed", which must not run over
@@ -76,6 +89,9 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     }
     if (draft.installer_id && draft.installer_id === draft.helper_id) {
       return 'The installer and the helper cannot be the same person.'
+    }
+    if (!COLLECTED_BY.some(c => c.value === draft.collected_by)) {
+      return 'Pick who collects the balance.'
     }
     return ''
   }
@@ -121,15 +137,18 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         () => supabase.from('jobs').update({
           payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
           invoice_number: draft.invoice_number.trim() || null,
+          collected_by: draft.collected_by,
         }).eq('id', job.id),
-        'The pay and job number could not be saved.',
+        'The pay, job number and collected by could not be saved.',
       )
 
       if (err) {
         setBusy(false)
         // Say exactly what landed. A half save reported as a failure invites
         // somebody to redo the half that already worked.
-        setError(crewDirty ? `The crew was saved, but the pay and job number were not. ${err}` : err)
+        setError(crewDirty
+          ? `The crew was saved, but the pay, job number and collected by were not. ${err}`
+          : err)
         onChanged()
         return
       }
@@ -214,6 +233,18 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
             value={draft.invoice_number} onChange={change} disabled={busy}
             placeholder="MWP-0001" />
           <span className="field-hint">The invoice number. The work order will not send without it.</span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="crew_collected_by">Balance collected by</label>
+          <select id="crew_collected_by" name="collected_by" value={draft.collected_by}
+            onChange={change} disabled={busy}>
+            {COLLECTED_BY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <span className="field-hint">
+            Who takes what is still owed on the day. Ticks one of the two collected by
+            boxes on the work order.
+          </span>
         </div>
       </div>
 

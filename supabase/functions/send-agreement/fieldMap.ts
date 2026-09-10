@@ -93,6 +93,12 @@ function todayLong(now: Date): string {
   return now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+// One question, asked by both collected by boxes, so they can never agree
+// with each other by both being ticked or both being blank.
+function collectedBySubcontractor(ctx: Context): boolean {
+  return text(ctx.job.collected_by).toLowerCase() === 'subcontractor'
+}
+
 // Prefilled on every work order. Both are company facts rather than job facts,
 // so they live here as constants rather than as columns nobody would ever edit
 // per job. If either changes, it changes in one place.
@@ -264,10 +270,16 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
 
     // exactly one box carries an X. The other is sent blank and locked, so it
     // cannot be ticked as well.
+    //
+    // Which one is a fact about the job, chosen beside crew and pay. It used
+    // to be hardcoded to the company, so a subcontractor who took the payment
+    // signed a document saying he had not. Anything other than
+    // 'subcontractor', including a job read before the column existed, is the
+    // company, which is what every work order sent before this said.
     { key: 'collected_by_company', required: false, names: ['collected_by_company'],
-      lockBlank: true, value: () => 'X' },
+      lockBlank: true, value: ctx => (collectedBySubcontractor(ctx) ? '' : 'X') },
     { key: 'collected_by_subcontractor', required: false, names: ['collected_by_subcontractor'],
-      lockBlank: true, value: () => '' },
+      lockBlank: true, value: ctx => (collectedBySubcontractor(ctx) ? 'X' : '') },
 
     { key: 'company_signature', required: true, names: ['company_signature'],
       value: () => COMPANY_SIGNATORY },
