@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
 import { describeStatusShift } from '../lib/jobActions'
+import { useSettings, withCurrent } from '../lib/settings'
 import { installerLabel } from '../lib/useInstallers'
 import { gapsSentence } from '../lib/workOrder'
 import './Agreement.css'
@@ -40,12 +41,15 @@ function baselineOf(job) {
     payout_amount: Number.isFinite(pay) && pay > 0 ? String(job.installer_pay) : '',
     invoice_number: job.invoice_number || '',
     collected_by: job.collected_by === 'subcontractor' ? 'subcontractor' : 'company',
+    // which control valve the build sheet takes; blank on an RO only job
+    valve_type: job.valve_type || '',
   }
 }
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
 export default function JobCrewPay({ job, installers, loadingCrew, onChanged, onDirtyChange }) {
+  const { valveTypes, loading: loadingSettings } = useSettings()
   const incoming = baselineOf(job)
   const incomingKey = JSON.stringify(incoming)
   const [saved, setSaved] = useState(incoming)
@@ -68,6 +72,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
   const detailsDirty = draft.payout_amount !== saved.payout_amount
     || draft.invoice_number.trim() !== saved.invoice_number.trim()
     || draft.collected_by !== saved.collected_by
+    || draft.valve_type !== saved.valve_type
   const dirty = crewDirty || detailsDirty
 
   // The status section holds "Mark installed", which must not run over
@@ -138,8 +143,9 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
           payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
           invoice_number: draft.invoice_number.trim() || null,
           collected_by: draft.collected_by,
+          valve_type: draft.valve_type || null,
         }).eq('id', job.id),
-        'The pay, job number and collected by could not be saved.',
+        'The pay and job details could not be saved.',
       )
 
       if (err) {
@@ -147,7 +153,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         // Say exactly what landed. A half save reported as a failure invites
         // somebody to redo the half that already worked.
         setError(crewDirty
-          ? `The crew was saved, but the pay, job number and collected by were not. ${err}`
+          ? `The crew was saved, but the pay and job details were not. ${err}`
           : err)
         onChanged()
         return
@@ -244,6 +250,21 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
           <span className="field-hint">
             Who takes what is still owed on the day. Ticks one of the two collected by
             boxes on the work order.
+          </span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="crew_valve_type">Valve type</label>
+          <select id="crew_valve_type" name="valve_type" value={draft.valve_type}
+            onChange={change} disabled={busy || loadingSettings}>
+            <option value="">{loadingSettings ? 'Loading valve types...' : 'Not chosen'}</option>
+            {withCurrent(valveTypes, draft.valve_type).map(v => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+          <span className="field-hint">
+            Which control valve goes on the truck. Printed on the work order and taken
+            off the shelf when the job installs. RO only needs none.
           </span>
         </div>
       </div>

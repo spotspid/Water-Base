@@ -161,7 +161,7 @@ Deno.serve(async req => {
     .select('id, customer_name, customer_email, phone, address, city, system_template, '
       + 'template_id, sale_price, invoice_number, faucet_finish, ro_type, install_date, '
       + 'scheduled_date, time_window, installer_id, installer_pay, status, site_conditions, '
-      + 'deposits_taken, balance_due, collected_by')
+      + 'deposits_taken, balance_due, collected_by, valve_type')
     .eq('id', jobId)
     .maybeSingle()
 
@@ -231,6 +231,7 @@ Deno.serve(async req => {
       p_template_id: job.template_id,
       p_faucet_finish: job.faucet_finish || null,
       p_ro_type: job.ro_type || null,
+      p_valve_type: job.valve_type || null,
     })
 
     if (partsError) return fail(`The parts list could not be resolved. ${partsError.message}`, 500)

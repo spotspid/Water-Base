@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   payment_type: '',
   faucet_finish: '',
   ro_type: '',
+  valve_type: '',
   status: 'sold',
   scheduled_date: '',
   time_window: '',
@@ -152,6 +153,9 @@ export default function NewJob() {
       payment_type: form.payment_type,
       faucet_finish: form.faucet_finish,
       ro_type: form.ro_type || null,
+      // Optional here. An RO only job has no control valve, and the parts
+      // preview flags an unresolved valve line on a sheet that needs one.
+      valve_type: form.valve_type || null,
       status: wantsInstall ? 'scheduled' : form.status,
       scheduled_date: form.scheduled_date || null,
       time_window: form.scheduled_date ? (form.time_window || null) : null,

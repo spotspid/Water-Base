@@ -384,6 +384,28 @@ const [junkCo, junkSub] = boxesOf({ ...woCtx, job: { ...woCtx.job, collected_by:
 check('an unknown value is the company rather than nobody',
   junkCo?.default_value === 'X' && junkSub?.default_value === '')
 
+// --- which control valve to take ---------------------------------------------
+
+// The work order adds the valve type to the systems line, because the
+// installer has to know which one to put on the truck. The customer never
+// chose it, so the customer agreement leaves it out.
+const systemsOn = (spec, ctx) =>
+  matchFields(spec, ['systems'], ctx).fields.find(f => f.name === 'systems')?.default_value
+
+const woValve = systemsOn(SPECS.subcontractor_service,
+  { ...woCtx, job: { ...woCtx.job, valve_type: 'Clack' } })
+check('the work order names the valve type',
+  woValve === 'Flagship Bundle (Tank Style, Chrome, Clack)', woValve)
+
+const ciValve = systemsOn(SPECS.customer_install,
+  { ...ciCtx, job: { ...ciCtx.job, valve_type: 'Clack' } })
+check('and the customer agreement leaves it out',
+  ciValve === 'RO Only (Tankless, Chrome)', ciValve)
+
+const woNoValve = systemsOn(SPECS.subcontractor_service, woCtx)
+check('a job with no valve type prints the two picks it has',
+  woNoValve === 'Flagship Bundle (Tank Style, Chrome)', woNoValve)
+
 const paidInFull = matchFields(woSpec, [...WO_TEMPLATE, 'balance_due'], {
   ...woCtx, job: { ...woCtx.job, deposits_taken: 2999, balance_due: 0 },
 })

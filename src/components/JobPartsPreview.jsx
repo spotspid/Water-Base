@@ -12,7 +12,7 @@ import { pickSourceLabel } from '../lib/templates'
 // claim. On the new job form it is false, because nothing is claimed until
 // the job is saved.
 export default function JobPartsPreview({
-  templateId, templateLabel, faucetFinish, roType, committed = false,
+  templateId, templateLabel, faucetFinish, roType, valveType, committed = false,
 }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -33,6 +33,7 @@ export default function JobPartsPreview({
         p_template_id: templateId,
         p_faucet_finish: faucetFinish || null,
         p_ro_type: roType || null,
+        p_valve_type: valveType || null,
       }),
       'The parts list could not be resolved.',
     )
@@ -45,7 +46,7 @@ export default function JobPartsPreview({
     }
 
     setLoading(false)
-  }, [templateId, faucetFinish, roType])
+  }, [templateId, faucetFinish, roType, valveType])
 
   useEffect(() => { load() }, [load])
 

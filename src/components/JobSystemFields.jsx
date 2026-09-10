@@ -8,7 +8,9 @@ export default function JobSystemFields({
   form, onChange, disabled, templates, loadingTemplates, templateError, onReloadTemplates,
   selectedTemplate,
 }) {
-  const { finishes, roTypes, paymentTypes, loading: loadingSettings } = useSettings()
+  const {
+    finishes, roTypes, valveTypes, paymentTypes, loading: loadingSettings,
+  } = useSettings()
 
   return (
     <section className="form-section">
@@ -71,6 +73,23 @@ export default function JobSystemFields({
           </span>
         </div>
         <div className="field">
+          <label htmlFor="valve_type">
+            Valve type <span className="optional">(whole home systems)</span>
+          </label>
+          <select id="valve_type" name="valve_type"
+            value={form.valve_type} onChange={onChange}
+            disabled={disabled || loadingSettings}>
+            <option value="">
+              {loadingSettings ? 'Loading valve types...' : 'Not chosen'}
+            </option>
+            {valveTypes.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+          <span className="field-hint">
+            Which control valve the build sheet takes off the shelf. A sheet with a
+            valve line will not install until one is chosen. RO only needs none.
+          </span>
+        </div>
+        <div className="field">
           <label htmlFor="payment_type">Payment type</label>
           <select id="payment_type" name="payment_type" required
             value={form.payment_type} onChange={onChange}
@@ -88,6 +107,7 @@ export default function JobSystemFields({
         templateLabel={form.system_template}
         faucetFinish={form.faucet_finish}
         roType={form.ro_type}
+        valveType={form.valve_type}
       />
     </section>
   )

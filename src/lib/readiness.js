@@ -94,7 +94,7 @@ export function readinessOf(facts) {
       tone: 'warn',
       label: `Pick ${unresolved}`,
       detail: `${plural(unresolved, 'line', 'lines')} on the build sheet cannot name a part until `
-        + 'the finish or the RO type is chosen, so the parts are not counted yet.',
+        + 'the finish, the RO type or the valve type is chosen, so the parts are not counted yet.',
     }
   }
 

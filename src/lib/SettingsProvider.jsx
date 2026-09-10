@@ -92,6 +92,7 @@ export function SettingsProvider({ children }) {
       timeWindows: activeValues('time_window'),
       expenseCategories: activeValues('expense_category'),
       roTypes: activeValues('ro_type'),
+      valveTypes: activeValues('valve_type'),
       txnTypes: sortedTypes.filter(t => t.active),
       ...readScalars(scalarRows),
     }

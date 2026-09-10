@@ -142,8 +142,9 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     { key: 'email', required: true, names: ['email'],
       value: ctx => text(ctx.job.customer_email) },
 
-    // What was sold, with the two choices that decide what turns up, the same
-    // sentence the work order prints so the two documents cannot disagree.
+    // What was sold, with the two choices that decide what turns up. The work
+    // order prints the same sentence plus the valve type, which the installer
+    // needs and the customer never chose.
     { key: 'systems', required: true, names: ['systems'],
       value: ctx => {
         const picks = [text(ctx.job.ro_type), text(ctx.job.faucet_finish)].filter(Boolean)
@@ -212,11 +213,15 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
     { key: 'site_conditions', required: false, names: ['site_conditions'],
       lockBlank: true, value: ctx => text(ctx.job.site_conditions) },
 
-    // the system as sold, with the two choices that decide which parts go on
-    // the truck
+    // the system as sold, with the three choices that decide which parts go
+    // on the truck. The valve type is here and not on the customer agreement:
+    // the installer has to know which control valve to take, and the customer
+    // never chose it.
     { key: 'systems', required: true, names: ['systems'],
       value: ctx => {
-        const picks = [text(ctx.job.ro_type), text(ctx.job.faucet_finish)].filter(Boolean)
+        const picks = [
+          text(ctx.job.ro_type), text(ctx.job.faucet_finish), text(ctx.job.valve_type),
+        ].filter(Boolean)
         const base = text(ctx.job.system_template)
         return picks.length > 0 ? `${base} (${picks.join(', ')})` : base
       } },

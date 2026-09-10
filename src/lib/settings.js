@@ -13,6 +13,7 @@ export const OPTION_LISTS = [
   'time_window',
   'expense_category',
   'ro_type',
+  'valve_type',
 ]
 
 export const DIRECTION_LABELS = {

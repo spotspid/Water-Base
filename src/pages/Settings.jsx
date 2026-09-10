@@ -44,6 +44,12 @@ const LISTS = [
     title: 'RO Types',
     description: 'Matched against the variant on an inventory item when a job installs.',
   },
+  {
+    listKey: 'valve_type',
+    title: 'Valve Types',
+    description: 'Which control valve a whole home system takes. Matched against the variant '
+      + 'on a Valve item when a job installs.',
+  },
 ]
 
 export default function Settings() {

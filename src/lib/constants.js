@@ -29,11 +29,20 @@ export const PICK_SOURCES = [
     help: 'Resolves to the item whose variant matches the RO type chosen on the job. '
       + 'Both cost the same, so this is a choice rather than an upgrade.',
   },
+  {
+    value: 'valve_type',
+    label: 'Valve Type',
+    jobField: 'valve_type',
+    defaultCategory: 'Valve',
+    help: 'Resolves to the control valve whose variant matches the type chosen on the job. '
+      + 'Valve items cost zero, because the valve is already inside the system price.',
+  },
 ]
 
 export const PICK_SOURCE_LABELS = {
   faucet_finish: 'Faucet Finish',
   ro_type: 'RO Type',
+  valve_type: 'Valve Type',
 }
 
 export const STATUS_LABELS = {
