@@ -2,15 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
-import { agreementLabel, agreementTone } from '../lib/agreements'
 import { billableJobs } from '../lib/dashboard'
-import { GROSS, NOT_COSTED, basisTag, canShowProfit, profitTotals } from '../lib/profit'
+import { GROSS, profitTotals } from '../lib/profit'
 import { attempt } from '../lib/errors'
-import { formatCurrency } from '../lib/inventory'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import JobDetailModal from '../components/JobDetailModal'
 import JobsSummary from '../components/JobsSummary'
+import JobsTable from '../components/JobsTable'
 import './Jobs.css'
 
 const ALL_STATUSES = 'all'
@@ -197,95 +196,7 @@ export default function Jobs() {
             which is where the eye looks for it anyway, and the table fits the
             page instead of hiding the date behind a scrollbar. */}
         {hasData && visible.length > 0 && (
-          <div className="table-wrap">
-            <table className="jobs-table jobs-list">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>System</th>
-                  <th className="col-num">Price</th>
-                  <th className="col-num">Parts</th>
-                  <th className="col-num">Pay</th>
-                  <th className="col-num">{GROSS}</th>
-                  <th>Status</th>
-                  <th>Agreement</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(job => (
-                  <tr key={job.id} className="inv-row" tabIndex={0}
-                    onClick={() => openJobById(job.id)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        openJobById(job.id)
-                      }
-                    }}>
-                    <td className="td-customer">
-                      {job.customer_name}
-                      <span className="cell-sub">
-                        {job.city || <span className="cell-unset">City not set</span>}
-                      </span>
-                    </td>
-                    <td>{job.system_template}</td>
-                    <td className="col-num">{formatCurrency(job.sale_price)}</td>
-                    <td className="col-num">
-                      {/* The ledger figure once it has installed, the resolved
-                          list before that, and never a zero standing in for
-                          "nobody has costed this". */}
-                      {job.parts_cost_effective == null ? (
-                        <span className="cell-unset">not costed</span>
-                      ) : (
-                        <>
-                          {formatCurrency(job.parts_cost_effective)}
-                          {basisTag(job.parts_cost_basis) && (
-                            <span className="cell-basis">{basisTag(job.parts_cost_basis)}</span>
-                          )}
-                        </>
-                      )}
-                      {job.status === 'installed' && !job.parts_deducted_at && (
-                        <span className="inv-low" title="Installed without a template deduction">Manual</span>
-                      )}
-                    </td>
-                    <td className="col-num">{formatCurrency(job.installer_pay)}</td>
-                    <td className={Number(job.margin) < 0 ? 'col-num col-value job-margin-bad' : 'col-num col-value'}>
-                      {canShowProfit(job.parts_cost_basis) && job.margin != null ? (
-                        <>
-                          {formatCurrency(job.margin)}
-                          {job.margin_pct != null && (
-                            <span className="job-margin-pct">{Number(job.margin_pct).toFixed(0)}%</span>
-                          )}
-                          {basisTag(job.parts_cost_basis) && (
-                            <span className="cell-basis">{basisTag(job.parts_cost_basis)}</span>
-                          )}
-                        </>
-                      ) : (
-                        /* A blank that says so, rather than the whole sale price
-                           dressed up as profit. */
-                        <span className="cell-unset">{NOT_COSTED}</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`status-badge status-${job.status}`}>
-                        {STATUS_LABELS[job.status] || job.status}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`agr-badge agr-${agreementTone(job)}`}>
-                        {agreementLabel(job)}
-                      </span>
-                    </td>
-                    <td className="col-nowrap">
-                      {new Date(job.created_at).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric',
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <JobsTable jobs={visible} onOpen={openJobById} />
         )}
 
         {hasData && visible.length > 0 && (
