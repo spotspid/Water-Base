@@ -1,29 +1,27 @@
 import { formatCurrency } from '../lib/inventory'
+import { GROSS, totalsNote } from '../lib/profit'
 import StatGrid from './StatGrid'
 
 // The four figures over the jobs table.
 //
-// The first used to be called revenue, and Profit and loss calls installed
-// revenue by the same name. They are different numbers: this one is the sum
-// of every open and finished contract, and only the installed part has been
-// earned. So it is contracted value here, and revenue stays with the page
-// that counts delivered jobs.
+// Contracted value is not revenue. Profit and loss calls installed work by
+// that name, and this is the sum of every open and finished contract, only
+// part of which has been earned. Keeping the two words apart is what stops the
+// pages being read as disagreeing.
 //
-// Margin carries a caveat for the same reason. A job that is sold or
-// scheduled has drawn no parts yet, so its margin reads as its whole price
-// and the percentage says 100. The note says how many jobs are in that state
-// so the figure is read as "so far" rather than as the answer.
-export default function JobsSummary({ totals, undeducted }) {
+// The profit figure used to be every job's price less whatever the ledger had
+// deducted, which for a job that had not installed was nothing. Eight jobs
+// therefore contributed their entire sale price and the bar read 30,080
+// against a real figure of 1,838. It now adds the settled jobs to the ones
+// whose parts list resolves in full, says how many of each, and leaves out
+// anything not costed rather than counting it as pure profit.
+export default function JobsSummary({ totals }) {
   return (
     <StatGrid count={4}>
       <div className="inv-stat inv-stat-lead">
-        <span className="inv-stat-label">Margin so far</span>
-        <span className="inv-stat-value">{formatCurrency(totals.margin)}</span>
-        <span className="inv-stat-note">
-          {undeducted === 0
-            ? 'Parts deducted on every job counted'
-            : `Before parts on ${undeducted} ${undeducted === 1 ? 'job' : 'jobs'} not yet installed`}
-        </span>
+        <span className="inv-stat-label">{GROSS}</span>
+        <span className="inv-stat-value">{formatCurrency(totals.combined)}</span>
+        <span className="inv-stat-note">{totalsNote(totals)}</span>
       </div>
       <div className="inv-stat">
         <span className="inv-stat-label">Contracted value</span>
@@ -33,6 +31,7 @@ export default function JobsSummary({ totals, undeducted }) {
       <div className="inv-stat">
         <span className="inv-stat-label">Parts</span>
         <span className="inv-stat-value">{formatCurrency(totals.parts)}</span>
+        <span className="inv-stat-note">Deducted where installed, expected where not</span>
       </div>
       <div className="inv-stat">
         <span className="inv-stat-label">Installer Pay</span>

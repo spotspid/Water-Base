@@ -1180,6 +1180,21 @@ a {
 /* Parts listed against one job rather than on a build sheet. Set apart from
    the resolved list above it, because one is what the job will consume and the
    other is the thing you edit to change it. */
+/* The one word beside a figure saying what it rests on: expected, incomplete,
+   not costed. Quiet and small, because it qualifies the number rather than
+   competing with it, and absent entirely on a settled figure where "actual"
+   would be noise on every row. Used on the jobs table and in the job drawer,
+   so it lives here rather than in either stylesheet. */
+.cell-basis {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 /* A name in a table or a list that opens the thing it names. Inherits its
    colour so a table of these does not turn into a wall of blue, and earns its
    underline on hover, because a row of permanently underlined names is harder

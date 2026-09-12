@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
 import { agreementLabel, agreementTone } from '../lib/agreements'
 import { billableJobs } from '../lib/dashboard'
+import { GROSS, NOT_COSTED, basisTag, canShowProfit, profitTotals } from '../lib/profit'
 import { attempt } from '../lib/errors'
 import { formatCurrency } from '../lib/inventory'
 import AppShell from '../components/AppShell'
@@ -27,7 +28,8 @@ const JOB_MARGIN_COLUMNS =
   'work_order_send_count, installer_email, site_conditions, ' +
   'agreement_view_count, work_order_view_count, nag_snoozed_until, ' +
   'deposits_taken, deposit_count, last_deposit_on, balance_due, template_line_count, ' +
-  'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts'
+  'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts, ' +
+  'expected_parts_cost, parts_cost_effective, parts_cost_basis, unresolved_lines'
 
 export default function Jobs() {
   // Every Slack message links to /jobs?job=<id>, because a webhook cannot
@@ -97,19 +99,11 @@ export default function Jobs() {
 
   const cancelledCount = visible.length - counted.length
 
-  // Jobs in the totals whose parts have not been drawn yet. Their margin is
-  // their whole price until they install, which is what the caveat says.
-  const undeducted = useMemo(
-    () => counted.filter(j => !j.parts_deducted_at).length,
-    [counted],
-  )
-
-  const totals = useMemo(() => counted.reduce((acc, j) => ({
-    revenue: acc.revenue + (Number(j.sale_price) || 0),
-    parts: acc.parts + (Number(j.parts_cost) || 0),
-    pay: acc.pay + (Number(j.installer_pay) || 0),
-    margin: acc.margin + (Number(j.margin) || 0),
-  }), { revenue: 0, parts: 0, pay: 0, margin: 0 }), [counted])
+  // Split by what each figure rests on rather than summed into one number.
+  // Adding a settled figure to an estimate makes a third thing that is neither,
+  // and a job with nothing costed contributes nothing rather than its whole
+  // price. That last part is what used to make this bar read 30,080.
+  const totals = useMemo(() => profitTotals(counted), [counted])
 
   const openJob = useMemo(
     () => jobs.find(j => j.id === openJobId) || null,
@@ -127,7 +121,7 @@ export default function Jobs() {
       <div className="jobs-page">
 
         {hasData && jobs.length > 0 && (
-          <JobsSummary totals={totals} undeducted={undeducted} />
+          <JobsSummary totals={totals} />
         )}
 
         {hasData && jobs.length > 0 && (
@@ -212,7 +206,7 @@ export default function Jobs() {
                   <th className="col-num">Price</th>
                   <th className="col-num">Parts</th>
                   <th className="col-num">Pay</th>
-                  <th className="col-num">Margin</th>
+                  <th className="col-num">{GROSS}</th>
                   <th>Status</th>
                   <th>Agreement</th>
                   <th>Date</th>
@@ -237,16 +231,39 @@ export default function Jobs() {
                     <td>{job.system_template}</td>
                     <td className="col-num">{formatCurrency(job.sale_price)}</td>
                     <td className="col-num">
-                      {formatCurrency(job.parts_cost)}
+                      {/* The ledger figure once it has installed, the resolved
+                          list before that, and never a zero standing in for
+                          "nobody has costed this". */}
+                      {job.parts_cost_effective == null ? (
+                        <span className="cell-unset">not costed</span>
+                      ) : (
+                        <>
+                          {formatCurrency(job.parts_cost_effective)}
+                          {basisTag(job.parts_cost_basis) && (
+                            <span className="cell-basis">{basisTag(job.parts_cost_basis)}</span>
+                          )}
+                        </>
+                      )}
                       {job.status === 'installed' && !job.parts_deducted_at && (
                         <span className="inv-low" title="Installed without a template deduction">Manual</span>
                       )}
                     </td>
                     <td className="col-num">{formatCurrency(job.installer_pay)}</td>
                     <td className={Number(job.margin) < 0 ? 'col-num col-value job-margin-bad' : 'col-num col-value'}>
-                      {formatCurrency(job.margin)}
-                      {job.margin_pct != null && (
-                        <span className="job-margin-pct">{Number(job.margin_pct).toFixed(0)}%</span>
+                      {canShowProfit(job.parts_cost_basis) && job.margin != null ? (
+                        <>
+                          {formatCurrency(job.margin)}
+                          {job.margin_pct != null && (
+                            <span className="job-margin-pct">{Number(job.margin_pct).toFixed(0)}%</span>
+                          )}
+                          {basisTag(job.parts_cost_basis) && (
+                            <span className="cell-basis">{basisTag(job.parts_cost_basis)}</span>
+                          )}
+                        </>
+                      ) : (
+                        /* A blank that says so, rather than the whole sale price
+                           dressed up as profit. */
+                        <span className="cell-unset">{NOT_COSTED}</span>
                       )}
                     </td>
                     <td>
@@ -273,10 +290,12 @@ export default function Jobs() {
 
         {hasData && visible.length > 0 && (
           <p className="inv-ledger-note">
-            Margin is price minus parts minus installer pay. Parts come from the inventory
-            ledger at the cost stamped on each transaction. A job that is sold or scheduled
-            has its parts committed but not yet deducted. Click a job to install it or
-            review what it consumed.
+            {GROSS} is price less parts less installer pay. A job that has installed takes
+            its parts from the inventory ledger at the cost stamped on each row, and that
+            figure never moves again. A job that has not takes them from its resolved parts
+            list at today’s item costs, marked expected. A job whose list cannot name
+            every part is not costed at all rather than costed optimistically. Click a job
+            to install it or review what it consumed.
             {cancelledCount > 0 && (
               <> {cancelledCount} cancelled {cancelledCount === 1 ? 'job is' : 'jobs are'} shown
               but left out of the totals above.</>

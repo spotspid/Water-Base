@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { formatCurrency, formatMonth, monthsAgoIso, todayIso } from '../lib/expenses'
+import { GROSS, NET } from '../lib/profit'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import PnlCash from '../components/PnlCash'
@@ -46,7 +47,8 @@ export default function PnL() {
       attempt(
         () => supabase.from('pnl_monthly')
           .select('month, revenue, parts_cost, installer_pay, expense_total, job_count, '
-            + 'expense_count, net, deposits_in, deposit_count, balance_on_install, cash_in')
+            + 'expense_count, gross_profit, net_profit, net, deposits_in, deposit_count, '
+            + 'balance_on_install, cash_in')
           .gte('month', start).lte('month', end)
           .order('month', { ascending: false }),
         'The profit and loss could not be loaded.',
@@ -82,12 +84,13 @@ export default function PnL() {
     parts_cost: acc.parts_cost + Number(m.parts_cost),
     installer_pay: acc.installer_pay + Number(m.installer_pay),
     expense_total: acc.expense_total + Number(m.expense_total),
-    net: acc.net + Number(m.net),
+    gross_profit: acc.gross_profit + Number(m.gross_profit),
+    net_profit: acc.net_profit + Number(m.net_profit),
     job_count: acc.job_count + Number(m.job_count),
     cash_in: acc.cash_in + Number(m.cash_in),
   }), {
-    revenue: 0, parts_cost: 0, installer_pay: 0, expense_total: 0, net: 0, job_count: 0,
-    cash_in: 0,
+    revenue: 0, parts_cost: 0, installer_pay: 0, expense_total: 0,
+    gross_profit: 0, net_profit: 0, job_count: 0, cash_in: 0,
   }), [months])
 
   const monthKeys = useMemo(
@@ -137,7 +140,7 @@ export default function PnL() {
         )}
 
         {hasData && months.length > 0 && (
-          <StatGrid count={6} className="inv-summary pnl-summary">
+          <StatGrid count={7} className="inv-summary pnl-summary">
             <div className="inv-stat">
               <span className="inv-stat-label">Revenue</span>
               <span className="inv-stat-value">{formatCurrency(totals.revenue)}</span>
@@ -151,13 +154,22 @@ export default function PnL() {
               <span className="inv-stat-label">Installer Pay</span>
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.installer_pay)}</span>
             </div>
+            {/* The same arithmetic the jobs page does, on installed work only,
+                so a person can reconcile the two pages instead of taking it on
+                trust that they measure different things. */}
+            <div className="inv-stat">
+              <span className="inv-stat-label">{GROSS}</span>
+              <span className="inv-stat-value">{formatCurrency(totals.gross_profit)}</span>
+              <span className="inv-stat-note">Before overheads</span>
+            </div>
             <div className="inv-stat">
               <span className="inv-stat-label">Expenses</span>
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.expense_total)}</span>
             </div>
-            <div className={totals.net < 0 ? 'inv-stat inv-stat-alert pnl-net' : 'inv-stat inv-stat-lead pnl-net'}>
-              <span className="inv-stat-label">Net</span>
-              <span className="inv-stat-value">{formatCurrency(totals.net)}</span>
+            <div className={totals.net_profit < 0 ? 'inv-stat inv-stat-alert pnl-net' : 'inv-stat inv-stat-lead pnl-net'}>
+              <span className="inv-stat-label">{NET}</span>
+              <span className="inv-stat-value">{formatCurrency(totals.net_profit)}</span>
+              <span className="inv-stat-note">{GROSS} less overheads</span>
             </div>
             <div className="inv-stat pnl-cash-stat">
               <span className="inv-stat-label">Cash in</span>
@@ -186,7 +198,7 @@ export default function PnL() {
                   <th className="col-num">Parts</th>
                   <th className="col-num">Installer Pay</th>
                   <th className="col-num">Expenses</th>
-                  <th className="col-num">Net</th>
+                  <th className="col-num">{NET}</th>
                   <th className="col-num">Jobs</th>
                 </tr>
               </thead>
@@ -198,8 +210,8 @@ export default function PnL() {
                     <td className="col-num pnl-cost">{formatCurrency(row.parts_cost)}</td>
                     <td className="col-num pnl-cost">{formatCurrency(row.installer_pay)}</td>
                     <td className="col-num pnl-cost">{formatCurrency(row.expense_total)}</td>
-                    <td className={Number(row.net) < 0 ? 'col-num col-value qty-out' : 'col-num col-value qty-in'}>
-                      {formatCurrency(row.net)}
+                    <td className={Number(row.net_profit) < 0 ? 'col-num col-value qty-out' : 'col-num col-value qty-in'}>
+                      {formatCurrency(row.net_profit)}
                     </td>
                     <td className="col-num">{row.job_count}</td>
                   </tr>
@@ -210,8 +222,8 @@ export default function PnL() {
                   <td className="col-num col-value pnl-cost">{formatCurrency(totals.parts_cost)}</td>
                   <td className="col-num col-value pnl-cost">{formatCurrency(totals.installer_pay)}</td>
                   <td className="col-num col-value pnl-cost">{formatCurrency(totals.expense_total)}</td>
-                  <td className={totals.net < 0 ? 'col-num col-value qty-out' : 'col-num col-value qty-in'}>
-                    {formatCurrency(totals.net)}
+                  <td className={totals.net_profit < 0 ? 'col-num col-value qty-out' : 'col-num col-value qty-in'}>
+                    {formatCurrency(totals.net_profit)}
                   </td>
                   <td className="col-num col-value">{totals.job_count}</td>
                 </tr>

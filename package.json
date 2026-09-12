@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "check:dates": "node scripts/check-dates.js",
     "check:dashboard": "node scripts/check-dashboard.js",
-    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:readiness && npm run check:paperwork && npm run check:documents && npm run check:pipeline && npm run check:styles && npm run check:functions && npm run check:templates && npm run check:warranty && npm run check:embeds",
+    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:readiness && npm run check:paperwork && npm run check:documents && npm run check:pipeline && npm run check:styles && npm run check:functions && npm run check:templates && npm run check:profit && npm run check:warranty && npm run check:embeds",
     "check:notifications": "node scripts/check-notifications.js",
     "check:orders": "node scripts/check-orders.js",
     "check:deposits": "node scripts/check-deposits.js",
@@ -22,7 +22,8 @@
     "check:styles": "node scripts/check-styles.js",
     "check:templates": "node scripts/check-templates.js",
     "check:warranty": "node scripts/check-warranty.js",
-    "check:embeds": "node scripts/check-embeds.js"
+    "check:embeds": "node scripts/check-embeds.js",
+    "check:profit": "node scripts/check-profit.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",

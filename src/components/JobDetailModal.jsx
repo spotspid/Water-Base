@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CANCELLED_STATUS } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
+import { GROSS, NOT_COSTED, basisTag, canShowProfit, partsNote, profitNote } from '../lib/profit'
 import { useInstallers } from '../lib/useInstallers'
 import { crewLabel, formatLongDate } from '../lib/schedule'
 import { metaLine } from '../lib/text'
@@ -109,26 +110,38 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
         </div>
         <div className="job-margin-cell job-margin-minus">
           <span className="inv-stat-label">Parts Cost</span>
-          <span className="inv-stat-value">{formatCurrency(job.parts_cost)}</span>
+          <span className="inv-stat-value">
+            {job.parts_cost_effective == null
+              ? <span className="cell-unset">not costed</span>
+              : formatCurrency(job.parts_cost_effective)}
+            {basisTag(job.parts_cost_basis) && (
+              <span className="cell-basis">{basisTag(job.parts_cost_basis)}</span>
+            )}
+          </span>
         </div>
         <div className="job-margin-cell job-margin-minus">
           <span className="inv-stat-label">Installer Pay</span>
           <span className="inv-stat-value">{formatCurrency(job.installer_pay)}</span>
         </div>
         <div className={Number(job.margin) < 0 ? 'job-margin-cell job-margin-total job-margin-bad' : 'job-margin-cell job-margin-total'}>
-          <span className="inv-stat-label">Margin</span>
+          <span className="inv-stat-label">{GROSS}</span>
           <span className="inv-stat-value">
-            {formatCurrency(job.margin)}
-            {job.margin_pct != null && (
-              <span className="job-margin-pct">{Number(job.margin_pct).toFixed(1)}%</span>
+            {canShowProfit(job.parts_cost_basis) && job.margin != null ? (
+              <>
+                {formatCurrency(job.margin)}
+                {job.margin_pct != null && (
+                  <span className="job-margin-pct">{Number(job.margin_pct).toFixed(1)}%</span>
+                )}
+              </>
+            ) : (
+              <span className="cell-unset">{NOT_COSTED}</span>
             )}
           </span>
         </div>
       </div>
 
       <p className="inv-ledger-note">
-        Parts cost is summed from the ledger at the cost stamped on each row, so changing an
-        item cost later does not rewrite the margin on a job that already installed.
+        {partsNote(job.parts_cost_basis)} {profitNote(job.parts_cost_basis)}
       </p>
 
       <div className="form-actions job-edit-row">
