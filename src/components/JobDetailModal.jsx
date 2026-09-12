@@ -120,7 +120,7 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
           </span>
         </div>
         <div className="job-margin-cell job-margin-minus">
-          <span className="inv-stat-label">Installer Pay</span>
+          <span className="inv-stat-label">Installer pay</span>
           <span className="inv-stat-value">{formatCurrency(job.installer_pay)}</span>
         </div>
         <div className={Number(job.margin) < 0 ? 'job-margin-cell job-margin-total job-margin-bad' : 'job-margin-cell job-margin-total'}>

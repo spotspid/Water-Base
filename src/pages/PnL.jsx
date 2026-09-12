@@ -151,7 +151,7 @@ export default function PnL() {
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.parts_cost)}</span>
             </div>
             <div className="inv-stat">
-              <span className="inv-stat-label">Installer Pay</span>
+              <span className="inv-stat-label">Installer pay</span>
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.installer_pay)}</span>
             </div>
             {/* The same arithmetic the jobs page does, on installed work only,
@@ -196,7 +196,7 @@ export default function PnL() {
                   <th>Month</th>
                   <th className="col-num">Revenue</th>
                   <th className="col-num">Parts</th>
-                  <th className="col-num">Installer Pay</th>
+                  <th className="col-num">Installer pay</th>
                   <th className="col-num">Expenses</th>
                   <th className="col-num">{NET}</th>
                   <th className="col-num">Jobs</th>

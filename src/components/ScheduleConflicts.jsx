@@ -32,7 +32,7 @@ export default function ScheduleConflicts({ conflicts, checking, error, onRetry 
   if (conflicts.length === 0) {
     return (
       <p className="sch-clear" role="status">
-        Every part this job needs is on the shelf and unclaimed by anyone else.
+        Every part this job needs is on the shelf and promised to nobody else.
       </p>
     )
   }
@@ -48,8 +48,8 @@ export default function ScheduleConflicts({ conflicts, checking, error, onRetry 
     <section className="sch-conflicts" role="status">
       <h3 className="sch-conflicts-title">
         {conflicts.length === 1
-          ? `1 part is short${contested ? ', and other jobs have claimed it' : ''}`
-          : `${conflicts.length} parts are short${contested ? ', and other jobs have claimed them' : ''}`}
+          ? `1 part is short${contested ? ', and other jobs have promised it' : ''}`
+          : `${conflicts.length} parts are short${contested ? ', and other jobs have promised them' : ''}`}
       </h3>
 
       <p className="sch-conflicts-lead">

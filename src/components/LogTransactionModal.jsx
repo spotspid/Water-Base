@@ -6,6 +6,7 @@ import { effectiveDirection, signedQuantity, txnTypeMeta } from '../lib/inventor
 import { isWarranty } from '../lib/warranty'
 import Modal from './Modal'
 import WarrantyJobField from './WarrantyJobField'
+import { Link } from 'react-router-dom'
 
 export default function LogTransactionModal({ items, presetItemId, onClose, onSaved }) {
   const { txnTypes, defaultLocation, loading: loadingSettings } = useSettings()
@@ -163,7 +164,9 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
           <div className="field">
             <label htmlFor="location">Location</label>
             <input id="location" type="text" value={defaultLocation || 'Not set'} disabled readOnly />
-            <span className="field-hint">Set on the Settings page.</span>
+            <span className="field-hint">
+              Set on the <Link to="/settings" className="tpl-link">Settings page</Link>.
+            </span>
           </div>
 
           <div className="field">

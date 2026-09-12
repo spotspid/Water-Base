@@ -7,9 +7,15 @@
 // today, what is on the shelf, what it earned. Nine flat links across a bar
 // would be a row to search rather than a place to go.
 //
-// Settings used to sit under Money, where it never belonged. It is not a
-// number, it is the configuration behind all of them, so it now lives in the
-// account menu with sign out.
+// Settings used to sit under Money, where it never belonged, and then under
+// the avatar, where nobody found it. Two pages told people to go and manage
+// something "on the Settings page" while the only way there was an unlabelled
+// circle in the corner.
+//
+// It is not Operations and it is not Stock: those group what you look at, and
+// this is what you configure. So it has its own group rather than being filed
+// under a heading it would make mean two things. One item is a short menu, not
+// a wrong one.
 
 export const GROUPS = [
   {
@@ -28,7 +34,7 @@ export const GROUPS = [
     items: [
       { to: '/inventory', text: 'Inventory', hint: 'On hand, promised, on order' },
       { to: '/orders', text: 'Supplier orders', hint: 'What is coming, and when' },
-      { to: '/templates', text: 'Build sheets', hint: 'Parts per system' },
+      { to: '/build-sheets', text: 'Build sheets', hint: 'Parts per system' },
       { to: '/warranty', text: 'Warranty', hint: 'Failures by part and supplier' },
     ],
   },
@@ -40,12 +46,19 @@ export const GROUPS = [
       { to: '/pnl', text: 'Profit and loss', hint: 'Revenue less parts, pay, expenses' },
     ],
   },
+  {
+    id: 'setup',
+    label: 'Setup',
+    items: [
+      { to: '/settings', text: 'Settings', hint: 'Lists, crew, agreements' },
+    ],
+  },
 ]
 
-// Reachable from the account menu rather than the bar.
-export const ACCOUNT_ITEMS = [
-  { to: '/settings', text: 'Settings', hint: 'Lists, crew, agreements' },
-]
+// The account menu is sign out and who you are. Settings moved to the bar, and
+// listing it in both places would only raise the question of whether they are
+// the same page.
+export const ACCOUNT_ITEMS = []
 
 // Titles are operational labels, not explanations. They name what the page
 // holds, so the bar says what you can read here rather than selling it.
@@ -56,6 +69,7 @@ const TITLES = {
   '/jobs/new': ['New job', 'Parts are claimed when it is scheduled'],
   '/inventory': ['Inventory', 'On hand, promised, on order'],
   '/orders': ['Supplier orders', 'On order and arrival dates'],
+  '/build-sheets': ['Build sheets', 'Parts per system'],
   '/templates': ['Build sheets', 'Parts per system'],
   '/warranty': ['Warranty', 'Failures by part and supplier'],
   '/documents': ['Documents', 'Agreements and work orders'],

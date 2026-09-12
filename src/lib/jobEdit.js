@@ -172,13 +172,13 @@ function describeSave(result) {
     : ''
 
   if (!claimed) {
-    return `Saved.${still || ' It has no date, so it claims no parts yet.'}`
+    return `Saved.${still || ' It has no date, so it promises no parts yet.'}`
   }
 
   if (lines === 0) {
-    return `Saved. It claims nothing from the shelf.${still}`
+    return `Saved. It promises nothing from the shelf.${still}`
   }
 
-  return `Saved. It now claims ${lines} ${lines === 1 ? 'part' : 'parts'}, `
+  return `Saved. It now promises ${lines} ${lines === 1 ? 'part' : 'parts'}, `
     + `${units} ${units === 1 ? 'unit' : 'units'} in all.${still}`
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchOrderLines } from '../lib/orders'
+import { countOutstanding, filterOutstanding } from '../lib/orderLines'
 import {
   entryState, isOpenOrder, landedUplift, orderStatusLabel, orderStatusTone,
 } from '../lib/orderState'
@@ -18,6 +19,12 @@ export default function OrderDetailModal({
   order, items, notice: pageNotice, onClose, onEdit, onChanged,
 }) {
   const [lines, setLines] = useState([])
+  // A part order is mostly lines that already arrived. What somebody opens
+  // this to find is the handful that have not.
+  const [outstandingOnly, setOutstandingOnly] = useState(false)
+
+  const owed = countOutstanding(lines)
+  const visibleLines = filterOutstanding(lines, outstandingOnly)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   // starts with whatever the page has to say, usually that the header was
@@ -117,6 +124,34 @@ export default function OrderDetailModal({
       )}
 
       {!loading && !error && lines.length > 0 && (
+        <div className="inv-toolbar order-line-filter">
+          <label className="check-inline" htmlFor="outstanding-only">
+            <input
+              id="outstanding-only"
+              type="checkbox"
+              checked={outstandingOnly}
+              onChange={e => setOutstandingOnly(e.target.checked)}
+            />
+            Outstanding only
+          </label>
+          <span className="dash-panel-note">
+            {owed === 0
+              ? 'Every line on this order has arrived'
+              : `${owed} of ${lines.length} ${lines.length === 1 ? 'line is' : 'lines are'} still owed`}
+          </span>
+        </div>
+      )}
+
+      {/* The filter can empty a table that is not empty. Saying which is the
+          difference between a finished order and a broken page. */}
+      {!loading && !error && lines.length > 0 && visibleLines.length === 0 && (
+        <p className="inv-state">
+          Every line on this order has been received in full. Untick Outstanding only to
+          see them.
+        </p>
+      )}
+
+      {!loading && !error && visibleLines.length > 0 && (
         <div className="table-wrap">
           <table className="jobs-table">
             <thead>
@@ -131,7 +166,7 @@ export default function OrderDetailModal({
               </tr>
             </thead>
             <tbody>
-              {lines.map(line => (
+              {visibleLines.map(line => (
                 <OrderLineRow key={line.id} line={line}
                   onChanged={refresh} onNotice={setNotice} />
               ))}

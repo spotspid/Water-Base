@@ -197,7 +197,7 @@ export default function Dashboard() {
                 you stock on hand and a value to track.
               </li>
               <li>
-                <Link to="/templates">Put parts on a template</Link>, so installing a job deducts
+                <Link to="/build-sheets">Put parts on a build sheet</Link>, so installing a job deducts
                 the right stock automatically.
               </li>
               <li>

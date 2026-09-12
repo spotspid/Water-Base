@@ -47,7 +47,12 @@ export default function App() {
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+            <Route path="/build-sheets" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+            {/* The page was called Build sheets in the bar and Templates in the
+                address, which is the same thing wearing two names. The old path
+                still resolves, because a link somebody pasted last week should
+                not break to make a heading consistent. */}
+            <Route path="/templates" element={<Navigate to="/build-sheets" replace />} />
             <Route path="/warranty" element={<ProtectedRoute><Warranty /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />

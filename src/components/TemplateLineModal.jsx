@@ -143,8 +143,8 @@ export default function TemplateLineModal({
     // so the shelf's committed figures already reflect it by the time this
     // reads. Saying so is what stops somebody going to check.
     onSaved(editing
-      ? 'Part updated. Jobs booked on this sheet now claim the new quantity.'
-      : 'Part added to the template. Jobs booked on this sheet now claim it too.')
+      ? 'Part updated. Jobs booked on this sheet now promise the new quantity.'
+      : 'Part added to this build sheet. Jobs booked on it now promise the new part too.')
   }
 
   const sourceMeta = pickSourceMeta(form.pick_source)

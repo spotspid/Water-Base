@@ -1195,6 +1195,52 @@ a {
   margin-top: 2px;
 }
 
+/* Was in Documents.css, which meant it only reached the browser on
+   /documents. The jobs search clears with one of these too, so it belongs
+   where every route can see it. */
+.btn-small {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+/* The jobs search sits beside the status filter and gets the room, because a
+   name and a street need more characters than a status does. */
+.inv-filter-search {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.inv-filter-search input {
+  width: 100%;
+}
+
+/* A checkbox and its words on one line, clickable as one target. Used for
+   "Outstanding only" on an order, and for whatever the next one of these is. */
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-inline input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* The filter row above an order's lines. Inside a modal rather than on a page,
+   so it carries no page padding of its own. */
+.order-line-filter {
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
 /* A name in a table or a list that opens the thing it names. Inherits its
    colour so a table of these does not turn into a wall of blue, and earns its
    underline on hover, because a row of permanently underlined names is harder

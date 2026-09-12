@@ -24,7 +24,7 @@ export default function JobsTable({ jobs, onOpen }) {
             <thead>
               <tr>
                 <th>Customer</th>
-                <th>System</th>
+                <th>Build sheet</th>
                 <th className="col-num">Price</th>
                 <th className="col-num">Parts</th>
                 <th className="col-num">Pay</th>

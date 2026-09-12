@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
 import { billableJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
+import { searchJobs } from '../lib/search'
 import { attempt } from '../lib/errors'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
@@ -49,6 +50,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [status, setStatus] = useState(ALL_STATUSES)
+  const [query, setQuery] = useState('')
 
   const openJobById = useCallback(id => {
     setParams(current => {
@@ -87,8 +89,11 @@ export default function Jobs() {
   useEffect(() => { load() }, [load])
 
   const visible = useMemo(
-    () => (status === ALL_STATUSES ? jobs : jobs.filter(j => j.status === status)),
-    [jobs, status],
+    () => searchJobs(
+      status === ALL_STATUSES ? jobs : jobs.filter(j => j.status === status),
+      query,
+    ),
+    [jobs, status, query],
   )
 
   // Cancelled jobs stay in the list and in the status filter, but never in
@@ -108,6 +113,8 @@ export default function Jobs() {
     () => jobs.find(j => j.id === openJobId) || null,
     [jobs, openJobId],
   )
+
+  const searching = query.trim() !== ''
 
   const hasData = !loading && !error
 
@@ -134,6 +141,23 @@ export default function Jobs() {
                 ))}
               </select>
             </div>
+            {/* type=search rather than text, so a phone shows the right
+                keyboard and the browser offers its own clear button. */}
+            <div className="inv-filter inv-filter-search">
+              <label htmlFor="job-search">Search</label>
+              <input
+                id="job-search"
+                type="search"
+                value={query}
+                placeholder="Name, address or invoice number"
+                onChange={e => setQuery(e.target.value)}
+              />
+            </div>
+            {query.trim() !== '' && (
+              <button type="button" className="btn-cancel btn-small" onClick={() => setQuery('')}>
+                Clear
+              </button>
+            )}
           </div>
         )}
 
@@ -176,18 +200,36 @@ export default function Jobs() {
             <p>
               If this is a fresh install, set up
               {' '}<Link to="/inventory" className="tpl-link">inventory</Link> and
-              {' '}<Link to="/templates" className="tpl-link">templates</Link> first, so a
+              {' '}<Link to="/build-sheets" className="tpl-link">build sheets</Link> first, so a
               job knows what parts it consumes.
             </p>
           </EmptyState>
         )}
 
+        {/* Which filter emptied the list matters. "No jobs with that status"
+            over a search that found nothing sends somebody to the wrong
+            control. */}
         {hasData && jobs.length > 0 && visible.length === 0 && (
-          <EmptyState title="No jobs with that status" tone="filtered" compact>
+          <EmptyState
+            title={searching ? 'Nothing matched that search' : 'No jobs with that status'}
+            tone="filtered"
+            compact
+          >
             <p>
-              {jobs.length} {jobs.length === 1 ? 'job exists' : 'jobs exist'}, but none are
-              {' '}{(STATUS_LABELS[status] || status).toLowerCase()}. Change the status
-              filter above to see the rest.
+              {searching ? (
+                <>
+                  Nothing matches &ldquo;{query.trim()}&rdquo;
+                  {status !== ALL_STATUSES && (
+                    <> among jobs that are {(STATUS_LABELS[status] || status).toLowerCase()}</>
+                  )}. Search runs on the customer name, the address and the invoice number.
+                </>
+              ) : (
+                <>
+                  {jobs.length} {jobs.length === 1 ? 'job exists' : 'jobs exist'}, but none are
+                  {' '}{(STATUS_LABELS[status] || status).toLowerCase()}. Change the status
+                  filter above to see the rest.
+                </>
+              )}
             </p>
           </EmptyState>
         )}

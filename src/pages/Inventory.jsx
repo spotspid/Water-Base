@@ -163,7 +163,7 @@ export default function Inventory() {
             </p>
             <p>
               Add the parts you carry, log what is on the shelf as a purchase, then put those
-              parts on a <Link to="/templates" className="tpl-link">template</Link> so
+              parts on a <Link to="/build-sheets" className="tpl-link">build sheet</Link> so
               installing a job deducts them automatically.
             </p>
           </EmptyState>
@@ -241,8 +241,8 @@ export default function Inventory() {
         {hasData && visible.length > 0 && (
           <p className="inv-ledger-note">
             On hand is summed from the transaction ledger and is never edited directly.
-            Promised is what booked jobs have claimed but not yet consumed, and free to sell
-            is on hand minus committed. On order is what is bought and not here yet, with
+            Promised is what booked jobs have set aside but not yet consumed, and available
+            is on hand minus promised. On order is what is bought and not here yet, with
             the earliest date it is expected. Booking a job never moves stock. Only marking it
             installed writes to the ledger. Click a row to see its history.
           </p>

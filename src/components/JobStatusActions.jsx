@@ -52,7 +52,7 @@ export default function JobStatusActions({
                 value={schedule.scheduled_date} onChange={onScheduleChange} disabled={busy} />
               <span className="field-hint">
                 Pick the day, then mark it scheduled. That puts it on the calendar and
-                claims its parts for the day. The crew stays as it is.
+                promises its parts for the day. The crew stays as it is.
               </span>
             </div>
           )}
@@ -70,7 +70,7 @@ export default function JobStatusActions({
       {job.status === 'scheduled' && (
         <p className="field-hint">
           Back to sold clears the date, takes the job off the calendar and releases the
-          parts it claimed. To move it instead, change the date on the schedule.
+          parts it promised. To move it instead, change the date on the schedule.
         </p>
       )}
 
@@ -88,7 +88,7 @@ export default function JobStatusActions({
 
       {confirmCancel && (
         <p className="form-warning" role="status">
-          Cancelling releases every part this job has committed and returns it to
+          Cancelling releases every part this job has promised and returns it to
           available. The job stays in the list as cancelled and stops counting toward
           revenue and margin. Nothing is deducted or returned in the ledger.
         </p>

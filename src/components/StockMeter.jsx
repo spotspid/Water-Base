@@ -47,7 +47,7 @@ export default function StockMeter({ row, label = true }) {
         role="img"
         aria-label={short > 0
           ? `${short} short, ${covered} promised of ${onHand} on hand`
-          : `${free} free to sell, ${covered} promised of ${onHand} on hand`}
+          : `${free} available, ${covered} promised of ${onHand} on hand`}
       >
         {!empty && free > 0 && (
           <span className="meter-seg meter-free" style={{ '--seg-width': `${pct(free)}%` }} />

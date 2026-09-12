@@ -196,7 +196,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Crew, pay and job number</h3>
+          <h3>Crew, pay and invoice number</h3>
           <p className="agr-sub">
             What the work order is built from. Saved here, it counts everywhere: the
             schedule, the dashboard and the send button all read the same values.
@@ -234,11 +234,11 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         </div>
 
         <div className="field">
-          <label htmlFor="crew_invoice">Job number</label>
+          <label htmlFor="crew_invoice">Invoice number</label>
           <input id="crew_invoice" name="invoice_number" type="text"
             value={draft.invoice_number} onChange={change} disabled={busy}
             placeholder="MWP-0001" />
-          <span className="field-hint">The invoice number. The work order will not send without it.</span>
+          <span className="field-hint">The work order will not send without it.</span>
         </div>
 
         <div className="field">

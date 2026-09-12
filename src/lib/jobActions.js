@@ -53,7 +53,7 @@ export async function revertInstall(job, revertTo) {
 
   const lines = data?.lines_reversed ?? 0
   return {
-    message: `Install reversed. ${lines} ${lines === 1 ? 'item was' : 'items were'} returned to inventory, and the job is now ${statusLabel(revertTo)} with its parts committed again.`,
+    message: `Install reversed. ${lines} ${lines === 1 ? 'item was' : 'items were'} returned to inventory, and the job is now ${statusLabel(revertTo)} with its parts promised again.`,
   }
 }
 
@@ -70,7 +70,7 @@ export async function changeStatus(job, next) {
 
   if (next === CANCELLED_STATUS) {
     return {
-      message: 'Job cancelled. Every part it had committed is released and back in available. '
+      message: 'Job cancelled. Every part it had promised is released and back in available. '
         + 'Nothing moved in the ledger, because a cancelled job never consumed anything.',
     }
   }
@@ -79,8 +79,8 @@ export async function changeStatus(job, next) {
     return {
       message: `Job reopened as ${statusLabel(next)}.`
         + (job.scheduled_date
-          ? ' Its parts are committed again.'
-          : ' It has no date, so it claims no parts until it is scheduled.'),
+          ? ' Its parts are promised again.'
+          : ' It has no date, so it promises no parts until it is scheduled.'),
     }
   }
 
@@ -109,7 +109,7 @@ export async function setScheduledDate(job, date) {
   if (!date) {
     return {
       message: 'Back to sold. The date is cleared, the job is off the calendar, and any parts '
-        + 'it had claimed are back in available.',
+        + 'it had promised are back in available.',
     }
   }
 
@@ -119,7 +119,7 @@ export async function setScheduledDate(job, date) {
     : ''
 
   return {
-    message: `Scheduled for ${formatLongDate(date)}. Its parts are claimed for that day and the crew is unchanged.${short}`,
+    message: `Scheduled for ${formatLongDate(date)}. Its parts are promised for that day and the crew is unchanged.${short}`,
   }
 }
 

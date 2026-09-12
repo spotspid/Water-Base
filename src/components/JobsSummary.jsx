@@ -34,7 +34,7 @@ export default function JobsSummary({ totals }) {
         <span className="inv-stat-note">Deducted where installed, expected where not</span>
       </div>
       <div className="inv-stat">
-        <span className="inv-stat-label">Installer Pay</span>
+        <span className="inv-stat-label">Installer pay</span>
         <span className="inv-stat-value">{formatCurrency(totals.pay)}</span>
       </div>
     </StatGrid>

@@ -116,7 +116,7 @@ export default function JobPartsPreview({
                   <td>
                     {r.line_type === 'customer_pick'
                       ? <span className="tpl-pick-badge">{pickSourceLabel(r.pick_source)}</span>
-                      : 'Template'}
+                      : 'Build sheet'}
                   </td>
                   <td className="col-num">{r.quantity}</td>
                   <td className="col-num">{r.resolved ? formatCurrency(r.unit_cost) : ''}</td>
@@ -136,10 +136,10 @@ export default function JobPartsPreview({
 
       {!loading && !error && committed && rows.length > 0 && (
         <p className="inv-ledger-note">
-          These parts are promised to this job now, which lowers what is free to sell
+          These parts are promised to this job now, which lowers what is available
           without moving stock. They leave the shelf when the job is marked installed,
-          and the claim is released if it is cancelled.
-          {unresolved.length > 0 && ' A line with no matching item cannot be committed either, so it is not counted above.'}
+          and they are released if it is cancelled.
+          {unresolved.length > 0 && ' A line with no matching item cannot be promised either, so it is not counted above.'}
         </p>
       )}
     </section>

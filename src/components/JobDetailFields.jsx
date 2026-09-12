@@ -1,5 +1,6 @@
 import { useSettings, withCurrent } from '../lib/settings'
 import { useInstallers, installerLabel } from '../lib/useInstallers'
+import { Link } from 'react-router-dom'
 
 // The scheduling half of the job form. Installer and helper are picked from
 // the roster rather than typed, so the calendar can group by person and a
@@ -64,7 +65,9 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
               <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
             ))}
           </select>
-          <span className="field-hint">Managed on the Settings page.</span>
+          <span className="field-hint">
+            Managed on the <Link to="/settings" className="tpl-link">Settings page</Link>.
+          </span>
         </div>
         <div className="field">
           <label htmlFor="helper_id">Helper <span className="optional">(optional)</span></label>
@@ -85,7 +88,7 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           <span className="field-hint">The day it actually happened. Left blank until then.</span>
         </div>
         <div className="field">
-          <label htmlFor="payout_amount">Payout amount ($) <span className="optional">(optional)</span></label>
+          <label htmlFor="payout_amount">Installer pay ($) <span className="optional">(optional)</span></label>
           <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
             value={form.payout_amount} onChange={onChange} disabled={disabled} />
           {payHint && <span className="field-hint">{payHint}</span>}

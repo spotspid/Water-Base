@@ -8,6 +8,7 @@ import { formatLongDate, isMovable } from '../lib/schedule'
 import { metaLine } from '../lib/text'
 import ScheduleConflicts from './ScheduleConflicts'
 import Modal from './Modal'
+import { Link } from 'react-router-dom'
 
 // Book one job: a day, a window, a lead and a helper.
 //
@@ -181,7 +182,9 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
                   <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
                 ))}
               </select>
-              <span className="field-hint">Managed on the Settings page.</span>
+              <span className="field-hint">
+                Managed on the <Link to="/settings" className="tpl-link">Settings page</Link>.
+              </span>
             </div>
 
             <div className="field">

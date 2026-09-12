@@ -37,18 +37,18 @@ export default function JobSystemFields({
 
       {!templateError && !loadingTemplates && templates.length === 0 && (
         <p className="form-warning" role="status">
-          No active system templates exist. Create one on the Templates page first.
+          No active build sheets exist. Create one on the Build sheets page first.
         </p>
       )}
 
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="system_template">System template</label>
+          <label htmlFor="system_template">Build sheet</label>
           <select id="system_template" name="system_template" required={!templateOptional}
             value={form.system_template} onChange={onChange}
             disabled={disabled || lockedPicks || loadingTemplates || templates.length === 0}>
             <option value="">
-              {loadingTemplates ? 'Loading templates...' : 'Select system...'}
+              {loadingTemplates ? 'Loading build sheets...' : 'Select build sheet...'}
             </option>
             {templates.map(t => <option key={t.id} value={t.label}>{t.label}</option>)}
           </select>

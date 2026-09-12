@@ -32,7 +32,7 @@ export default function ScheduleList({ rows, onOpen }) {
             <th>Address</th>
             <th>Installer</th>
             <th>Helper</th>
-            <th>System</th>
+            <th>Build sheet</th>
             <th>Status</th>
           </tr>
         </thead>

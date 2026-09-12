@@ -27,7 +27,7 @@ export default function InventoryReorder({ rows }) {
             </span>
             <span className="inv-reorder-figures">
               <b>{row.on_hand}</b> on hand, reorder at <b>{row.reorder_threshold}</b>,
-              {' '}<b>{row.free}</b> free to sell
+              {' '}<b>{row.free}</b> available
             </span>
           </li>
         ))}
