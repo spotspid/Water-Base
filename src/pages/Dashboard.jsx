@@ -59,9 +59,15 @@ const STOCK_COLUMNS =
 
 // job_id is what folds five part rows into one install. Without it the panel
 // can join to a customer name but cannot tell two jobs apart.
+//
+// The jobs embed names its foreign key. The ledger has two keys to jobs, the
+// install it consumed parts for and the install a warranty replacement traces
+// back to, and PostgREST refuses to guess between them. This panel is about
+// consumption, so it follows job_id. The result still arrives as `jobs`.
 const ACTIVITY_COLUMNS =
   'id, created_at, quantity, txn_type, unit_cost_at_txn, source, deduct_batch, note, ' +
-  'job_id, inventory_items(sku, name, variant), jobs(customer_name)'
+  'job_id, inventory_items(sku, name, variant), ' +
+  'jobs!inventory_transactions_job_id_fkey(customer_name)'
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState([])
