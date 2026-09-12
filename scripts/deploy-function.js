@@ -10,8 +10,14 @@
 //
 // Needs SUPABASE_ACCESS_TOKEN (a personal access token, sbp_...) and
 // SUPABASE_PROJECT_REF in the environment.
+//
+// The ref is checked against the project the app actually talks to, read from
+// .env.local. They disagreed once, and the deploy reported success three times
+// against a project nobody uses while the live function stayed as it was. A
+// deploy that goes somewhere else is worse than one that fails, because it
+// reads as done. Pass --any-project to deploy somewhere else on purpose.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const API = 'https://api.supabase.com'
@@ -31,6 +37,25 @@ const ref = process.env.SUPABASE_PROJECT_REF
 
 if (!token) fail('SUPABASE_ACCESS_TOKEN is not set. It is a personal access token, sbp_...')
 if (!ref) fail('SUPABASE_PROJECT_REF is not set.')
+
+// Which project the app signs in to. The ref is the first label of that host.
+const appRef = (() => {
+  if (!existsSync('.env.local')) return ''
+  const line = readFileSync('.env.local', 'utf8')
+    .split(/\r?\n/)
+    .find(l => l.startsWith('VITE_SUPABASE_URL='))
+  const host = line ? line.slice(line.indexOf('=') + 1).trim() : ''
+  return host.replace(/^https?:\/\//, '').split('.')[0] || ''
+})()
+
+if (appRef && appRef !== ref && !process.argv.includes('--any-project')) {
+  fail(
+    `SUPABASE_PROJECT_REF is ${ref}, but .env.local points the app at ${appRef}. `
+    + 'Deploying would put this function on a project the app never calls, and report '
+    + `success. Set SUPABASE_PROJECT_REF=${appRef}, or pass --any-project if another `
+    + 'project is genuinely the target.',
+  )
+}
 
 const dir = join('supabase', 'functions', slug)
 

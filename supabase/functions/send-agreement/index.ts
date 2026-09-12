@@ -71,11 +71,39 @@ Deno.serve(async req => {
     inspect?: boolean
     submission_id?: string
     archive?: boolean
+    list?: boolean
+    template_id?: string
   }
   try {
     body = await req.json()
   } catch {
     return fail('The request body was not valid JSON.', 400)
+  }
+
+  // Every submission DocuSeal holds for one template, newest first. Read
+  // only. Exists because a resend overwrites the submission id on the job's
+  // row, so the earlier sends for a job cannot be found from this side, and
+  // an unarchived earlier send is a second email somebody can sign.
+  if (body.list === true) {
+    const listTemplate = String(body.template_id || '').trim()
+    if (!listTemplate) return fail('A template id is required to list submissions.', 400)
+
+    try {
+      const res = await fetch(
+        `${DOCUSEAL_API}/submissions?template_id=${encodeURIComponent(listTemplate)}&limit=100`,
+        { headers: { 'X-Auth-Token': apiKey } },
+      )
+
+      const payload = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        return fail(`DocuSeal returned ${res.status} listing submissions.`, 502, { detail: payload })
+      }
+
+      return json({ ok: true, submissions: payload })
+    } catch (caught) {
+      return fail(`DocuSeal could not be reached. ${(caught as Error).message}`, 502)
+    }
   }
 
   // Reading back a submission that already exists. Needs nothing but an id, so
