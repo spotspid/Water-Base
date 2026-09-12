@@ -10,6 +10,7 @@ const APP_CODES = new Set([
   'WB011', 'WB012', 'WB013', 'WB014', 'WB015',
   'WB016', 'WB017', 'WB018', 'WB019',
   'WB020', 'WB021', 'WB022', 'WB023', 'WB024',
+  'WB025', 'WB026',
 ])
 
 const MIGRATION_HINT =

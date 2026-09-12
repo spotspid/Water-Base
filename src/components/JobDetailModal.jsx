@@ -15,7 +15,8 @@ import JobNagPause from './JobNagPause'
 import JobSiteConditions from './JobSiteConditions'
 import JobCrewPay from './JobCrewPay'
 import JobStatusActions from './JobStatusActions'
-import JobPartsPreview from './JobPartsPreview'
+import JobParts from './JobParts'
+import JobEditModal from './JobEditModal'
 import Modal from './Modal'
 
 export default function JobDetailModal({ job, onClose, onChanged }) {
@@ -30,6 +31,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   const [revertTo, setRevertTo] = useState('scheduled')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [crewDirty, setCrewDirty] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [install, setInstall] = useState({
     // an install that happened today usually happened on the day it was
     // promised, so the date it was booked for is the sensible starting point
@@ -126,6 +128,12 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
         item cost later does not rewrite the margin on a job that already installed.
       </p>
 
+      <div className="form-actions job-edit-row">
+        <button type="button" className="btn-cancel" onClick={() => setEditing(true)}>
+          Edit job details
+        </button>
+      </div>
+
       {/* An installed job is dated by the day it happened, not by the day it
           was booked for. Walter Radu was written up after the fact with an
           install date and no booking, and "Not scheduled yet" on an installed
@@ -167,15 +175,11 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
 
       {!cancelled && <JobNagPause job={job} onChanged={onChanged} />}
 
-      {open && (
-        <JobPartsPreview
-          templateId={job.template_id}
-          templateLabel={job.system_template}
-          faucetFinish={job.faucet_finish}
-          roType={job.ro_type}
-          valveType={job.valve_type}
-          committed
-        />
+      {/* Asked of the job rather than of its sheet, because a job may carry
+          its own parts list and then the sheet is not the answer. Shown on an
+          installed job too: what it consumed is worth reading back. */}
+      {!cancelled && (
+        <JobParts job={job} committed={open} onChanged={onChanged} />
       )}
 
       {cancelled && (
@@ -209,6 +213,21 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
       />
 
       <JobPartsLedger jobId={job.id} refreshKey={ledgerKey} />
+
+      {editing && (
+        <JobEditModal
+          job={job}
+          hasOwnParts={job.has_job_parts === true}
+          onClose={() => setEditing(false)}
+          onSaved={message => {
+            setEditing(false)
+            setActionError('')
+            setNotice(message)
+            setLedgerKey(k => k + 1)
+            onChanged()
+          }}
+        />
+      )}
     </Modal>
   )
 }

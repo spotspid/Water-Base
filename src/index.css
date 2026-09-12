@@ -1177,6 +1177,51 @@ a {
   background: var(--red-soft);
 }
 
+/* Parts listed against one job rather than on a build sheet. Set apart from
+   the resolved list above it, because one is what the job will consume and the
+   other is the thing you edit to change it. */
+/* The edit form inside the job drawer. Deliberately not .newjob-form, which
+   lives in NewJob.css and so only reaches the browser on /jobs/new: the drawer
+   opens on /jobs and /schedule, where that rule is simply absent and the form
+   would render with no spacing at all and nothing would error. */
+.job-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* The one button that opens the whole job for editing. Right aligned with the
+   form actions it borrows from, and set above the schedule line so it reads as
+   belonging to the job rather than to any one panel. */
+.job-edit-row {
+  margin: 4px 0 16px;
+}
+
+.job-parts-own {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--surface-soft, transparent);
+}
+
+.job-parts-own h4 {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* Narrow, because it holds a count and not a price, and a full width number
+   input in a table cell reads as a text field. */
+.qty-input {
+  width: 72px;
+  text-align: right;
+}
+
 .col-total-label {
   text-align: right;
   font-weight: 600;

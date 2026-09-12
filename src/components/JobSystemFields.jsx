@@ -3,10 +3,22 @@ import JobPartsPreview from './JobPartsPreview'
 
 // What is being sold and what it costs, plus the live parts preview for the
 // chosen template. Split out of NewJob so that page stays about the form's
-// state and submission rather than about markup.
+// state and submission rather than about markup, and shared with the edit form
+// so the two cannot drift apart.
+//
+// lockedPicks is an installed job. The sheet and the three picks decided which
+// items left the shelf, and the ledger rows recording that are append only, so
+// they are shown and not editable.
+//
+// hidePreview is for the edit form, where the drawer already shows the job's
+// resolved parts underneath and a second copy resolving the template alone
+// would disagree with it on any job carrying its own parts list.
+//
+// templateOptional is a job that lists its own parts and therefore needs no
+// sheet at all.
 export default function JobSystemFields({
   form, onChange, disabled, templates, loadingTemplates, templateError, onReloadTemplates,
-  selectedTemplate,
+  selectedTemplate, lockedPicks = false, hidePreview = false, templateOptional = false,
 }) {
   const {
     finishes, roTypes, valveTypes, paymentTypes, loading: loadingSettings,
@@ -32,9 +44,9 @@ export default function JobSystemFields({
       <div className="form-grid">
         <div className="field">
           <label htmlFor="system_template">System template</label>
-          <select id="system_template" name="system_template" required
+          <select id="system_template" name="system_template" required={!templateOptional}
             value={form.system_template} onChange={onChange}
-            disabled={disabled || loadingTemplates || templates.length === 0}>
+            disabled={disabled || lockedPicks || loadingTemplates || templates.length === 0}>
             <option value="">
               {loadingTemplates ? 'Loading templates...' : 'Select system...'}
             </option>
@@ -50,7 +62,7 @@ export default function JobSystemFields({
           <label htmlFor="faucet_finish">Faucet finish</label>
           <select id="faucet_finish" name="faucet_finish" required
             value={form.faucet_finish} onChange={onChange}
-            disabled={disabled || loadingSettings}>
+            disabled={disabled || lockedPicks || loadingSettings}>
             <option value="">
               {loadingSettings ? 'Loading finishes...' : 'Select finish...'}
             </option>
@@ -62,7 +74,7 @@ export default function JobSystemFields({
           <label htmlFor="ro_type">RO type</label>
           <select id="ro_type" name="ro_type" required
             value={form.ro_type} onChange={onChange}
-            disabled={disabled || loadingSettings}>
+            disabled={disabled || lockedPicks || loadingSettings}>
             <option value="">
               {loadingSettings ? 'Loading RO types...' : 'Select RO type...'}
             </option>
@@ -78,7 +90,7 @@ export default function JobSystemFields({
           </label>
           <select id="valve_type" name="valve_type"
             value={form.valve_type} onChange={onChange}
-            disabled={disabled || loadingSettings}>
+            disabled={disabled || lockedPicks || loadingSettings}>
             <option value="">
               {loadingSettings ? 'Loading valve types...' : 'Not chosen'}
             </option>
@@ -102,13 +114,15 @@ export default function JobSystemFields({
         </div>
       </div>
 
-      <JobPartsPreview
-        templateId={selectedTemplate?.id || ''}
-        templateLabel={form.system_template}
-        faucetFinish={form.faucet_finish}
-        roType={form.ro_type}
-        valveType={form.valve_type}
-      />
+      {!hidePreview && (
+        <JobPartsPreview
+          templateId={selectedTemplate?.id || ''}
+          templateLabel={form.system_template}
+          faucetFinish={form.faucet_finish}
+          roType={form.ro_type}
+          valveType={form.valve_type}
+        />
+      )}
     </section>
   )
 }
