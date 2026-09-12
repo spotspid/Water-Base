@@ -38,6 +38,12 @@ export default function Jobs() {
   const [params, setParams] = useSearchParams()
   const openJobId = params.get('job') || ''
 
+  // An alert that names a field can send you straight to it. The schedule's
+  // readiness badge and the dashboard's blocker cards both link with ?fix=,
+  // and the drawer opens its edit form on that box rather than leaving the
+  // reader to find it. Unknown or absent is simply no focus, never an error.
+  const fixField = params.get('fix') || ''
+
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,6 +54,9 @@ export default function Jobs() {
       const next = new URLSearchParams(current)
       if (id) next.set('job', id)
       else next.delete('job')
+      // the field to fix belongs to the job that was opened with it, so it
+      // never outlives the drawer that consumed it
+      if (!id) next.delete('fix')
       return next
     }, { replace: true })
   }, [setParams])
@@ -279,6 +288,7 @@ export default function Jobs() {
       {openJob && (
         <JobDetailModal
           job={openJob}
+          fixField={fixField}
           onClose={() => openJobById('')}
           onChanged={() => load()}
         />

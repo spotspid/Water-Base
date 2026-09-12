@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import {
   formFromJob, isDirty, validateEdit, saveJobDetails, LOCKED_REASON,
@@ -18,10 +18,44 @@ import Modal from './Modal'
 // The schedule, the crew and the pay are not here. They are edited in their
 // own panels behind their own functions, and this form would be a second
 // writer for them.
-export default function JobEditModal({ job, hasOwnParts, onClose, onSaved }) {
+export default function JobEditModal({ job, hasOwnParts, focusField = '', onClose, onSaved }) {
   const [form, setForm] = useState(() => formFromJob(job))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const formRef = useRef(null)
+
+  // An alert that named a field opens this form on that field: scrolled to,
+  // focused, and outlined so it is obvious which of a dozen boxes was meant.
+  //
+  // Done by name attribute rather than by id, because the same field
+  // components are shared with the new job form and only the names are stable
+  // across both. A field that is not on this form, or a browser that will not
+  // focus it, simply leaves the form as it was: this is a convenience, and it
+  // must never be able to break the form it is trying to help with.
+  useEffect(() => {
+    if (!focusField || !formRef.current) return
+
+    let cancelled = false
+
+    // after paint, so the field exists and the modal has finished opening
+    const timer = window.setTimeout(() => {
+      if (cancelled || !formRef.current) return
+
+      try {
+        const el = formRef.current.querySelector(`[name="${CSS.escape(focusField)}"]`)
+        if (!el) return
+
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        el.focus({ preventScroll: true })
+        el.classList.add('field-called-out')
+      } catch {
+        // an unsupported selector or a browser that refuses focus is not a
+        // reason to fail the edit form
+      }
+    }, 0)
+
+    return () => { cancelled = true; window.clearTimeout(timer) }
+  }, [focusField])
 
   const installed = job.parts_deducted_at != null
 
@@ -103,7 +137,7 @@ export default function JobEditModal({ job, hasOwnParts, onClose, onSaved }) {
         </p>
       )}
 
-      <form className="job-edit-form" onSubmit={handleSubmit} noValidate>
+      <form className="job-edit-form" ref={formRef} onSubmit={handleSubmit} noValidate>
 
         <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 

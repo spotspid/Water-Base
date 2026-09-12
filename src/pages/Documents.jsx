@@ -208,6 +208,9 @@ export default function Documents() {
                           Needs {group.short}
                           <span className="doc-group-n">{group.rows.length}</span>
                         </p>
+                        {/* The group heading already says what these rows are
+                            waiting on, so showReason false stops each of them
+                            repeating the same sentence down the column. */}
                         <ul className="doc-list">
                           {group.rows.map(row => (
                             <DocumentRow key={row.key} row={row} busy={busy}
@@ -219,8 +222,7 @@ export default function Documents() {
                   ) : (
                     <ul className="doc-list">
                       {sectionRows.map(row => (
-                        <DocumentRow key={row.key} row={row} busy={busy}
-                          onSend={handleSend} showReason={false} />
+                        <DocumentRow key={row.key} row={row} busy={busy} onSend={handleSend} />
                       ))}
                     </ul>
                   )}

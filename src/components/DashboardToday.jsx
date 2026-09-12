@@ -45,7 +45,9 @@ export default function DashboardToday({ cards, paperworkNote }) {
         <ul className="blockers">
           {blocked.map(card => (
             <li key={card.job_id} className={`bk bk-${card.urgency}`}>
-              <Link to="/jobs" className="bk-link">
+              {/* The job itself, not the list. A card that names a customer
+                  and then lands on forty rows has handed the search back. */}
+              <Link to={`/jobs?job=${encodeURIComponent(card.job_id)}`} className="bk-link">
                 <span className={`bk-when bk-when-${card.urgency}`}>{card.when}</span>
                 <span className="bk-who">{card.who}</span>
                 <span className="bk-need">{card.needs}</span>

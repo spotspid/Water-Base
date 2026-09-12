@@ -574,3 +574,23 @@
   gap: 8px;
   margin-bottom: 14px;
 }
+
+/* A readiness badge that names a missing field is a link to that field, so it
+   has to look pressable without becoming a second button competing with the
+   card it sits on. Underline on hover only, and the focus ring is the card's
+   rather than a new one. */
+.sch-ready-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.sch-ready-link:hover .sch-ready-text,
+.sch-ready-link:focus-visible .sch-ready-text {
+  text-decoration: underline;
+}
+
+.sch-ready-link:focus-visible {
+  outline: 2px solid var(--navy, #1f3352);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

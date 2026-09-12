@@ -514,6 +514,28 @@ check('an unscheduled job reports the date, not the payout',
 check('a crewless job reports the crew, not the payout',
   workOrderBlocker({ ...sendable, installer_id: null, installer_pay: null }).includes('No installer'))
 
+// --- the link has to open the drawer, not the list -------------------------
+//
+// Jobs.jsx reads ?job=<id> and opens that job's drawer, and it resolves the id
+// against every job it loaded rather than against the status filtered view, so
+// a link to a cancelled job still opens. That contract is the whole value of a
+// Slack alert: a line saying "unsigned for 9 days" is only useful if one click
+// lands on the job it is about rather than on forty rows.
+//
+// Asserted here because the link is built in a Deno function and consumed in a
+// React page, and nothing else would notice if the two drifted apart.
+
+const link = jobLink(JOB.id)
+
+check('a job link carries the job id in the query string',
+  link.includes(`?job=${JOB.id}`), link)
+check('and points at the jobs page, which is what reads that parameter',
+  new URL(link).pathname === '/jobs', link)
+check('and names the parameter the drawer actually looks for',
+  new URL(link).searchParams.get('job') === JOB.id, link)
+check('an id with awkward characters survives the round trip',
+  new URL(jobLink('a b&c=d')).searchParams.get('job') === 'a b&c=d')
+
 console.log(failed === 0
   ? '\nAll notification checks passed.'
   : `\n${failed} notification check(s) failed.`)

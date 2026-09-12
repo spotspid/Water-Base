@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { crewLabel, isMovable } from '../lib/schedule'
 import { useJobReadiness } from '../lib/readinessContext'
 
@@ -112,13 +113,35 @@ function ReadinessBadge({ jobId, compact }) {
 
   if (!readiness) return null
 
-  return (
-    <span
-      className={`sch-ready sch-ready-${readiness.tone}${compact ? ' sch-ready-dot' : ''}`}
-      title={readiness.detail}
-    >
+  const className =
+    `sch-ready sch-ready-${readiness.tone}${compact ? ' sch-ready-dot' : ''}`
+
+  const body = (
+    <>
       <span className="sch-ready-mark" aria-hidden="true" />
       <span className={compact ? 'sr-only' : 'sch-ready-text'}>{readiness.label}</span>
-    </span>
+    </>
+  )
+
+  // Ready has nothing to fix, so it stays a label. Anything else links to the
+  // job with the field named, and the drawer opens its edit form on that box.
+  //
+  // stopPropagation because the whole card is already a button that opens the
+  // job. Without it the click would both follow the link and fire the card's
+  // open, and the card would win the race.
+  if (!readiness.fix) {
+    return <span className={className} title={readiness.detail}>{body}</span>
+  }
+
+  return (
+    <Link
+      to={`/jobs?job=${encodeURIComponent(jobId)}&fix=${encodeURIComponent(readiness.fix)}`}
+      className={`${className} sch-ready-link`}
+      title={`${readiness.detail} Click to fix it.`}
+      onClick={e => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
+    >
+      {body}
+    </Link>
   )
 }

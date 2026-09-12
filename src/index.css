@@ -1180,6 +1180,37 @@ a {
 /* Parts listed against one job rather than on a build sheet. Set apart from
    the resolved list above it, because one is what the job will consume and the
    other is the thing you edit to change it. */
+/* A name in a table or a list that opens the thing it names. Inherits its
+   colour so a table of these does not turn into a wall of blue, and earns its
+   underline on hover, because a row of permanently underlined names is harder
+   to read than the table it replaced. Used on the dashboard and on Documents,
+   so it lives here rather than in either page's stylesheet. */
+.row-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row-link:hover,
+.row-link:focus-visible {
+  text-decoration: underline;
+}
+
+.row-link:focus-visible {
+  outline: 2px solid var(--navy, #1f3352);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* The field an alert sent you to. Applied by the edit form after it focuses
+   the box, so arriving from "Faucet finish not chosen" shows which of a dozen
+   inputs was meant rather than leaving the focus ring to carry it alone. */
+.field-called-out {
+  outline: 2px solid var(--amber, #b07d2b);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* The edit form inside the job drawer. Deliberately not .newjob-form, which
    lives in NewJob.css and so only reaches the browser on /jobs/new: the drawer
    opens on /jobs and /schedule, where that rule is simply absent and the form

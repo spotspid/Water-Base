@@ -76,8 +76,18 @@ export default function DashboardPaperwork({ rows, jobCount }) {
             <tbody>
               {rows.map(row => (
                 <tr key={`${row.job_id}-${row.type}`}>
+                  {/* The customer name is the link rather than the whole row:
+                      a table row cannot legally contain an anchor around its
+                      cells, and a row-wide click handler is invisible to a
+                      keyboard. One real anchor, in the cell that names the
+                      thing you want to open. */}
                   <td className="td-customer">
-                    {row.customer_name}
+                    <Link
+                      to={`/jobs?job=${encodeURIComponent(row.job_id)}`}
+                      className="row-link"
+                    >
+                      {row.customer_name}
+                    </Link>
                     {row.installer_name && (
                       <span className="cell-sub">{row.installer_name}</span>
                     )}

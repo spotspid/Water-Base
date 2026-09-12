@@ -19,7 +19,7 @@ import JobParts from './JobParts'
 import JobEditModal from './JobEditModal'
 import Modal from './Modal'
 
-export default function JobDetailModal({ job, onClose, onChanged }) {
+export default function JobDetailModal({ job, fixField = '', onClose, onChanged }) {
   const { installers, loading: loadingCrew } = useInstallers({
     activeOnly: true,
     keepIds: [job.installer_id, job.helper_id],
@@ -31,7 +31,10 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
   const [revertTo, setRevertTo] = useState('scheduled')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [crewDirty, setCrewDirty] = useState(false)
-  const [editing, setEditing] = useState(false)
+  // Opened straight into the edit form when the link named a field to fix, so
+  // an alert that says "Faucet finish not chosen" lands on the faucet finish
+  // rather than on the job that has one somewhere.
+  const [editing, setEditing] = useState(Boolean(fixField))
   const [install, setInstall] = useState({
     // an install that happened today usually happened on the day it was
     // promised, so the date it was booked for is the sensible starting point
@@ -217,6 +220,7 @@ export default function JobDetailModal({ job, onClose, onChanged }) {
       {editing && (
         <JobEditModal
           job={job}
+          focusField={fixField}
           hasOwnParts={job.has_job_parts === true}
           onClose={() => setEditing(false)}
           onSaved={message => {

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { installLabel, sentLabel } from '../lib/documents'
 
 // One document, as a row.
@@ -6,19 +7,38 @@ import { installLabel, sentLabel } from '../lib/documents'
 // deliberate. Hiding it would leave the row looking like a record with nothing
 // to do about it; a dead button with the reason beside it says "this is the
 // thing you would press, and here is why you cannot yet".
-export default function DocumentRow({ row, busy, onSend, showReason }) {
+//
+// The reason used to live only in the button's title attribute, which is a
+// tooltip, which means it did not exist on a tablet: there is no hover on
+// touch, and every one of these rows is read on one. It is now printed on the
+// row whenever the button is dead, and the title is the supplement rather than
+// the carrier. showReason still exists for callers that group by reason and
+// would otherwise print the same sentence down a whole column.
+//
+// The customer name is a link to the job. A page that says "waiting on a
+// crew" and then leaves you to find which job that was is the fault this whole
+// pass is about.
+export default function DocumentRow({ row, busy, onSend, showReason = true }) {
   const blocked = row.gaps.length > 0 || row.job_status === 'cancelled'
   const sending = busy === row.key
 
   return (
     <li className="doc-row">
       <span className="doc-main">
-        <span className="doc-who">{row.customer_name}</span>
+        <Link
+          to={`/jobs?job=${encodeURIComponent(row.job_id)}`}
+          className="doc-who row-link"
+        >
+          {row.customer_name}
+        </Link>
         <span className="doc-meta">
           {row.document}
           {row.installer_name && <> &middot; {row.installer_name}</>}
         </span>
-        {showReason && row.reason && (
+        {/* Printed whenever the button is dead, so the reason is readable
+            without a pointer. A caller that has already grouped these rows
+            under their shared reason passes showReason false. */}
+        {blocked && row.reason && showReason && (
           <span className="doc-reason">{row.reason}</span>
         )}
       </span>

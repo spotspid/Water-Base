@@ -62,14 +62,70 @@ check('a short count with no unit figure still shows something',
 
 // --- lines nobody has chosen yet -------------------------------------------
 
-const pick = { ...ok, unresolved_lines: 2 }
+const pick = { ...ok, unresolved_lines: 2, unresolved_picks: ['faucet_finish', 'ro_type'] }
 check('unresolved lines read as a choice to make', readinessOf(pick).state === UNRESOLVED)
 check('and are amber rather than an exception', readinessOf(pick).tone === 'warn')
-check('and say how many', readinessOf(pick).label === 'Pick 2')
+
+// The badge used to say "Pick 2", which names the size of the problem and not
+// the problem. Naming the field is the whole point of this: it is the
+// difference between a badge you act on and a badge you investigate.
+check('the badge names the fields rather than counting them',
+  readinessOf(pick).label === 'Faucet finish and RO type not chosen',
+  readinessOf(pick).label)
+
+const onePick = { ...ok, unresolved_lines: 1, unresolved_picks: ['faucet_finish'] }
+check('one missing field reads as one instruction',
+  readinessOf(onePick).label === 'Faucet finish not chosen', readinessOf(onePick).label)
+
+const threePicks = {
+  ...ok, unresolved_lines: 3,
+  unresolved_picks: ['faucet_finish', 'ro_type', 'valve_type'],
+}
+check('three read as a list, not a count',
+  readinessOf(threePicks).label === 'Faucet finish, RO type and valve type not chosen',
+  readinessOf(threePicks).label)
+
+// RO is an acronym. Lowercasing the label for mid sentence use turned it into
+// "rO type", and a badge that misspells the field it is sending you to is
+// worse than the count it replaced.
+check('an acronym keeps its case partway through the sentence',
+  !readinessOf(pick).label.includes('rO'), readinessOf(pick).label)
+
+// --- the field a click should land on --------------------------------------
+
+check('a missing faucet finish points at the faucet finish field',
+  readinessOf(onePick).fix === 'faucet_finish')
+check('with several missing, it points at the first',
+  readinessOf(threePicks).fix === 'faucet_finish')
+check('a ready job points at nothing', readinessOf(ok).fix === '')
+check('an empty parts list points at the build sheet',
+  readinessOf({ ...ok, sheet_lines: 0 }).fix === 'system_template')
+
+// --- facts that arrive malformed -------------------------------------------
+//
+// This reads whatever the database returned. A badge must never be the thing
+// that breaks the schedule, so anything unusable degrades to the old count
+// wording rather than throwing.
+
+check('no picks at all falls back to counting lines',
+  readinessOf({ ...ok, unresolved_lines: 2 }).label === '2 lines cannot name a part',
+  readinessOf({ ...ok, unresolved_lines: 2 }).label)
+check('and one line reads singular',
+  readinessOf({ ...ok, unresolved_lines: 1 }).label === '1 line cannot name a part')
+check('a picks value that is not an array does not throw',
+  readinessOf({ ...ok, unresolved_lines: 1, unresolved_picks: 'faucet_finish' }).state === UNRESOLVED)
+check('an unknown pick source is ignored rather than printed raw',
+  readinessOf({ ...ok, unresolved_lines: 1, unresolved_picks: ['nonsense'] }).label
+    === '1 line cannot name a part')
+check('a null picks value does not throw',
+  readinessOf({ ...ok, unresolved_lines: 1, unresolved_picks: null }).state === UNRESOLVED)
 
 // A job can be both. Short wins the badge, because the shortage is concrete,
 // but the detail has to admit the number could get worse once the rest resolve.
-const both = { ...ok, short_items: 1, short_units: 1, unresolved_lines: 2 }
+const both = {
+  ...ok, short_items: 1, short_units: 1, unresolved_lines: 2,
+  unresolved_picks: ['faucet_finish', 'ro_type'],
+}
 check('short outranks unresolved on the badge', readinessOf(both).state === SHORT)
 check('and the detail warns the figure is incomplete',
   readinessOf(both).detail.includes('could be worse'))
