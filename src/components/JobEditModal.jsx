@@ -50,7 +50,7 @@ export default function JobEditModal({ job, hasOwnParts, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    const problem = validateEdit(form, { hasOwnParts })
+    const problem = validateEdit(form, { job, hasOwnParts })
     if (problem) {
       setError(problem)
       return

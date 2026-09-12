@@ -63,27 +63,57 @@ export function isDirty(form, job) {
   return EDITABLE_FIELDS.some(name => (form[name] || '') !== (original[name] || ''))
 }
 
+// The fields that must not be emptied once they hold something, and what to
+// call each one in the refusal. A gap that was already there is not in
+// question: these only fire when the box is blank and the row is not.
+const KEEPABLE = [
+  ['customer_name', 'The customer name'],
+  ['phone', 'The phone number'],
+  ['address', 'The address'],
+  ['city', 'The city'],
+  ['payment_type', 'The payment type'],
+  ['invoice_number', 'The invoice number'],
+]
+
+function filled(value) {
+  return String(value ?? '').trim() !== ''
+}
+
 /**
  * The first problem with the form, or an empty string.
+ *
+ * The rule is the one update_job_details enforces, and it is not "everything
+ * is required". Three back loaded jobs have no payment type, two have no
+ * invoice number and one has no city, and demanding those would mean the form
+ * built to fix those jobs could not save them at all, on any field. So a value
+ * that is present must be valid, and a gap that was already there may stay a
+ * gap. Emptying a field that had something in it is the one refusal, because
+ * that loses information rather than declining to invent it.
+ *
+ * job is the row as loaded, which is what says whether a blank box is a gap
+ * being kept or a value being thrown away.
  *
  * hasOwnParts relaxes the build sheet requirement: a job listing its own parts
  * needs no sheet, and demanding one would be asking for a list it is not going
  * to use.
  */
-export function validateEdit(form, { hasOwnParts = false } = {}) {
-  if (!form.customer_name.trim()) return 'Customer name is required.'
-  if (!form.phone.trim()) return 'Phone is required.'
-  if (!form.address.trim()) return 'Address is required.'
+export function validateEdit(form, { job, hasOwnParts = false } = {}) {
+  for (const [name, label] of KEEPABLE) {
+    if (!filled(form[name]) && filled(job?.[name])) {
+      return `${label} cannot be emptied once set. Correct it rather than clearing it, `
+        + 'or leave it as it was.'
+    }
+  }
 
   const email = form.customer_email.trim()
   if (email && !EMAIL.test(email)) return 'That email address does not look right.'
 
-  if (!form.city) return 'Pick a city.'
-  if (!form.payment_type) return 'Pick a payment type.'
-  if (!form.invoice_number.trim()) return 'Invoice number is required.'
-
-  if (!form.system_template && !hasOwnParts) {
-    return 'Pick a system template, or list this job’s parts against the job itself.'
+  // Same gap rule for the sheet. A job that already had none and lists its own
+  // parts is fine as it stands; taking the sheet off a job that had one, with
+  // nothing to put in its place, would leave it recording no parts at all.
+  if (!form.system_template && !hasOwnParts && filled(job?.system_template)) {
+    return 'Taking the build sheet off this job would leave it with no parts list at all. '
+      + 'Pick another sheet, or list this job’s parts against the job first.'
   }
 
   const price = Number(form.sale_price)
