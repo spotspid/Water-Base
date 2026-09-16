@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { GROUPS, groupForPath } from '../lib/navigation'
-import {
-  IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconSchedule, IconSettings,
-  IconWarranty,
-} from './NavIcons'
+import { groupForPath } from '../lib/navigation'
+import { NAV_GROUPS } from './navGroups'
 import NavMenu from './NavMenu'
 import AccountMenu from './AccountMenu'
 import emblem from '../assets/emblem.png'
@@ -14,31 +10,7 @@ import emblem from '../assets/emblem.png'
 // open. Exactly one, ever. Two panels on screen at once is the tell of a nav
 // assembled from independent dropdowns rather than built as a menu bar.
 //
-// The icons are attached here rather than in navigation.js so that file stays
-// free of components and can be read by anything, including a plain Node
-// script.
-const ICONS = {
-  '/dashboard': IconDashboard,
-  '/schedule': IconSchedule,
-  '/jobs': IconJobs,
-  '/documents': IconDocuments,
-  '/inventory': IconInventory,
-  '/orders': IconOrders,
-  // Keyed by the path in navigation.js. The page moved from /templates to
-  // /build-sheets and this key did not, which left the Stock menu with no icon
-  // and crashed it on open.
-  '/build-sheets': IconBuildSheets,
-  '/warranty': IconWarranty,
-  '/expenses': IconExpenses,
-  '/pnl': IconMoney,
-  '/outstanding': IconOutstanding,
-  '/settings': IconSettings,
-}
-
-const WITH_ICONS = GROUPS.map(group => ({
-  ...group,
-  items: group.items.map(item => ({ ...item, Icon: ICONS[item.to] })),
-}))
+// The groups and their icons come from navGroups.js.
 
 export default function TopNav() {
   const { pathname } = useLocation()
@@ -99,7 +71,7 @@ export default function TopNav() {
         </Link>
 
         <nav className="nav-groups" aria-label="Main">
-          {WITH_ICONS.map(group => (
+          {NAV_GROUPS.map(group => (
             <NavMenu
               key={group.id}
               group={group}
