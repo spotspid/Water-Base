@@ -133,14 +133,17 @@ const PAYMENT_TERMS = 'Paid weekly on Fridays'
 
 // The customer agreement, against template 5520400.
 //
-// Names are exact now. They used to be matched loosely, because that template
-// was prose and had been built before any of this code; it has since been
-// rebuilt in the same snake_case as the work order, so a near miss should be
-// an error rather than a guess.
+// Names are exact. The template was rebuilt on 2026-09-16 with a new PDF, and
+// this spec matches it box for box: fourteen boxes, all on the one role, First
+// Party. A box the template requires is required here too, so a rename in
+// DocuSeal stops the send with a message rather than printing a blank.
 //
-// Only customer_signature and customer_date are left for the signer.
-// Everything else, including the company countersignature, arrives filled and
-// locked.
+// Left for the signer: customer_signature and customer_printed_name. The date
+// beside the customer signature has no name on the template, so it cannot be
+// addressed and stays open to the signer anyway; customer_date is kept
+// optional so naming that box starts working with no change here. Everything
+// else, including the company countersignature and printed name, arrives
+// filled and locked.
 const CUSTOMER_INSTALL: AgreementSpec = {
   type: 'customer_install',
   submitterRole: 'Customer',
@@ -160,9 +163,9 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     { key: 'city', required: false, names: ['city'],
       value: ctx => text(ctx.job.city) },
 
-    // Optional because the template has no phone box today. Adding one starts
-    // filling it with no change here.
-    { key: 'phone', required: false, names: ['phone'],
+    // On the template since the 2026-09-16 rebuild, and required there. The
+    // column is NOT NULL on jobs, so every job has something to put in it.
+    { key: 'phone', required: true, names: ['phone'],
       value: ctx => text(ctx.job.phone) },
 
     { key: 'email', required: true, names: ['email'],
@@ -181,32 +184,32 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     { key: 'sale_price', required: true, names: ['sale_price'],
       value: ctx => money(ctx.job.sale_price) },
 
-    // The deposit agreed at quoting, and the sentence that replaces the
-    // template's printed "full payment is due upon installation completion".
-    //
-    // Optional, as balance_due was on the work order, because neither box is
-    // on template 5520400 yet. Until they are added the agreement sends
-    // exactly as before; adding a box by either name starts filling it with no
-    // change here. Both are locked: a customer does not get to type their own
-    // deposit.
-    //
-    // No deposit prints as "None" rather than $0.00, which reads as a figure
-    // somebody might have forgotten to fill in.
-    { key: 'deposit_amount', required: false, names: ['deposit_amount'],
-      value: ctx => (agreedDeposit(ctx) > 0 ? money(agreedDeposit(ctx)) : 'None') },
-    { key: 'payment_schedule', required: false, names: ['payment_schedule'],
+    // The sentence that replaced the printed "full payment is due upon
+    // installation completion". Deposit now and balance on completion when a
+    // deposit was agreed, full payment on completion when none was. It carries
+    // the deposit figure itself, which is why the template has no separate
+    // deposit box. Locked: a customer does not get to type their own terms.
+    { key: 'payment_schedule', required: true, names: ['payment_schedule'],
       value: ctx => paymentSchedule(ctx) },
 
-    { key: 'company_signature', required: false, names: ['company_signature'],
+    { key: 'company_signature', required: true, names: ['company_signature'],
       value: () => COMPANY_SIGNATORY },
-    { key: 'company_date', required: false, names: ['company_date'],
+    { key: 'company_date', required: true, names: ['company_date'],
       value: ctx => todayLong(ctx.today) },
+    // Printed under the countersignature, from the same constant, so the
+    // signature and the name beside it cannot disagree.
+    { key: 'company_printed_name', required: true, names: ['company_printed_name'],
+      value: () => COMPANY_SIGNATORY },
 
-    // The only two the customer touches. customer_date is optional because
-    // the box for it on the template has no name yet, and a box with no name
-    // cannot be addressed; it stays open to the signer either way.
+    // What the customer completes. The printed name is typed by them rather
+    // than prefilled from the job: it records who actually signed, which is
+    // not always the person the job was written up for.
     { key: 'customer_signature', required: true, names: ['customer_signature'],
       readonly: false, value: () => '' },
+    { key: 'customer_printed_name', required: true, names: ['customer_printed_name'],
+      readonly: false, value: () => '' },
+    // Unnamed on the template today, so nothing matches and the box stays
+    // open to the signer. Optional so that naming it needs no change here.
     { key: 'customer_date', required: false, names: ['customer_date'],
       readonly: false, value: () => '' },
   ],

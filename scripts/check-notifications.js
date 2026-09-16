@@ -182,11 +182,15 @@ check('document labels', documentLabel('customer_install') === 'customer agreeme
 
 // --- the customer agreement, against template 5520400 -----------------------
 
-// The ten boxes the template actually carries. It is exact match now, so a
-// rename in DocuSeal is an error rather than a silent blank.
+// The fourteen boxes the template carries since it was rebuilt on 2026-09-16,
+// read from the template itself. One of them, the date beside the customer
+// signature, has no name, so it is not in this list: a box with no name cannot
+// be addressed. Exact match, so a rename in DocuSeal is an error rather than a
+// silent blank.
 const CI_TEMPLATE = [
-  'customer_name', 'install_address', 'city', 'email', 'systems', 'sale_price',
-  'customer_signature', 'company_signature', 'company_date',
+  'customer_name', 'install_address', 'city', 'phone', 'email', 'systems',
+  'sale_price', 'payment_schedule', 'customer_signature', 'customer_printed_name',
+  'company_signature', 'company_date', 'company_printed_name',
 ]
 
 const ciSpec = SPECS.customer_install
@@ -195,7 +199,7 @@ const ciCtx = {
     customer_name: 'Steve Burgess', phone: '(248) 555-0100',
     customer_email: 'steve@example.com', address: '1 Test Street', city: 'Ann Arbor',
     system_template: 'RO Only', ro_type: 'Tankless', faucet_finish: 'Chrome',
-    sale_price: 1499,
+    sale_price: 1499, deposit_amount: 0,
   },
   installer: null, parts: [], today: new Date(2026, 7, 25),
 }
@@ -203,9 +207,14 @@ const ciCtx = {
 const ci = matchFields(ciSpec, CI_TEMPLATE, ciCtx)
 const ciBy = new Map(ci.fields.map(f => [f.name, f]))
 
-check('the customer agreement sends against the real template', ci.missing.length === 0,
+check('the customer agreement sends against the rebuilt template', ci.missing.length === 0,
   ci.missing.join('; '))
+check('every box on the template is claimed by the spec',
+  CI_TEMPLATE.every(name => ci.fields.some(f => f.name === name)),
+  CI_TEMPLATE.filter(name => !ci.fields.some(f => f.name === name)).join(','))
 check('customer name fills', ciBy.get('customer_name')?.default_value === 'Steve Burgess')
+check('phone fills now the template has a box for it',
+  ciBy.get('phone')?.default_value === '(248) 555-0100')
 check('email fills', ciBy.get('email')?.default_value === 'steve@example.com')
 check('sale price fills as money', ciBy.get('sale_price')?.default_value === '$1,499.00')
 check('systems carries the picks',
@@ -214,6 +223,8 @@ check('systems carries the picks',
 check('the company countersignature is prefilled',
   ciBy.get('company_signature')?.default_value === 'Steve Burgess')
 check('and dated', Boolean(ciBy.get('company_date')?.default_value))
+check('and the company printed name is the same person',
+  ciBy.get('company_printed_name')?.default_value === ciBy.get('company_signature')?.default_value)
 
 // The template carries a city box of its own, so the address is the street
 // alone. Putting the city in both would print it twice, and leaving the city
@@ -223,77 +234,67 @@ check('the address is the street only',
 check('and the city goes in the city box',
   ciBy.get('city')?.default_value === 'Ann Arbor')
 
-// Everything readonly except the two the customer signs.
-check('only two fields are left open', ci.openToSigner.length === 1 || ci.openToSigner.length === 2,
-  ci.openToSigner.join(','))
-check('and the customer signature is one of them',
-  ci.openToSigner.includes('customer_signature'))
+// Exactly two boxes are the customer's: the signature and the printed name.
+check('exactly two fields are left open',
+  ci.openToSigner.length === 2, ci.openToSigner.join(','))
+check('the customer signature is one of them', ci.openToSigner.includes('customer_signature'))
+check('the customer printed name is the other, typed by whoever actually signs',
+  ci.openToSigner.includes('customer_printed_name'))
+check('and it is not prefilled from the job',
+  ciBy.get('customer_printed_name')?.default_value === '')
 check('every other field is locked',
   ci.fields.filter(f => !f.readonly).every(f => f.name.startsWith('customer_')))
-check('the company countersignature is locked',
-  ciBy.get('company_signature')?.readonly === true)
+check('the company countersignature and printed name are locked',
+  ciBy.get('company_signature')?.readonly === true
+  && ciBy.get('company_printed_name')?.readonly === true)
 
-// Boxes the template does not carry today must not block the send.
-check('no phone box does not block the send',
-  !ci.fields.some(f => f.name === 'phone') && ci.missing.length === 0)
-check('adding a phone box starts filling it',
-  matchFields(ciSpec, [...CI_TEMPLATE, 'phone'], ciCtx)
-    .fields.find(f => f.name === 'phone')?.default_value === '(248) 555-0100')
-check('naming the customer date box opens it to the signer',
+// The date beside the customer signature has no name on the template today.
+check('the unnamed customer date does not block the send',
+  !ci.fields.some(f => f.name === 'customer_date') && ci.missing.length === 0)
+check('naming it opens it to the signer with no change to the spec',
   matchFields(ciSpec, [...CI_TEMPLATE, 'customer_date'], ciCtx)
     .openToSigner.includes('customer_date'))
 
-// Exact matching, so the prose names the old template used are now errors.
+// Required boxes, so a template that loses one is refused rather than sent blank.
+for (const name of ['phone', 'payment_schedule', 'customer_printed_name', 'company_printed_name']) {
+  check(`a template without ${name} is refused`,
+    matchFields(ciSpec, CI_TEMPLATE.filter(n => n !== name), ciCtx).missing.length === 1)
+}
+
+// There is no separate deposit box. The deposit lives in the sentence.
+check('no deposit box is sent', !ci.fields.some(f => f.name === 'deposit_amount'))
+
+// Exact matching, so the prose names the old template used are errors.
 check('a prose renamed box is reported rather than guessed at',
   matchFields(ciSpec, CI_TEMPLATE.map(n => (n === 'customer_name' ? 'Customer Name' : n)), ciCtx)
     .missing.length === 1)
 
-// --- the deposit, as a term the agreement prints ------------------------------
+// --- the payment terms the agreement prints -----------------------------------
 
-// Neither box is on template 5520400 yet, so the send must carry on exactly as
-// it did, and adding a box must start filling it.
-check('no deposit box does not block the send',
-  ci.missing.length === 0 && !ci.fields.some(f => f.name === 'deposit_amount'))
-check('no payment schedule box does not block it either',
-  !ci.fields.some(f => f.name === 'payment_schedule'))
-
-const withTerms = [...CI_TEMPLATE, 'deposit_amount', 'payment_schedule']
-const termsOf = job => new Map(
-  matchFields(ciSpec, withTerms, { ...ciCtx, job: { ...ciCtx.job, ...job } })
-    .fields.map(f => [f.name, f]),
-)
+const termsOf = job => matchFields(ciSpec, CI_TEMPLATE, { ...ciCtx, job: { ...ciCtx.job, ...job } })
+  .fields.find(f => f.name === 'payment_schedule')
 
 const deposited = termsOf({ sale_price: 2999, deposit_amount: 899.7 })
-check('an agreed deposit prints as money',
-  deposited.get('deposit_amount')?.default_value === '$899.70',
-  deposited.get('deposit_amount')?.default_value)
-check('and the terms say deposit now, balance on completion',
-  deposited.get('payment_schedule')?.default_value
+check('an agreed deposit reads deposit now, balance on completion',
+  deposited?.default_value
     === 'A deposit of $899.70 is due at signing. The balance of $2,099.30 is due upon installation completion.',
-  deposited.get('payment_schedule')?.default_value)
-check('both are locked', deposited.get('deposit_amount')?.readonly === true
-  && deposited.get('payment_schedule')?.readonly === true)
+  deposited?.default_value)
+check('and is locked', deposited?.readonly === true)
 
-const noDeposit = termsOf({ sale_price: 2999, deposit_amount: 0 })
-check('no deposit agreed prints None rather than a zero',
-  noDeposit.get('deposit_amount')?.default_value === 'None')
-check('and the full price is due on completion',
-  noDeposit.get('payment_schedule')?.default_value
+check('no deposit agreed reads full payment on completion',
+  termsOf({ sale_price: 2999, deposit_amount: 0 })?.default_value
     === 'Full payment of $2,999.00 is due upon installation completion.')
 
-const neverRecorded = termsOf({ sale_price: 2999, deposit_amount: null })
-check('a job quoted before deposits were recorded reads as it always did',
-  neverRecorded.get('payment_schedule')?.default_value
+check('a job quoted before deposits were recorded reads the same',
+  termsOf({ sale_price: 2999, deposit_amount: null })?.default_value
     === 'Full payment of $2,999.00 is due upon installation completion.')
 
 // The contract is about the terms, not today's bank balance. A payment taken
 // before the agreement is sent must not change the balance it prints.
-const paidEarly = termsOf({
-  sale_price: 2999, deposit_amount: 899.7, deposits_taken: 899.7, balance_due: 2099.3,
-})
 check('payments already received do not rewrite the terms',
-  paidEarly.get('payment_schedule')?.default_value
-    === deposited.get('payment_schedule')?.default_value)
+  termsOf({
+    sale_price: 2999, deposit_amount: 899.7, deposits_taken: 899.7, balance_due: 2099.3,
+  })?.default_value === deposited?.default_value)
 
 // The two documents must describe the same sale in the same words.
 check('systems reads the same on both documents',
