@@ -9,7 +9,25 @@
 // _service matches on one exact name each, because that template was built to
 // this list and a near miss there should be an error rather than a guess.
 
-export type Part = { sku: string; name: string; quantity: number }
+export type Part = { sku: string; name: string; quantity: number; category?: string }
+
+// Which half of the work order a part is listed in.
+//
+// The page splits the job the way the van is loaded: the whole home hardware
+// on one side, the under sink work and consumables on the other. A category
+// that is in neither list goes in the finish half rather than being dropped,
+// because a part missing from the sheet is a part left in the warehouse.
+export const SYSTEM_CATEGORIES = ['System', 'Tank', 'Valve', 'Media']
+export const FINISH_CATEGORIES = ['RO', 'Faucet', 'Filter', 'Consumable', 'Fittings']
+
+export function partGroup(category: unknown): 'system' | 'finish' {
+  return SYSTEM_CATEGORIES.includes(String(category ?? '').trim()) ? 'system' : 'finish'
+}
+
+// One line per part, quantity first, as the single list always printed.
+export function partLines(parts: Part[]): string {
+  return parts.map(p => `${p.quantity} x ${p.name} (${p.sku})`).join('\n')
+}
 
 // Everything a field may draw on. The job alone was enough for the customer
 // agreement; a work order also needs to name the installer it is going to and
@@ -45,6 +63,11 @@ export type AgreementSpec = {
   needsParts?: boolean
   // when the template names must match exactly rather than loosely
   exactNames?: boolean
+  // Boxes that are optional one by one but not all together. Satisfied when
+  // every key in at least one set is on the template. Lets a template carry
+  // either the split parts boxes or the old single one, and refuses a
+  // template with neither, or with only half of the split.
+  requireOneOf?: Array<{ label: string; sets: string[][] }>
   fields: FieldSpec[]
 }
 
@@ -228,6 +251,10 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
   exactNames: true,
   submitterEmail: ctx => text(ctx.installer?.email),
   submitterName: ctx => text(ctx.installer?.name),
+  requireOneOf: [{
+    label: 'the parts list',
+    sets: [['parts_system', 'parts_finish'], ['parts_list']],
+  }],
   fields: [
     { key: 'job_number', required: true, names: ['job_number'],
       value: ctx => text(ctx.job.invoice_number) },
@@ -271,19 +298,25 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
         return picks.length > 0 ? `${base} (${picks.join(', ')})` : base
       } },
 
-    // the point of the document. One line per part, quantity first, from the
-    // same resolver the reservations use, so the sheet cannot disagree with
-    // what the job actually holds.
+    // the point of the document, in two columns since template 5532104 was
+    // split on 2026-09-16. One line per part, quantity first, from the same
+    // resolver the reservations and the install use, so the sheet cannot
+    // disagree with what the job actually holds.
     //
-    // Two names. The template was rebuilt and this box renamed from
-    // additional_items to parts_list, so the old name is kept behind the
-    // new one: a template restored from a backup still fills, and only one
-    // of the two can exist on any given document anyway.
+    // A half with nothing in it prints "None" and is locked, rather than
+    // left as an open box the installer could write a part into.
+    { key: 'parts_system', required: false, names: ['parts_system'],
+      value: ctx => partLines(ctx.parts.filter(p => partGroup(p.category) === 'system')) || 'None' },
+    { key: 'parts_finish', required: false, names: ['parts_finish'],
+      value: ctx => partLines(ctx.parts.filter(p => partGroup(p.category) === 'finish')) || 'None' },
+
+    // The old single box, kept as a fallback so a template that still has it
+    // fills rather than breaking. additional_items is the name before that.
     { key: 'parts_list', required: false,
       names: ['parts_list', 'additional_items'],
-      value: ctx => ctx.parts.length === 0
+      value: ctx => (ctx.parts.length === 0
         ? 'No parts list on this build sheet'
-        : ctx.parts.map(p => `${p.quantity} x ${p.name} (${p.sku})`).join('\n') },
+        : partLines(ctx.parts)) },
 
     // Always locked, with no exception.
     //
@@ -418,6 +451,20 @@ export function matchFields(
 
     fields.push({ name: actual, default_value: value, readonly: true })
     if (value) filled.push(actual)
+  }
+
+  // a group of boxes that must be there as a set, in one of several forms
+  const present = (key: string) => {
+    const field = spec.fields.find(f => f.key === key)
+    return Boolean(field && field.names.some(candidate => (spec.exactNames
+      ? byExact.has(candidate)
+      : byNormalised.has(normalise(candidate)))))
+  }
+
+  for (const group of spec.requireOneOf || []) {
+    if (!group.sets.some(set => set.every(present))) {
+      missing.push(`${group.label} (looked for ${group.sets.map(set => set.join(' and ')).join(', or ')})`)
+    }
   }
 
   return { fields, missing, filled, openToSigner }

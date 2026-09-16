@@ -245,36 +245,29 @@ Deno.serve(async req => {
   let parts: Part[] = []
 
   if (spec.needsParts) {
-    if (!job.template_id) {
-      return fail(
-        `This job has no build sheet, so there is no parts list to put on the work order. `
-        + `Pick one on the job first.`,
-        422,
-      )
-    }
-
-    // the same resolver the reservations use, so the sheet the installer reads
-    // cannot disagree with what the job is actually holding
-    const { data: resolved, error: partsError } = await supabase.rpc('resolve_template_parts', {
-      p_template_id: job.template_id,
-      p_faucet_finish: job.faucet_finish || null,
-      p_ro_type: job.ro_type || null,
-      p_valve_type: job.valve_type || null,
+    // The job's own parts when it lists them, its build sheet when it does
+    // not. resolve_job_parts is what the reservations, the readiness report
+    // and the install deduction all read, so the sheet the installer holds
+    // cannot disagree with what the job claims and consumes. This used to
+    // resolve the build sheet alone, which printed the wrong parts for a job
+    // with its own list, and refused outright when that job sat on an empty
+    // sheet.
+    const { data: resolved, error: partsError } = await supabase.rpc('resolve_job_parts', {
+      p_job_id: jobId,
     })
 
     if (partsError) return fail(`The parts list could not be resolved. ${partsError.message}`, 500)
 
     const rows = (resolved || []) as Array<Record<string, unknown>>
 
-    // An empty sheet resolves cleanly, because nothing to resolve cannot fail,
-    // so the unresolved check below never catches it. The document would go
-    // out reading "No parts list on this build sheet": finished looking, and
+    // Nothing to resolve cannot fail, so the unresolved check below never
+    // catches an empty list. The document would go out finished looking and
     // telling the installer to bring nothing.
     if (rows.length === 0) {
       return fail(
-        `The ${String(job.system_template || 'build sheet')} sheet has no parts on it, so the `
-        + 'work order would tell the installer to bring nothing. Put its parts on the sheet '
-        + 'first, or pick a different sheet for this job.',
+        'This job has no parts, neither its own list nor any on the '
+        + `${String(job.system_template || 'build sheet')} sheet, so the work order would tell `
+        + 'the installer to bring nothing. Put its parts on the job or the sheet first.',
         422,
         { job_id: jobId, template_id: job.template_id, system_template: job.system_template },
       )
@@ -284,17 +277,35 @@ Deno.serve(async req => {
 
     if (unresolved.length > 0) {
       return fail(
-        `${unresolved.length} line(s) on this build sheet do not resolve to a stock item for the `
-        + `choices on this job, so the work order would list the wrong parts. Set the faucet `
-        + `finish and RO type first.`,
+        `${unresolved.length} line(s) on this job's parts list do not resolve to a stock item for `
+        + 'the choices on this job, so the work order would list the wrong parts. Set the faucet '
+        + 'finish, RO type and valve type first.',
         422,
       )
     }
+
+    // The category decides which half of the page a part is printed in, and
+    // the resolver does not carry it, so it is read from the catalogue.
+    const itemIds = [...new Set(rows.map(r => String(r.item_id || '')).filter(Boolean))]
+    const { data: items, error: itemError } = await supabase
+      .from('inventory_items')
+      .select('id, category')
+      .in('id', itemIds)
+
+    if (itemError) {
+      return fail(`The part categories could not be read. ${itemError.message}`, 500)
+    }
+
+    const categoryOf = new Map(
+      ((items || []) as Array<{ id: string; category: string | null }>)
+        .map(i => [String(i.id), String(i.category || '')]),
+    )
 
     parts = rows.map(r => ({
       sku: String(r.sku || ''),
       name: String(r.item_name || ''),
       quantity: Number(r.quantity) || 0,
+      category: categoryOf.get(String(r.item_id || '')) || '',
     }))
   }
 

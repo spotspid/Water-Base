@@ -5,7 +5,9 @@ import {
 import {
   NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
 } from '../src/lib/nag.js'
-import { SPECS, matchFields } from '../supabase/functions/send-agreement/fieldMap.ts'
+import {
+  SPECS, matchFields, partGroup, partLines,
+} from '../supabase/functions/send-agreement/fieldMap.ts'
 import { agreedPay, workOrderBlocker } from '../src/lib/workOrder.js'
 
 // Checks what the notifier says and when it says it.
@@ -369,7 +371,7 @@ check('an order notification carries no job id', arrived.job_id === '')
 const WO_TEMPLATE = [
   'job_number', 'date_issued', 'subcontractor', 'customer_name', 'phone',
   'install_address', 'city', 'scheduled_window', 'systems', 'site_conditions',
-  'parts_list', 'agreed_pay', 'payment_terms',
+  'parts_system', 'parts_finish', 'agreed_pay', 'payment_terms',
   'collected_by_company', 'collected_by_subcontractor',
   'company_signature', 'company_date',
   'subcontractor_signature', 'subcontractor_date',
@@ -383,7 +385,7 @@ const woCtx = {
     deposits_taken: 500, balance_due: 2499,
   },
   installer: { name: 'Anthony Thomas', email: 'a@example.com' },
-  parts: [{ sku: 'MB-1054', name: 'Mixed Bed', quantity: 1 }],
+  parts: [{ sku: 'MB-1054', name: 'Mixed Bed', quantity: 1, category: 'System' }],
   today: new Date(2026, 7, 25),
 }
 
@@ -469,18 +471,78 @@ check('an unknown balance leaves the box open rather than claiming zero',
   !unknownBalance.fields.some(f => f.name === 'balance_due'))
 check('and does not block the send', unknownBalance.missing.length === 0)
 
-// The parts box was renamed when the template was rebuilt. Both names are
-// carried so a template restored from a backup still fills, and only one of
-// them can exist on a given document.
-const renamed = matchFields(woSpec, WO_TEMPLATE, woCtx)
-check('the parts list fills under the new name parts_list',
-  renamed.fields.some(f => f.name === 'parts_list'))
-check('and still fills under the old name if a template carries it',
-  matchFields(woSpec,
-    WO_TEMPLATE.map(n => (n === 'parts_list' ? 'additional_items' : n)), woCtx)
+// --- the parts list, in two columns ------------------------------------------
+
+// Template 5532104 was split on 2026-09-16: the whole home hardware in
+// parts_system, the under sink work and consumables in parts_finish. The
+// ZZ Test job's real list, with the categories the catalogue gives each part.
+const NL = String.fromCharCode(10)
+const zzParts = [
+  { sku: 'MB-1054', name: '10x54 Mixed Bed System', quantity: 1, category: 'System' },
+  { sku: 'RO-TANK-5ST', name: '5 Stage Tank Style RO, 50 GPD', quantity: 1, category: 'RO' },
+  { sku: 'RO-ALK-FILT', name: 'Alkaline Mineral Filter with fittings', quantity: 1, category: 'RO' },
+  { sku: 'FCT-CHROME', name: 'RO Faucet', quantity: 1, category: 'Faucet' },
+  { sku: 'SALT-40', name: 'Softener salt, 40 lb bag', quantity: 2, category: 'Consumable' },
+  { sku: 'VLV-CLACK', name: 'Clack control valve', quantity: 1, category: 'Valve' },
+]
+const partsBy = (names, parts) => new Map(
+  matchFields(woSpec, names, { ...woCtx, parts }).fields.map(f => [f.name, f]),
+)
+
+const split = partsBy(WO_TEMPLATE, zzParts)
+check('the whole home hardware goes in parts_system, quantity first',
+  split.get('parts_system')?.default_value === [
+    '1 x 10x54 Mixed Bed System (MB-1054)',
+    '1 x Clack control valve (VLV-CLACK)',
+  ].join(NL),
+  JSON.stringify(split.get('parts_system')?.default_value))
+check('the under sink work and consumables go in parts_finish',
+  split.get('parts_finish')?.default_value === [
+    '1 x 5 Stage Tank Style RO, 50 GPD (RO-TANK-5ST)',
+    '1 x Alkaline Mineral Filter with fittings (RO-ALK-FILT)',
+    '1 x RO Faucet (FCT-CHROME)',
+    '2 x Softener salt, 40 lb bag (SALT-40)',
+  ].join(NL),
+  JSON.stringify(split.get('parts_finish')?.default_value))
+check('both are locked',
+  split.get('parts_system')?.readonly === true && split.get('parts_finish')?.readonly === true)
+check('the single box is not sent to a split template', !split.has('parts_list'))
+
+for (const category of ['System', 'Tank', 'Valve', 'Media']) {
+  check(`${category} is whole home hardware`, partGroup(category) === 'system')
+}
+for (const category of ['RO', 'Faucet', 'Filter', 'Consumable', 'Fittings']) {
+  check(`${category} is finish work`, partGroup(category) === 'finish')
+}
+
+const stray = partsBy(WO_TEMPLATE, [{ sku: 'TOOL-1', name: 'Pipe wrench', quantity: 1, category: 'Tools' }])
+check('a category in neither list lands in parts_finish rather than being dropped',
+  stray.get('parts_finish')?.default_value === '1 x Pipe wrench (TOOL-1)')
+check('as does a part with no category at all', partGroup(undefined) === 'finish')
+
+const roOnly = partsBy(WO_TEMPLATE, zzParts.filter(p => partGroup(p.category) === 'finish'))
+check('a half with nothing in it prints None and is locked, not left open',
+  roOnly.get('parts_system')?.default_value === 'None'
+  && roOnly.get('parts_system')?.readonly === true)
+
+// The old single box is a fallback, so a template that still carries it fills.
+const legacyNames = WO_TEMPLATE.filter(n => n !== 'parts_system' && n !== 'parts_finish')
+const legacy = matchFields(woSpec, [...legacyNames, 'parts_list'], { ...woCtx, parts: zzParts })
+check('a template with only the old parts_list box still sends', legacy.missing.length === 0,
+  legacy.missing.join('; '))
+check('and lists every part in it, in order',
+  legacy.fields.find(f => f.name === 'parts_list')?.default_value === partLines(zzParts))
+check('the name before that still fills too',
+  matchFields(woSpec, [...legacyNames, 'additional_items'], { ...woCtx, parts: zzParts })
     .fields.some(f => f.name === 'additional_items'))
-check('a template carrying neither does not block the send',
-  matchFields(woSpec, WO_TEMPLATE.filter(n => n !== 'parts_list'), woCtx).missing.length === 0)
+
+// A template must carry the parts somewhere, and not half of them.
+check('a template with no parts box at all is refused',
+  matchFields(woSpec, legacyNames, woCtx).missing.some(m => m.startsWith('the parts list')))
+check('a template with only one half of the split is refused',
+  matchFields(woSpec, WO_TEMPLATE.filter(n => n !== 'parts_finish'), woCtx)
+    .missing.some(m => m.startsWith('the parts list')))
+check('the split template itself is not', asIs.missing.length === 0, asIs.missing.join('; '))
 
 // --- agreed pay, which the installer must never be able to type -------------
 
