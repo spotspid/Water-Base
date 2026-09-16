@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { GROUPS, groupForPath } from '../lib/navigation'
 import {
   IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconSchedule, IconWarranty,
+  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconSchedule, IconSettings,
+  IconWarranty,
 } from './NavIcons'
 import NavMenu from './NavMenu'
 import AccountMenu from './AccountMenu'
@@ -23,11 +24,15 @@ const ICONS = {
   '/documents': IconDocuments,
   '/inventory': IconInventory,
   '/orders': IconOrders,
-  '/templates': IconBuildSheets,
+  // Keyed by the path in navigation.js. The page moved from /templates to
+  // /build-sheets and this key did not, which left the Stock menu with no icon
+  // and crashed it on open.
+  '/build-sheets': IconBuildSheets,
   '/warranty': IconWarranty,
   '/expenses': IconExpenses,
   '/pnl': IconMoney,
   '/outstanding': IconOutstanding,
+  '/settings': IconSettings,
 }
 
 const WITH_ICONS = GROUPS.map(group => ({

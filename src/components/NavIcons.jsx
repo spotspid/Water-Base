@@ -129,6 +129,16 @@ export function IconOrders() {
   )
 }
 
+// A plain ring, drawn when a destination has no icon of its own. It exists so
+// a missing map entry costs an icon rather than the whole menu.
+export function IconFallback() {
+  return (
+    <svg {...base}>
+      <circle cx="12" cy="12" r="7" />
+    </svg>
+  )
+}
+
 // A sheet with a signature line, for the paperwork a job needs signed.
 export function IconDocuments() {
   return (

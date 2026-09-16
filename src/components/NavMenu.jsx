@@ -1,5 +1,22 @@
 import { useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
+import { IconFallback } from './NavIcons'
+
+// An item with no icon gets a plain one and a console warning, once per path.
+// Rendering an undefined component throws, and in a menu that took the whole
+// page down (React error #130) when a path in navigation.js had no entry in
+// the TopNav icon map. check:nav fails the build on the same gap, so this is
+// the second line, not the first.
+const warnedMissingIcon = new Set()
+
+function iconFor(item) {
+  if (item.Icon) return item.Icon
+  if (!warnedMissingIcon.has(item.to)) {
+    warnedMissingIcon.add(item.to)
+    console.warn(`Nav item "${item.text}" (${item.to}) has no icon. Add it to the icon map in TopNav.jsx.`)
+  }
+  return IconFallback
+}
 
 // One dropdown in the top bar.
 //
@@ -122,7 +139,9 @@ export default function NavMenu({
 
       {open && (
         <div className="nav-panel" ref={panelRef} onKeyDown={handlePanelKeyDown} role="menu">
-          {group.items.map(item => (
+          {group.items.map(item => {
+            const Icon = iconFor(item)
+            return (
             <NavLink
               key={item.to}
               to={item.to}
@@ -130,13 +149,14 @@ export default function NavMenu({
               className={({ isActive }) => (isActive ? 'nav-option nav-option-on' : 'nav-option')}
               onClick={onClose}
             >
-              <span className="nav-option-icon" aria-hidden="true"><item.Icon /></span>
+              <span className="nav-option-icon" aria-hidden="true"><Icon /></span>
               <span className="nav-option-text">
                 <span className="nav-option-name">{item.text}</span>
                 <span className="nav-option-hint">{item.hint}</span>
               </span>
             </NavLink>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
