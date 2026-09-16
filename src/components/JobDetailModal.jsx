@@ -10,6 +10,7 @@ import {
 } from '../lib/jobActions'
 import JobAgreement from './JobAgreement'
 import JobWorkOrder from './JobWorkOrder'
+import JobEarlierDocuments from './JobEarlierDocuments'
 import JobPartsLedger from './JobPartsLedger'
 import JobDeposits from './JobDeposits'
 import JobNagPause from './JobNagPause'
@@ -188,6 +189,8 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
       )}
 
       {!cancelled && <JobWorkOrder job={job} onChanged={onChanged} />}
+
+      <JobEarlierDocuments job={job} />
 
       {!cancelled && <JobNagPause job={job} onChanged={onChanged} />}
 

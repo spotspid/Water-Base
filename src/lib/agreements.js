@@ -150,3 +150,17 @@ export async function resumeNag(jobId) {
     'Reminders could not be turned back on.',
   )
 }
+
+// Signed documents a job keeps but does not point at: a work order redone for
+// a new date, or one signed by an installer who did not finish. Oldest first,
+// so they read as the order things happened in.
+export async function fetchAgreementHistory(jobId) {
+  return attempt(
+    () => supabase
+      .from('agreement_history')
+      .select('id, type, docuseal_submission_id, status, sent_at, completed_at, signed_by, note')
+      .eq('job_id', jobId)
+      .order('completed_at', { ascending: true, nullsFirst: false }),
+    'The earlier documents on this job could not be loaded.',
+  )
+}

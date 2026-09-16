@@ -200,3 +200,9 @@
   color: var(--muted);
   margin-right: 2px;
 }
+
+.agr-history-row + .agr-history-row {
+  border-top: 1px solid var(--gray-300);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
