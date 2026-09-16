@@ -22,6 +22,7 @@ const Warranty = lazy(() => import('./pages/Warranty'))
 const Documents = lazy(() => import('./pages/Documents'))
 const Expenses = lazy(() => import('./pages/Expenses'))
 const PnL = lazy(() => import('./pages/PnL'))
+const Outstanding = lazy(() => import('./pages/Outstanding'))
 const Settings = lazy(() => import('./pages/Settings'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />
+            <Route path="/outstanding" element={<ProtectedRoute><Outstanding /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />

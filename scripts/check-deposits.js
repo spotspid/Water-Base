@@ -1,5 +1,6 @@
 import {
-  balanceState, depositsTaken, hasDeposits, isRefund, paidShare,
+  balanceState, depositTerm, depositsTaken, hasDeposits, isRefund, paidShare,
+  suggestedDeposit,
 } from '../src/lib/depositState.js'
 
 // Checks the one judgement deposits make on screen: what a balance means.
@@ -98,12 +99,49 @@ check('a net refund clamps at zero rather than going backwards',
 
 // Sold 2,999, five hundred down in July, installed August. The month figures
 // are the database's job, but the job record has to agree with them: 2,499 is
-// what the installer collects and what August counts as cash.
+// what the installer collects, and August counts it as still owed rather than
+// as cash until a payment for it is actually recorded.
 const walter = { sale_price: 2999, deposits_taken: 500, deposit_count: 1, balance_due: 2499 }
 check('Walter Radu owes 2,499 at the door',
   balanceState(walter).state === 'due' && balanceState(walter).amount === 2499)
 check('and 500 plus 2,499 is the sale price exactly once',
   balanceState(walter).taken + balanceState(walter).amount === 2999)
+
+// --- the deposit as a term of the sale ----------------------------------------
+
+check('the starting deposit is thirty percent of the price',
+  suggestedDeposit(2999) === '899.70', suggestedDeposit(2999))
+check('rounded to the cent', suggestedDeposit(3333.33) === '1000.00', suggestedDeposit(3333.33))
+check('and taken from a price typed as a string', suggestedDeposit('3799') === '1139.70')
+check('no price offers nothing rather than zero', suggestedDeposit('') === '')
+check('nor does a zero price', suggestedDeposit(0) === '')
+check('nor rubbish', suggestedDeposit('abc') === '')
+
+const termUnrecorded = depositTerm({ deposit_amount: null, deposits_taken: 0 })
+check('a job with no deposit written down says so', termUnrecorded.recorded === false)
+check('and is not the same as a sale with no deposit', termUnrecorded.none === false)
+
+const termZero = depositTerm({ deposit_amount: 0, deposits_taken: 0 })
+check('zero is a recorded term of no deposit', termZero.recorded && termZero.none)
+check('with nothing outstanding', termZero.outstanding === 0)
+
+const termAgreed = depositTerm({ deposit_amount: 899.7, deposits_taken: 0, deposit_outstanding: 899.7 })
+check('an agreed deposit with nothing paid is all outstanding',
+  termAgreed.recorded && !termAgreed.none && termAgreed.outstanding === 899.7)
+
+const termPart = depositTerm({ deposit_amount: 899.7, deposits_taken: 500 })
+check('a payment draws the deposit down with no special case',
+  termPart.outstanding === 399.7, String(termPart.outstanding))
+
+const termOver = depositTerm({ deposit_amount: 899.7, deposits_taken: 1500 })
+check('a payment larger than the deposit covers it and never goes negative',
+  termOver.outstanding === 0)
+
+// half by Affirm, half by Zelle: two payments, one kind of record
+const termSplit = { sale_price: 3000, deposits_taken: 3000, balance_due: 0, deposit_amount: 900 }
+check('a job paid in two halves by two methods is settled',
+  balanceState(termSplit).state === 'settled')
+check('and its deposit is covered', depositTerm(termSplit).outstanding === 0)
 
 console.log(failed === 0
   ? '\nAll deposit checks passed.'

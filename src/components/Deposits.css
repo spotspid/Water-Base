@@ -31,6 +31,18 @@
   color: var(--maroon);
 }
 
+/* The deposit agreed at quoting, under the payments summary. A term rather
+   than a payment, so it reads as a sentence and not as a row. Teal when some
+   of it has not arrived, because that is money due now rather than later. */
+.dep-term {
+  margin-top: 2px;
+}
+
+.dep-term-due {
+  color: var(--teal-deep);
+  font-weight: 600;
+}
+
 /* How much of the price is in, at a glance. Describes what happened; it is not
    a target and there is nothing to compare it against. */
 .dep-bar {

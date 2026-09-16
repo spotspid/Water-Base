@@ -17,8 +17,8 @@ import { attempt } from './errors'
 
 export const EDITABLE_FIELDS = [
   'customer_name', 'phone', 'customer_email', 'address', 'city', 'water_source',
-  'system_template', 'sale_price', 'payment_type', 'faucet_finish', 'ro_type',
-  'valve_type', 'invoice_number', 'site_conditions', 'notes',
+  'system_template', 'sale_price', 'deposit_amount', 'payment_type', 'faucet_finish',
+  'ro_type', 'valve_type', 'invoice_number', 'site_conditions', 'notes',
 ]
 
 // What an installed job will not let go of, and why. Shown before anybody
@@ -48,6 +48,9 @@ export function formFromJob(job) {
     water_source: job.water_source || 'city',
     system_template: job.system_template || '',
     sale_price: job.sale_price == null ? '' : String(job.sale_price),
+    // Blank means no term was ever recorded, and stays blank until somebody
+    // sets one. Zero is a term: no deposit.
+    deposit_amount: job.deposit_amount == null ? '' : String(job.deposit_amount),
     payment_type: job.payment_type || '',
     faucet_finish: job.faucet_finish || '',
     ro_type: job.ro_type || '',
@@ -58,9 +61,22 @@ export function formFromJob(job) {
   }
 }
 
+// Money fields compare as numbers, so a saved 899.7 and a typed 899.70 are not
+// a change and the Save button does not light up over nothing.
+const NUMERIC_FIELDS = new Set(['sale_price', 'deposit_amount'])
+
+function same(name, a, b) {
+  const left = String(a ?? '').trim()
+  const right = String(b ?? '').trim()
+  if (NUMERIC_FIELDS.has(name) && left !== '' && right !== '') {
+    return Number(left) === Number(right)
+  }
+  return left === right
+}
+
 export function isDirty(form, job) {
   const original = formFromJob(job)
-  return EDITABLE_FIELDS.some(name => (form[name] || '') !== (original[name] || ''))
+  return EDITABLE_FIELDS.some(name => !same(name, form[name], original[name]))
 }
 
 // The fields that must not be emptied once they hold something, and what to
@@ -73,6 +89,7 @@ const KEEPABLE = [
   ['city', 'The city'],
   ['payment_type', 'The payment type'],
   ['invoice_number', 'The invoice number'],
+  ['deposit_amount', 'The deposit', 'For no deposit, enter 0.'],
 ]
 
 function filled(value) {
@@ -98,10 +115,10 @@ function filled(value) {
  * to use.
  */
 export function validateEdit(form, { job, hasOwnParts = false } = {}) {
-  for (const [name, label] of KEEPABLE) {
+  for (const [name, label, hint] of KEEPABLE) {
     if (!filled(form[name]) && filled(job?.[name])) {
       return `${label} cannot be emptied once set. Correct it rather than clearing it, `
-        + 'or leave it as it was.'
+        + `or leave it as it was.${hint ? ` ${hint}` : ''}`
     }
   }
 
@@ -118,6 +135,16 @@ export function validateEdit(form, { job, hasOwnParts = false } = {}) {
 
   const price = Number(form.sale_price)
   if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'
+
+  // A deposit is editable after install like any other term. Blank is allowed
+  // only where it was already blank, which the loop above has settled.
+  if (filled(form.deposit_amount)) {
+    const deposit = Number(form.deposit_amount)
+    if (!Number.isFinite(deposit) || deposit < 0) return 'The deposit must be zero or more.'
+    if (deposit > price) {
+      return 'The deposit is more than the sale price. Lower the deposit, or raise the price.'
+    }
+  }
 
   return ''
 }
@@ -147,6 +174,9 @@ export async function saveJobDetails(job, form, templateId) {
       p_invoice_number: form.invoice_number.trim(),
       p_site_conditions: form.site_conditions.trim() || null,
       p_notes: form.notes.trim() || null,
+      // null keeps an unrecorded term unrecorded; the database refuses null
+      // on a job that already has one, so this cannot blank a real deposit
+      p_deposit_amount: filled(form.deposit_amount) ? Number(form.deposit_amount) : null,
     }),
     'The job could not be saved.',
   )

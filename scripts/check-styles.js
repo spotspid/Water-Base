@@ -37,6 +37,7 @@ const ROUTES = [
   ['/documents', 'src/pages/Documents.jsx'],
   ['/expenses', 'src/pages/Expenses.jsx'],
   ['/pnl', 'src/pages/PnL.jsx'],
+  ['/outstanding', 'src/pages/Outstanding.jsx'],
   ['/settings', 'src/pages/Settings.jsx'],
 ]
 

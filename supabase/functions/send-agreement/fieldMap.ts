@@ -93,6 +93,32 @@ function todayLong(now: Date): string {
   return now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+// The deposit agreed at quoting, when there is one. Null (never recorded) and
+// zero (none agreed) both mean the whole price is due on completion, which is
+// what every agreement said before the deposit existed.
+function agreedDeposit(ctx: Context): number {
+  const n = Number(ctx.job.deposit_amount)
+  return Number.isFinite(n) && n > 0.005 ? n : 0
+}
+
+// The payment terms as one sentence, so a single box on the template carries
+// both cases and nobody has to keep two versions of the page. The balance here
+// is the price less the agreed deposit, a term, and not the price less what has
+// been paid, which is a fact about today that the contract must not move with.
+function paymentSchedule(ctx: Context): string {
+  const price = Number(ctx.job.sale_price)
+  if (!Number.isFinite(price)) return ''
+
+  const deposit = agreedDeposit(ctx)
+  if (deposit === 0) {
+    return `Full payment of ${money(price)} is due upon installation completion.`
+  }
+
+  const balance = Math.round((price - deposit) * 100) / 100
+  return `A deposit of ${money(deposit)} is due at signing. `
+    + `The balance of ${money(balance)} is due upon installation completion.`
+}
+
 // One question, asked by both collected by boxes, so they can never agree
 // with each other by both being ticked or both being blank.
 function collectedBySubcontractor(ctx: Context): boolean {
@@ -154,6 +180,22 @@ const CUSTOMER_INSTALL: AgreementSpec = {
 
     { key: 'sale_price', required: true, names: ['sale_price'],
       value: ctx => money(ctx.job.sale_price) },
+
+    // The deposit agreed at quoting, and the sentence that replaces the
+    // template's printed "full payment is due upon installation completion".
+    //
+    // Optional, as balance_due was on the work order, because neither box is
+    // on template 5520400 yet. Until they are added the agreement sends
+    // exactly as before; adding a box by either name starts filling it with no
+    // change here. Both are locked: a customer does not get to type their own
+    // deposit.
+    //
+    // No deposit prints as "None" rather than $0.00, which reads as a figure
+    // somebody might have forgotten to fill in.
+    { key: 'deposit_amount', required: false, names: ['deposit_amount'],
+      value: ctx => (agreedDeposit(ctx) > 0 ? money(agreedDeposit(ctx)) : 'None') },
+    { key: 'payment_schedule', required: false, names: ['payment_schedule'],
+      value: ctx => paymentSchedule(ctx) },
 
     { key: 'company_signature', required: false, names: ['company_signature'],
       value: () => COMPANY_SIGNATORY },

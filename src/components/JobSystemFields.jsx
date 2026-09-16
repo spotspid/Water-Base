@@ -1,4 +1,6 @@
 import { useSettings } from '../lib/settings'
+import { suggestedDeposit } from '../lib/depositState'
+import { formatCurrency } from '../lib/inventory'
 import JobPartsPreview from './JobPartsPreview'
 
 // What is being sold and what it costs, plus the live parts preview for the
@@ -23,6 +25,18 @@ export default function JobSystemFields({
   const {
     finishes, roTypes, valveTypes, paymentTypes, loading: loadingSettings,
   } = useSettings()
+
+  // The deposit is offered, never imposed. The hint names thirty percent of
+  // whatever price is in the box, and the button puts it in; anything typed
+  // is left alone.
+  const suggestion = suggestedDeposit(form.sale_price)
+  // compared as numbers, since a saved 899.7 and a suggested 899.70 are one figure
+  const alreadySuggested = String(form.deposit_amount ?? '').trim() !== ''
+    && Number(form.deposit_amount) === Number(suggestion)
+
+  function applySuggestion() {
+    onChange({ target: { name: 'deposit_amount', value: suggestion } })
+  }
 
   return (
     <section className="form-section">
@@ -57,6 +71,23 @@ export default function JobSystemFields({
           <label htmlFor="sale_price">Sale price ($)</label>
           <input id="sale_price" name="sale_price" type="number" min="0" step="0.01" required
             value={form.sale_price} onChange={onChange} disabled={disabled} />
+        </div>
+        <div className="field">
+          <label htmlFor="deposit_amount">Deposit ($)</label>
+          <input id="deposit_amount" name="deposit_amount" type="number" min="0" step="0.01"
+            value={form.deposit_amount} onChange={onChange} disabled={disabled} />
+          <span className="field-hint">
+            Due at signing, and printed on the customer agreement. Enter 0 for no deposit.
+            {suggestion && !alreadySuggested && (
+              <>
+                {' '}
+                <button type="button" className="tpl-link" onClick={applySuggestion}
+                  disabled={disabled}>
+                  Use 30 percent, {formatCurrency(suggestion)}
+                </button>
+              </>
+            )}
+          </span>
         </div>
         <div className="field">
           <label htmlFor="faucet_finish">Faucet finish</label>

@@ -93,6 +93,17 @@ export function IconMoney() {
   )
 }
 
+// A clock with a single hand past the hour: money that was due and has not
+// arrived. Distinct from the dollar sign, which is what was earned.
+export function IconOutstanding() {
+  return (
+    <svg {...base}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  )
+}
+
 // Three sliders rather than a cogwheel. The gear was a twelve tooth path that
 // turned to mush at 18px and was the one decorative shape in an otherwise
 // geometric set. Settings here are lists and values, which is what this draws.

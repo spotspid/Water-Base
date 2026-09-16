@@ -44,6 +44,7 @@ export const GROUPS = [
     items: [
       { to: '/expenses', text: 'Expenses', hint: 'Overheads and one-offs' },
       { to: '/pnl', text: 'Profit and loss', hint: 'Revenue less parts, pay, expenses' },
+      { to: '/outstanding', text: 'Outstanding', hint: 'Owed now, deposits due, owed back' },
     ],
   },
   {
@@ -75,6 +76,7 @@ const TITLES = {
   '/documents': ['Documents', 'Agreements and work orders'],
   '/expenses': ['Expenses', 'Overheads and one-offs'],
   '/pnl': ['Profit and loss', 'Revenue, parts, pay, expenses'],
+  '/outstanding': ['Outstanding', 'Owed now, deposits due, owed back'],
   '/settings': ['Settings', 'Lists, crew, agreements'],
 }
 

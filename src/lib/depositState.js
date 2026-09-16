@@ -13,6 +13,63 @@
 // Below this, a difference is rounding rather than money.
 const CENT = 0.005
 
+// What the form offers as a starting deposit. An offer, not a rule: the
+// figure is typed over, zeroed or kept, and whatever is saved is the term.
+// Nothing reads this share after the form, so changing it changes a
+// suggestion and never a record.
+export const SUGGESTED_DEPOSIT_SHARE = 0.3
+
+function cents(value) {
+  return Math.round(value * 100) / 100
+}
+
+/**
+ * The starting deposit for a price, rounded to the cent, or '' when there is
+ * no price to take a share of. A string, because it goes straight into an
+ * input.
+ */
+export function suggestedDeposit(price) {
+  const n = Number(price)
+  if (String(price ?? '').trim() === '' || !Number.isFinite(n) || n <= 0) return ''
+  return cents(n * SUGGESTED_DEPOSIT_SHARE).toFixed(2)
+}
+
+/**
+ * The deposit agreed on a job, and how much of it has arrived.
+ *
+ *   recorded  false when no deposit term was ever written down, which is
+ *             different from a sale that takes no deposit
+ *   none      a term was recorded and it is zero
+ *   amount    what was agreed
+ *   outstanding  what of it has not arrived yet, never negative
+ *
+ * Payments draw down the price with no idea what they were for, so a payment
+ * larger than the deposit simply covers it and carries on into the balance.
+ */
+export function depositTerm(job) {
+  const raw = job?.deposit_amount
+  if (raw === null || raw === undefined || raw === '') {
+    return { recorded: false, none: false, amount: 0, outstanding: 0 }
+  }
+
+  const amount = Number(raw)
+  if (!Number.isFinite(amount)) {
+    return { recorded: false, none: false, amount: 0, outstanding: 0 }
+  }
+
+  const fromDb = Number(job?.deposit_outstanding)
+  const outstanding = Number.isFinite(fromDb) && job?.deposit_outstanding != null
+    ? fromDb
+    : Math.max(0, cents(amount - depositsTaken(job)))
+
+  return {
+    recorded: true,
+    none: amount <= CENT,
+    amount,
+    outstanding: outstanding > CENT ? outstanding : 0,
+  }
+}
+
 export function depositsTaken(job) {
   const n = Number(job?.deposits_taken)
   return Number.isFinite(n) ? n : 0

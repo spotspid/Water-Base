@@ -88,9 +88,10 @@ export default function PnL() {
     net_profit: acc.net_profit + Number(m.net_profit),
     job_count: acc.job_count + Number(m.job_count),
     cash_in: acc.cash_in + Number(m.cash_in),
+    still_owed: acc.still_owed + Number(m.balance_on_install),
   }), {
     revenue: 0, parts_cost: 0, installer_pay: 0, expense_total: 0,
-    gross_profit: 0, net_profit: 0, job_count: 0, cash_in: 0,
+    gross_profit: 0, net_profit: 0, job_count: 0, cash_in: 0, still_owed: 0,
   }), [months])
 
   const monthKeys = useMemo(
@@ -171,10 +172,17 @@ export default function PnL() {
               <span className="inv-stat-value">{formatCurrency(totals.net_profit)}</span>
               <span className="inv-stat-note">{GROSS} less overheads</span>
             </div>
+            {/* Payments that arrived and nothing else. What installed jobs
+                have not paid is named beside it rather than folded in, so
+                revenue earned and cash collected can never be read as one. */}
             <div className="inv-stat pnl-cash-stat">
               <span className="inv-stat-label">Cash in</span>
               <span className="inv-stat-value">{formatCurrency(totals.cash_in)}</span>
-              <span className="inv-stat-note">not income, see below</span>
+              <span className="inv-stat-note">
+                {totals.still_owed > 0
+                  ? `${formatCurrency(totals.still_owed)} still owed on installs`
+                  : 'not income, see below'}
+              </span>
             </div>
           </StatGrid>
         )}
@@ -234,9 +242,10 @@ export default function PnL() {
 
         {hasData && months.length > 0 && (
           <p className="inv-ledger-note">
-            Revenue counts a job in the month it was installed. Parts cost is summed from
-            the inventory ledger at the cost recorded on each transaction, and installer
-            pay is the amount entered on the job.
+            Revenue counts a job in the month it was installed, whether or not it has been
+            paid, because that is when it was earned. Parts cost is summed from the inventory
+            ledger at the cost recorded on each transaction, and installer pay is the amount
+            entered on the job. Money actually received is under Cash below.
           </p>
         )}
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
+import { suggestedDeposit } from '../lib/depositState'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import JobDetailFields from '../components/JobDetailFields'
@@ -18,6 +19,7 @@ const EMPTY_FORM = {
   water_source: 'city',
   system_template: '',
   sale_price: '',
+  deposit_amount: '',
   payment_type: '',
   faucet_finish: '',
   ro_type: '',
@@ -40,6 +42,17 @@ export default function NewJob() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // The deposit follows the price at thirty percent until somebody types in
+  // it. After that it is theirs, and a later change to the price leaves it
+  // alone, because the deposit that was agreed is not a formula.
+  const [depositTouched, setDepositTouched] = useState(false)
+
+  function withPrice(f, price) {
+    return depositTouched
+      ? { ...f, sale_price: price }
+      : { ...f, sale_price: price, deposit_amount: suggestedDeposit(price) }
+  }
+
   // the pick lists moved into JobSystemFields and JobDetailFields, which read
   // them from the same context, so this page reads no settings of its own.
 
@@ -56,10 +69,13 @@ export default function NewJob() {
     setForm(f => {
       if (f.system_template) return f
       const first = templates[0]
+      const price = first.default_price == null ? '' : String(first.default_price)
+      // untouched on first load by definition, so the deposit follows
       return {
         ...f,
         system_template: first.label,
-        sale_price: first.default_price == null ? '' : String(first.default_price),
+        sale_price: price,
+        deposit_amount: f.deposit_amount === '' ? suggestedDeposit(price) : f.deposit_amount,
       }
     })
   }, [templates])
@@ -74,12 +90,16 @@ export default function NewJob() {
     if (name === 'system_template') {
       const tpl = templates.find(t => t.label === value)
       setForm(f => ({
-        ...f,
+        ...withPrice(f, tpl?.default_price != null ? String(tpl.default_price) : f.sale_price),
         system_template: value,
-        sale_price: tpl?.default_price != null ? String(tpl.default_price) : f.sale_price,
       }))
       return
     }
+    if (name === 'sale_price') {
+      setForm(f => withPrice(f, value))
+      return
+    }
+    if (name === 'deposit_amount') setDepositTouched(true)
     setForm(f => ({ ...f, [name]: value }))
   }
 
@@ -103,6 +123,15 @@ export default function NewJob() {
 
     const price = Number(form.sale_price)
     if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'
+
+    // A new job always records a term. It starts filled, so a blank here is
+    // somebody clearing it, and zero is how to say no deposit.
+    if (String(form.deposit_amount).trim() === '') {
+      return 'Enter the deposit, or 0 if this sale takes no deposit.'
+    }
+    const deposit = Number(form.deposit_amount)
+    if (!Number.isFinite(deposit) || deposit < 0) return 'The deposit must be zero or more.'
+    if (deposit > price) return 'The deposit is more than the sale price.'
 
     if (form.payout_amount !== '') {
       const payout = Number(form.payout_amount)
@@ -150,6 +179,7 @@ export default function NewJob() {
       system_template: form.system_template,
       template_id: selectedTemplate?.id || null,
       sale_price: Number(form.sale_price),
+      deposit_amount: Number(form.deposit_amount),
       payment_type: form.payment_type,
       faucet_finish: form.faucet_finish,
       ro_type: form.ro_type || null,

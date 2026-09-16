@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchDeposits, removeDeposit } from '../lib/deposits'
-import { balanceState, isRefund, paidShare } from '../lib/depositState'
+import { balanceState, depositTerm, isRefund, paidShare } from '../lib/depositState'
 import { formatCurrency } from '../lib/inventory'
 import { formatLongDate } from '../lib/schedule'
 import JobDepositForm from './JobDepositForm'
@@ -8,8 +8,14 @@ import './Deposits.css'
 
 // What has been paid against this job, and what is left.
 //
+// Every row is a payment. A deposit, a completion payment, an Affirm
+// settlement and a Zelle transfer are the same kind of record, and each one
+// draws down the sale price. The deposit agreed at quoting is a term shown
+// above them, not a kind of row: it says how much was due at signing, and the
+// payments say how much of that has arrived.
+//
 // Balance due is worked out by the database from the sale price and the
-// deposits, and is never stored, so it cannot disagree with the figure printed
+// payments, and is never stored, so it cannot disagree with the figure printed
 // on the work order the installer is holding.
 export default function JobDeposits({ job, onChanged }) {
   const [rows, setRows] = useState([])
@@ -30,6 +36,15 @@ export default function JobDeposits({ job, onChanged }) {
 
   const balance = balanceState(job)
   const share = paidShare(job)
+  const term = depositTerm(job)
+
+  const termLine = !term.recorded
+    ? 'No deposit was recorded when this job was quoted. Set one from Edit if there was.'
+    : term.none
+      ? 'No deposit agreed. The whole price is due on completion.'
+      : term.outstanding > 0
+        ? `Deposit of ${formatCurrency(term.amount)} agreed, ${formatCurrency(term.outstanding)} of it not yet received.`
+        : `Deposit of ${formatCurrency(term.amount)} agreed and received.`
 
   async function drop(id) {
     setError('')
@@ -56,11 +71,14 @@ export default function JobDeposits({ job, onChanged }) {
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Deposits</h3>
+          <h3>Payments</h3>
           <p className="agr-sub">
             {balance.taken === 0
-              ? 'Nothing taken yet. The whole price is due at the door.'
-              : `${formatCurrency(balance.taken)} taken of ${formatCurrency(balance.price)}.`}
+              ? `Nothing received yet against ${formatCurrency(balance.price)}.`
+              : `${formatCurrency(balance.taken)} received of ${formatCurrency(balance.price)}.`}
+          </p>
+          <p className={term.outstanding > 0 ? 'agr-sub dep-term dep-term-due' : 'agr-sub dep-term'}>
+            {termLine}
           </p>
         </div>
         <span className={`dep-balance dep-balance-${balance.state}`}>
@@ -79,7 +97,7 @@ export default function JobDeposits({ job, onChanged }) {
 
       {error && <p className="form-error" role="alert">{error}</p>}
 
-      {loading && <p className="inv-state">Loading deposits...</p>}
+      {loading && <p className="inv-state">Loading payments...</p>}
 
       {!loading && rows.length > 0 && (
         <ul className="dep-list">
@@ -116,7 +134,7 @@ export default function JobDeposits({ job, onChanged }) {
 
       {!loading && rows.length === 0 && !adding && (
         <p className="inv-state">
-          No deposits recorded. Plenty of jobs never take one.
+          No payments recorded yet.
         </p>
       )}
 
@@ -133,9 +151,9 @@ export default function JobDeposits({ job, onChanged }) {
       )}
 
       <p className="agr-sub">
-        Balance due is the sale price less what has been taken, worked out fresh every
-        time rather than stored. It prints on the work order so the installer collects
-        the right amount instead of asking for the whole price.
+        Balance due is the sale price less every payment, whatever it was for, worked out
+        fresh every time rather than stored. It prints on the work order so the installer
+        collects the right amount instead of asking for the whole price.
       </p>
     </section>
   )

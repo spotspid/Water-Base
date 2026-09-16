@@ -21,7 +21,8 @@ const MIGRATION_HINT =
 const CONSTRAINT_MESSAGES = [
   ['jobs_payout_amount_check', 'Installer pay cannot be negative.'],
   ['jobs_sale_price_check', 'The sale price cannot be negative.'],
-  ['job_deposits_amount_check', 'A deposit cannot be zero. Enter the amount taken, or a negative amount for a refund.'],
+  ['job_deposits_amount_check', 'A payment cannot be zero. Enter the amount taken, or a negative amount for a refund.'],
+  ['jobs_deposit_amount_check', 'The deposit must be zero or more, and cannot be more than the sale price.'],
   ['supplier_order_lines_not_over_received', 'More cannot be received on a line than was ordered.'],
 ]
 

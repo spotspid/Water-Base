@@ -248,6 +248,53 @@ check('a prose renamed box is reported rather than guessed at',
   matchFields(ciSpec, CI_TEMPLATE.map(n => (n === 'customer_name' ? 'Customer Name' : n)), ciCtx)
     .missing.length === 1)
 
+// --- the deposit, as a term the agreement prints ------------------------------
+
+// Neither box is on template 5520400 yet, so the send must carry on exactly as
+// it did, and adding a box must start filling it.
+check('no deposit box does not block the send',
+  ci.missing.length === 0 && !ci.fields.some(f => f.name === 'deposit_amount'))
+check('no payment schedule box does not block it either',
+  !ci.fields.some(f => f.name === 'payment_schedule'))
+
+const withTerms = [...CI_TEMPLATE, 'deposit_amount', 'payment_schedule']
+const termsOf = job => new Map(
+  matchFields(ciSpec, withTerms, { ...ciCtx, job: { ...ciCtx.job, ...job } })
+    .fields.map(f => [f.name, f]),
+)
+
+const deposited = termsOf({ sale_price: 2999, deposit_amount: 899.7 })
+check('an agreed deposit prints as money',
+  deposited.get('deposit_amount')?.default_value === '$899.70',
+  deposited.get('deposit_amount')?.default_value)
+check('and the terms say deposit now, balance on completion',
+  deposited.get('payment_schedule')?.default_value
+    === 'A deposit of $899.70 is due at signing. The balance of $2,099.30 is due upon installation completion.',
+  deposited.get('payment_schedule')?.default_value)
+check('both are locked', deposited.get('deposit_amount')?.readonly === true
+  && deposited.get('payment_schedule')?.readonly === true)
+
+const noDeposit = termsOf({ sale_price: 2999, deposit_amount: 0 })
+check('no deposit agreed prints None rather than a zero',
+  noDeposit.get('deposit_amount')?.default_value === 'None')
+check('and the full price is due on completion',
+  noDeposit.get('payment_schedule')?.default_value
+    === 'Full payment of $2,999.00 is due upon installation completion.')
+
+const neverRecorded = termsOf({ sale_price: 2999, deposit_amount: null })
+check('a job quoted before deposits were recorded reads as it always did',
+  neverRecorded.get('payment_schedule')?.default_value
+    === 'Full payment of $2,999.00 is due upon installation completion.')
+
+// The contract is about the terms, not today's bank balance. A payment taken
+// before the agreement is sent must not change the balance it prints.
+const paidEarly = termsOf({
+  sale_price: 2999, deposit_amount: 899.7, deposits_taken: 899.7, balance_due: 2099.3,
+})
+check('payments already received do not rewrite the terms',
+  paidEarly.get('payment_schedule')?.default_value
+    === deposited.get('payment_schedule')?.default_value)
+
 // The two documents must describe the same sale in the same words.
 check('systems reads the same on both documents',
   ciBy.get('systems')?.default_value

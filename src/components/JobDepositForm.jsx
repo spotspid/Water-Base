@@ -4,9 +4,11 @@ import { useSettings, withCurrent } from '../lib/settings'
 
 // Recording one payment.
 //
-// Amount is a plain number with no suggested value. There is deliberately no
-// "30 percent" button and no default, because a default is a rule wearing a
-// convenience, and the whole point of this table is that there is no rule.
+// Amount is a plain number with no suggested value. The thirty percent offer
+// belongs to the deposit term on the job, which is a decision made at quoting.
+// A payment is a fact about money that arrived, and a default here would be a
+// rule wearing a convenience. Deposit, completion, Affirm or Zelle, it is one
+// kind of record, and the method says how it came rather than what it was for.
 //
 // A negative amount is accepted and reads as a refund. It is the only way to
 // record money going back out without deleting the deposit that really came
@@ -90,7 +92,7 @@ export default function JobDepositForm({ jobId, onAdded, onCancel }) {
 
       <div className="dep-form-actions">
         <button type="submit" className="btn-primary btn-mini" disabled={busy}>
-          {busy ? 'Saving...' : refund ? 'Record refund' : 'Record deposit'}
+          {busy ? 'Saving...' : refund ? 'Record refund' : 'Record payment'}
         </button>
         <button type="button" className="btn-cancel btn-mini" disabled={busy} onClick={onCancel}>
           Cancel

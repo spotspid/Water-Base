@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { GROUPS, groupForPath } from '../lib/navigation'
 import {
   IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconDocuments, IconJobs, IconMoney, IconOrders, IconSchedule, IconWarranty,
+  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconSchedule, IconWarranty,
 } from './NavIcons'
 import NavMenu from './NavMenu'
 import AccountMenu from './AccountMenu'
@@ -27,6 +27,7 @@ const ICONS = {
   '/warranty': IconWarranty,
   '/expenses': IconExpenses,
   '/pnl': IconMoney,
+  '/outstanding': IconOutstanding,
 }
 
 const WITH_ICONS = GROUPS.map(group => ({

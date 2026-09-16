@@ -189,7 +189,7 @@ Deno.serve(async req => {
     .select('id, customer_name, customer_email, phone, address, city, system_template, '
       + 'template_id, sale_price, invoice_number, faucet_finish, ro_type, install_date, '
       + 'scheduled_date, time_window, installer_id, installer_pay, status, site_conditions, '
-      + 'deposits_taken, balance_due, collected_by, valve_type')
+      + 'deposits_taken, balance_due, collected_by, valve_type, deposit_amount')
     .eq('id', jobId)
     .maybeSingle()
 
