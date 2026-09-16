@@ -1,4 +1,5 @@
 import { soldNotBooked } from './dashboard.js'
+import { attentionReasons, needsAttention } from './attention.js'
 
 // Named lists a link can open the jobs page on.
 //
@@ -13,6 +14,16 @@ export const JOB_VIEWS = {
     filter: soldNotBooked,
     describe: count => `${count} sold ${count === 1 ? 'job is' : 'jobs are'} waiting on a date.`,
     empty: 'Every sold job has a date, so there is nothing waiting to be booked.',
+  },
+  // Each row says why it is here, because a list of names with no reason is a
+  // list nobody can work through.
+  attention: {
+    title: 'Needs attention',
+    filter: needsAttention,
+    reasonFor: job => attentionReasons(job).join('. '),
+    describe: count => `${count} ${count === 1 ? 'job is' : 'jobs are'} missing something that`
+      + ' affects the money or the paperwork. Open one to fix it.',
+    empty: 'Nothing is missing on any open job.',
   },
 }
 

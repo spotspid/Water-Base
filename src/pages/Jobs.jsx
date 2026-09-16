@@ -261,7 +261,7 @@ export default function Jobs() {
             which is where the eye looks for it anyway, and the table fits the
             page instead of hiding the date behind a scrollbar. */}
         {hasData && visible.length > 0 && (
-          <JobsTable jobs={visible} onOpen={openJobById} />
+          <JobsTable jobs={visible} onOpen={openJobById} reasonFor={view?.reasonFor} />
         )}
 
         {hasData && visible.length > 0 && (

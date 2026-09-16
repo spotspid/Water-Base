@@ -1,4 +1,5 @@
 import { attentionReasons, isTestJob, needsAttention } from '../src/lib/attention.js'
+import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 
 // Checks the rule behind the dashboard's Needs attention tile and the jobs list
 // it opens. Each case is a way a job has quietly dropped out of, or distorted,
@@ -45,6 +46,15 @@ check('reasons are ordered most costly first', reasons({ customer_name: 'ZZ Test
 const list = needsAttention([clean, { ...clean, sale_price: 0 }, { ...clean, status: 'cancelled', sale_price: 0 }])
 check('the list holds exactly the flagged jobs', list.length === 1, list.length)
 check('an empty or missing list is empty', needsAttention(null).length === 0)
+
+// the dashboard tile links to this view, so the list must be the count
+const view = jobViewOf('attention')
+const sample = [clean, { ...clean, sale_price: 0 }, { ...clean, invoice_number: '' }, { ...clean, status: 'cancelled', sale_price: 0 }]
+check('the attention view exists', view !== null)
+check('the view lists exactly what the tile counts', view && view.filter(sample).length === needsAttention(sample).length
+  && view.filter(sample).every((j, i) => j === needsAttention(sample)[i]))
+check('each row carries its reason', view && view.reasonFor({ ...clean, sale_price: 0 }) === 'No sale price')
+check('the tile links to that view', jobViewLink('attention') === '/jobs?view=attention')
 
 console.log(failed === 0
   ? '\nAll attention checks passed.\n'

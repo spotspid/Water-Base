@@ -167,3 +167,9 @@ td.job-margin-bad {
 .jobs-view-detail {
   margin: 2px 0 0;
 }
+
+/* Why a job is on a named list, under its name. */
+.job-row-reason {
+  color: var(--amber);
+  font-weight: 600;
+}

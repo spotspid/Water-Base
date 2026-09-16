@@ -17,7 +17,10 @@ import { GROSS, NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
 // parts list cannot name every part reads "Not costed yet" rather than its
 // whole sale price, which is what used to make this table's total sixteen
 // times the one on Profit and loss.
-export default function JobsTable({ jobs, onOpen }) {
+//
+// reasonFor, when a named list passes it, puts that list's reason under each
+// customer name, so a filtered list says why every row is on it.
+export default function JobsTable({ jobs, onOpen, reasonFor }) {
   return (
         <div className="table-wrap">
           <table className="jobs-table jobs-list">
@@ -49,6 +52,9 @@ export default function JobsTable({ jobs, onOpen }) {
                     <span className="cell-sub">
                       {job.city || <span className="cell-unset">City not set</span>}
                     </span>
+                    {reasonFor && reasonFor(job) && (
+                      <span className="cell-sub job-row-reason">{reasonFor(job)}</span>
+                    )}
                   </td>
                   <td>{job.system_template}</td>
                   <td className="col-num">{formatCurrency(job.sale_price)}</td>
