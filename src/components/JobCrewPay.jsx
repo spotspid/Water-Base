@@ -95,6 +95,10 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     if (draft.installer_id && draft.installer_id === draft.helper_id) {
       return 'The installer and the helper cannot be the same person.'
     }
+    // Every job carries one, and the database refuses to clear it.
+    if (!draft.invoice_number.trim()) {
+      return 'A job always has an invoice number. Type the number you want rather than clearing it.'
+    }
     if (!COLLECTED_BY.some(c => c.value === draft.collected_by)) {
       return 'Pick who collects the balance.'
     }
@@ -141,7 +145,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
       const { error: err } = await attemptRows(
         () => supabase.from('jobs').update({
           payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
-          invoice_number: draft.invoice_number.trim() || null,
+          invoice_number: draft.invoice_number.trim(),
           collected_by: draft.collected_by,
           valve_type: draft.valve_type || null,
         }).eq('id', job.id),

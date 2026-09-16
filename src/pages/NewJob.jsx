@@ -119,7 +119,6 @@ export default function NewJob() {
     if (!form.payment_type) return 'Pick a payment type.'
     if (!form.faucet_finish) return 'Pick a faucet finish.'
     if (!form.ro_type) return 'Pick an RO type.'
-    if (!form.invoice_number.trim()) return 'Invoice number is required.'
 
     const price = Number(form.sale_price)
     if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'

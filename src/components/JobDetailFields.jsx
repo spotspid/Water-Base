@@ -38,9 +38,13 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           )}
         </div>
         <div className="field">
-          <label htmlFor="invoice_number">Invoice number</label>
-          <input id="invoice_number" name="invoice_number" type="text" required
-            value={form.invoice_number} onChange={onChange} disabled={disabled} />
+          <label htmlFor="invoice_number">Invoice number <span className="optional">(optional)</span></label>
+          <input id="invoice_number" name="invoice_number" type="text"
+            value={form.invoice_number} onChange={onChange} disabled={disabled}
+            placeholder="Next number" />
+          <span className="field-hint">
+            Leave blank and the next MWP number is given when the job is saved.
+          </span>
         </div>
         <div className="field">
           <label htmlFor="scheduled_date">Scheduled date <span className="optional">(optional)</span></label>

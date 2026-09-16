@@ -10,7 +10,7 @@ const APP_CODES = new Set([
   'WB011', 'WB012', 'WB013', 'WB014', 'WB015',
   'WB016', 'WB017', 'WB018', 'WB019',
   'WB020', 'WB021', 'WB022', 'WB023', 'WB024',
-  'WB025', 'WB026',
+  'WB025', 'WB026', 'WB027',
 ])
 
 const MIGRATION_HINT =
@@ -51,6 +51,9 @@ export function describeError(error, fallback = 'Something went wrong. Try again
   }
 
   if (code === '23505') {
+    if (message.includes('jobs_invoice_number_key')) {
+      return 'Another job already has that invoice number. Use a different one.'
+    }
     return 'That row already exists. Refresh and check the current values.'
   }
 
