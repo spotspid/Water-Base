@@ -3,7 +3,7 @@ import { formatCurrency } from '../lib/inventory'
 import { jobViewLink } from '../lib/jobViews'
 import StatGrid from './StatGrid'
 
-const TILES = 5
+const TILES = 6
 
 // Five figures that answer "what needs doing", not "how did we do".
 //
@@ -25,7 +25,7 @@ const TILES = 5
 // percentage was always 100. It lives on Profit and loss, where the month
 // range makes it mean something.
 export default function DashboardMetrics({
-  sold, installed, both = 0, monthName, notBooked, bookedSoon, bookingDays,
+  sold, installed, both = 0, monthName, notBooked, attention = 0, bookedSoon, bookingDays,
   inventoryValue, inventoryUnits, itemCount,
 }) {
   return (
@@ -65,6 +65,23 @@ export default function DashboardMetrics({
           {notBooked === 0
             ? 'Every sold job has a date'
             : `${notBooked === 1 ? 'Job is' : 'Jobs are'} waiting on a date`}
+        </span>
+      </Link>
+
+      {/* Jobs with something missing that distorts the money or blocks the
+          paperwork. Opens the list with the reason on every row, counted and
+          listed by the same needsAttention rule, so no job drops out of Profit
+          and loss without somebody being told. */}
+      <Link
+        to={jobViewLink('attention')}
+        className={attention > 0 ? 'dash-tile dash-tile-link dash-tile-attention' : 'dash-tile dash-tile-link'}
+      >
+        <span className="dash-tile-label">Needs attention</span>
+        <span className="dash-tile-value">{attention}</span>
+        <span className="dash-tile-foot">
+          {attention === 0
+            ? 'Nothing missing on any open job'
+            : `${attention === 1 ? 'Job is' : 'Jobs are'} missing a price, parts, pay or invoice`}
         </span>
       </Link>
 

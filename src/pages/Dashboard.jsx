@@ -7,6 +7,7 @@ import {
   monthLabel, monthStart, pipelineSummary, soldNotBooked, splitMonthRevenue,
   stockShortages,
 } from '../lib/dashboard'
+import { needsAttention } from '../lib/attention'
 import { pendingPaperwork } from '../lib/paperwork'
 import { todayBlockers } from '../lib/today'
 import AppShell from '../components/AppShell'
@@ -43,7 +44,7 @@ const BOOKING_DAYS = 14
 // sheet with parts on it, and a payout.
 const JOB_COLUMNS =
   'id, created_at, customer_name, customer_email, status, scheduled_date, install_date, ' +
-  'invoice_number, ' +
+  'invoice_number, payout_amount, unresolved_lines, parts_cost_basis, ' +
   'sale_price, parts_cost, installer_pay, margin, installer_name, ' +
   'installer_id, installer_email, template_id, template_line_count, system_template, ' +
   'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
@@ -142,6 +143,7 @@ export default function Dashboard() {
   const revenue = useMemo(() => splitMonthRevenue(jobs, start), [jobs, start])
   const pipeline = useMemo(() => pipelineSummary(jobs), [jobs])
   const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
+  const attention = useMemo(() => needsAttention(jobs).length, [jobs])
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const shortages = useMemo(() => stockShortages(stock), [stock])
   const paperwork = useMemo(() => pendingPaperwork(jobs), [jobs])
@@ -226,6 +228,7 @@ export default function Dashboard() {
               both={revenue.both}
               monthName={monthLabel(start)}
               notBooked={notBooked}
+              attention={attention}
               bookedSoon={bookedSoon}
               bookingDays={BOOKING_DAYS}
               inventoryValue={inventoryValue(stock)}
