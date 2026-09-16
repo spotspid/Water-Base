@@ -50,7 +50,7 @@ function headersFor(api: Api, key: string): Record<string, string> {
   return base
 }
 
-async function get(
+export async function get(
   api: Api, key: string, path: string, timeoutMs = 20000,
 ): Promise<{ ok: boolean; status: number; body: Record<string, unknown> | null; error: string }> {
   const abort = new AbortController()
@@ -85,7 +85,7 @@ async function get(
   }
 }
 
-function str(value: unknown): string | null {
+export function str(value: unknown): string | null {
   if (value === null || value === undefined) return null
   const s = String(value).trim()
   return s === '' ? null : s

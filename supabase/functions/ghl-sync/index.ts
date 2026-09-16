@@ -2,6 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { detectApi, fetchOpportunities, fetchStages } from './ghl.ts'
 import { buildReconcile, splitDirections } from './messages.ts'
+import { lookupContact } from './lookup.ts'
 
 // ghl-sync
 //
@@ -15,6 +16,8 @@ import { buildReconcile, splitDirections } from './messages.ts'
 //   inspect    probe the credential and report what came back. No writes.
 //   sync       pull every opportunity and upsert. Hourly.
 //   reconcile  compare both directions and post only if something is off.
+//   lookup     one customer by email or phone: messages, appointments, notes
+//              and opportunities with custom fields. Reads GHL, writes nothing.
 //
 // Slack is never touched here. The reconcile posts by calling notify, which
 // owns the three webhook urls and the outbox, so there is still exactly one
@@ -23,7 +26,7 @@ import { buildReconcile, splitDirections } from './messages.ts'
 const LOCATION_ID = 'ra2NJfCoBWd3gBgHyq0W'
 const EASTERN_RECONCILE_HOUR = 3
 
-type Body = { mode?: string; force?: boolean }
+type Body = { mode?: string; force?: boolean; email?: string; phone?: string }
 
 function json(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -107,8 +110,9 @@ Deno.serve(async req => {
   try {
     if (mode === 'inspect') return await handleInspect(ghlKey)
     if (mode === 'sync') return await handleSync(supabase, ghlKey)
+    if (mode === 'lookup') return await handleLookup(ghlKey, body)
     if (mode === 'reconcile') return await handleReconcile(supabase, serviceKey, supabaseUrl, body, appUrl)
-    return fail(`Unknown mode "${mode}". Use inspect, sync or reconcile.`, 400)
+    return fail(`Unknown mode "${mode}". Use inspect, sync, reconcile or lookup.`, 400)
   } catch (caught) {
     console.error('ghl-sync threw', caught)
     return fail(`The GHL sync failed. ${(caught as Error)?.message || String(caught)}`, 500)
@@ -153,6 +157,19 @@ async function handleInspect(ghlKey: string): Promise<Response> {
     // one row, so the shape can be read without dumping the pipeline
     sample: opportunities[0] ?? null,
   })
+}
+
+// Read only. Nothing from the lookup is stored: it answers one question about
+// one customer and is gone.
+async function handleLookup(ghlKey: string, body: Body): Promise<Response> {
+  if (!String(body.email || '').trim() && !String(body.phone || '').trim()) {
+    return fail('Give an email or a phone to look up.', 400)
+  }
+
+  const { api, tried } = await detectApi(ghlKey, LOCATION_ID)
+  if (!api) return fail('Neither GHL API accepted this key for this location.', 502, { tried })
+
+  return json({ ok: true, lookup: true, api, ...(await lookupContact(api, ghlKey, LOCATION_ID, body)) })
 }
 
 /**
