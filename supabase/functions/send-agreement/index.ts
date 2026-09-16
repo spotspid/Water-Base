@@ -73,6 +73,8 @@ Deno.serve(async req => {
     archive?: boolean
     list?: boolean
     template_id?: string
+    after?: string | number
+    archived?: boolean
   }
   try {
     body = await req.json()
@@ -80,17 +82,26 @@ Deno.serve(async req => {
     return fail('The request body was not valid JSON.', 400)
   }
 
-  // Every submission DocuSeal holds for one template, newest first. Read
-  // only. Exists because a resend overwrites the submission id on the job's
-  // row, so the earlier sends for a job cannot be found from this side, and
-  // an unarchived earlier send is a second email somebody can sign.
+  // Submissions DocuSeal holds, newest first, a page at a time. Read only.
+  // Exists because a resend overwrites the submission id on the job's row, so
+  // the earlier sends for a job cannot be found from this side, and an
+  // unarchived earlier send is a second email somebody can sign.
+  //
+  // template_id narrows it to one template. Without it the whole account is
+  // listed, which is how documents built by hand in DocuSeal before any
+  // template existed are found. after is the pagination cursor DocuSeal
+  // returns as pagination.next, and archived asks for the archived ones.
   if (body.list === true) {
+    const params = new URLSearchParams({ limit: '100' })
     const listTemplate = String(body.template_id || '').trim()
-    if (!listTemplate) return fail('A template id is required to list submissions.', 400)
+    if (listTemplate) params.set('template_id', listTemplate)
+    const after = String(body.after ?? '').trim()
+    if (after) params.set('after', after)
+    if (body.archived === true) params.set('archived', 'true')
 
     try {
       const res = await fetch(
-        `${DOCUSEAL_API}/submissions?template_id=${encodeURIComponent(listTemplate)}&limit=100`,
+        `${DOCUSEAL_API}/submissions?${params.toString()}`,
         { headers: { 'X-Auth-Token': apiKey } },
       )
 
