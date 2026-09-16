@@ -6,11 +6,13 @@ import { billableJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
 import { searchJobs } from '../lib/search'
 import { attempt } from '../lib/errors'
+import { jobViewOf } from '../lib/jobViews'
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import JobDetailModal from '../components/JobDetailModal'
 import JobsSummary from '../components/JobsSummary'
 import JobsTable from '../components/JobsTable'
+import JobsViewBanner from '../components/JobsViewBanner'
 import './Jobs.css'
 
 const ALL_STATUSES = 'all'
@@ -46,6 +48,10 @@ export default function Jobs() {
   // and the drawer opens its edit form on that box rather than leaving the
   // reader to find it. Unknown or absent is simply no focus, never an error.
   const fixField = params.get('fix') || ''
+
+  // A named list from a dashboard tile, run with the tile's own counting rule.
+  const viewKey = params.get('view') || ''
+  const view = jobViewOf(viewKey)
 
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -89,12 +95,22 @@ export default function Jobs() {
 
   useEffect(() => { load() }, [load])
 
+  const inView = useMemo(() => (view ? view.filter(jobs) : jobs), [jobs, view])
+
+  const clearView = useCallback(() => {
+    setParams(current => {
+      const next = new URLSearchParams(current)
+      next.delete('view')
+      return next
+    }, { replace: true })
+  }, [setParams])
+
   const visible = useMemo(
     () => searchJobs(
-      status === ALL_STATUSES ? jobs : jobs.filter(j => j.status === status),
+      status === ALL_STATUSES ? inView : inView.filter(j => j.status === status),
       query,
     ),
-    [jobs, status, query],
+    [inView, status, query],
   )
 
   // Cancelled jobs stay in the list and in the status filter, but never in
@@ -162,6 +178,10 @@ export default function Jobs() {
           </div>
         )}
 
+        {hasData && jobs.length > 0 && (
+          <JobsViewBanner viewKey={viewKey} view={view} count={inView.length} onClear={clearView} />
+        )}
+
         {linkedJobMissing && (
           <div className="inv-error-box" role="alert">
             <p className="inv-error-title">That job is not here any more.</p>
@@ -210,7 +230,8 @@ export default function Jobs() {
         {/* Which filter emptied the list matters. "No jobs with that status"
             over a search that found nothing sends somebody to the wrong
             control. */}
-        {hasData && jobs.length > 0 && visible.length === 0 && (
+        {hasData && jobs.length > 0 && visible.length === 0
+          && !(view && inView.length === 0) && (
           <EmptyState
             title={searching ? 'Nothing matched that search' : 'No jobs with that status'}
             tone="filtered"
@@ -226,7 +247,8 @@ export default function Jobs() {
                 </>
               ) : (
                 <>
-                  {jobs.length} {jobs.length === 1 ? 'job exists' : 'jobs exist'}, but none are
+                  {inView.length} {inView.length === 1 ? 'job is' : 'jobs are'}
+                  {view ? ' in this list' : ' here'}, but none are
                   {' '}{(STATUS_LABELS[status] || status).toLowerCase()}. Change the status
                   filter above to see the rest.
                 </>

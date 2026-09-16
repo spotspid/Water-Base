@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import { formatCurrency } from '../lib/inventory'
+import { jobViewLink } from '../lib/jobViews'
 import StatGrid from './StatGrid'
 
 const TILES = 5
@@ -50,7 +52,13 @@ export default function DashboardMetrics({
         </span>
       </article>
 
-      <article className={notBooked > 0 ? 'dash-tile dash-tile-attention' : 'dash-tile'}>
+      {/* A count you cannot open is a count you cannot act on. The link lands
+          on the jobs list filtered by soldNotBooked, the same rule the number
+          is counted with, so the list is always the number. */}
+      <Link
+        to={jobViewLink('not-booked')}
+        className={notBooked > 0 ? 'dash-tile dash-tile-link dash-tile-attention' : 'dash-tile dash-tile-link'}
+      >
         <span className="dash-tile-label">Sold, not booked</span>
         <span className="dash-tile-value">{notBooked}</span>
         <span className="dash-tile-foot">
@@ -58,7 +66,7 @@ export default function DashboardMetrics({
             ? 'Every sold job has a date'
             : `${notBooked === 1 ? 'Job is' : 'Jobs are'} waiting on a date`}
         </span>
-      </article>
+      </Link>
 
       <article className="dash-tile">
         <span className="dash-tile-label">Booked, next {bookingDays} days</span>

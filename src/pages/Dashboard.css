@@ -931,3 +931,16 @@
   .mv { flex-wrap: wrap; }
   .mv-w { flex: 1 0 auto; text-align: left; }
 }
+
+/* The not-booked tile opens the jobs behind its count. It keeps the tile's
+   look rather than taking on link colours, and says it is clickable on focus. */
+.dash-tile-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dash-tile-link:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}

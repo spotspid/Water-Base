@@ -1,6 +1,7 @@
 import {
-  atReorderPoint, groupActivity, monthStart, splitMonthRevenue, stockShortages,
+  atReorderPoint, groupActivity, monthStart, soldNotBooked, splitMonthRevenue, stockShortages,
 } from '../src/lib/dashboard.js'
+import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 
 // Checks the dashboard's two summarising decisions, both of which are pure and
 // both of which have been quietly wrong before.
@@ -119,6 +120,31 @@ check('the folded entry sums the units drawn', entries[0].units === 4, entries[0
 check('a second batch is a separate entry', entries[1].single === true)
 check('unjobbed rows never merge', entries[2].single && entries[3].single)
 check('a group of one stays a plain row', entries[4] === undefined)
+
+// --- the not-booked tile and the list it opens ------------------------------
+//
+// The tile counts with soldNotBooked and links to /jobs?view=not-booked. The
+// jobs page must run that same rule, or the list and the number drift apart.
+
+const booking = [
+  { id: 'a', status: 'sold', scheduled_date: null },
+  { id: 'b', status: 'sold', scheduled_date: '' },
+  { id: 'c', status: 'sold', scheduled_date: '2026-09-30' },
+  { id: 'd', status: 'scheduled', scheduled_date: '2026-09-24' },
+  { id: 'e', status: 'scheduled', scheduled_date: null },
+  { id: 'f', status: 'cancelled', scheduled_date: null },
+  { id: 'g', status: 'installed', scheduled_date: null },
+]
+
+const notBookedView = jobViewOf('not-booked')
+const tileIds = soldNotBooked(booking).map(j => j.id).join(',')
+const listIds = notBookedView ? notBookedView.filter(booking).map(j => j.id).join(',') : 'no view'
+
+check('the not-booked view exists', notBookedView !== null)
+check('the list is exactly the jobs the tile counts', listIds === tileIds, `${listIds} vs ${tileIds}`)
+check('only sold jobs with no date are counted', tileIds === 'a,b', tileIds)
+check('the tile links to that view', jobViewLink('not-booked') === '/jobs?view=not-booked', jobViewLink('not-booked'))
+check('an unknown view is refused, not guessed', jobViewOf('toString') === null && jobViewOf('nope') === null)
 
 console.log(failed === 0
   ? '\nAll dashboard checks passed.\n'
