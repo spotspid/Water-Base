@@ -203,6 +203,12 @@ export async function lookupContact(
       contact: {
         id, name: str(contact.contactName) ?? [str(contact.firstName), str(contact.lastName)].filter(Boolean).join(' '),
         email: str(contact.email), phone: str(contact.phone), added: str(contact.dateAdded),
+        // The address as GHL holds it. Read only, like everything here: this
+        // is what a job with no city is answered from.
+        address1: str(contact.address1) ?? str(contact.address),
+        city: str(contact.city),
+        postal_code: str(contact.postalCode) ?? str(contact.postal_code),
+        state: str(contact.state),
         tags: contact.tags ?? [], custom_fields: named(contact.customFields, names),
       },
       opportunities, appointments, notes,

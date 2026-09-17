@@ -29,6 +29,11 @@ export type Opportunity = {
   contact_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  // Where the customer is. Kept so a job with no city can be answered from the
+  // synced copy rather than a live lookup every time.
+  address1: string | null
+  city: string | null
+  postal_code: string | null
   pipeline_id: string | null
   pipeline_name: string | null
   stage_id: string | null
@@ -150,6 +155,13 @@ function normalise(raw: Record<string, unknown>, stages: Map<string, Stage>): Op
     contact_name: str(contact.name) ?? str(raw.contactName) ?? str(raw.name),
     contact_email: str(contact.email) ?? str(raw.email),
     contact_phone: str(contact.phone) ?? str(raw.phone),
+    // Both shapes again: v1 nests the contact, v2 sometimes flattens it. If
+    // the search payload carries no address at all these stay null, which is
+    // the honest answer rather than an invented one.
+    address1: str(contact.address1) ?? str(raw.address1) ?? str(contact.address) ?? null,
+    city: str(contact.city) ?? str(raw.city) ?? null,
+    postal_code: str(contact.postalCode) ?? str(raw.postalCode)
+      ?? str(contact.postal_code) ?? str(raw.zip) ?? null,
     pipeline_id: str(raw.pipelineId) ?? stage?.pipelineId ?? null,
     pipeline_name: stage?.pipelineName || null,
     stage_id: stageId,
