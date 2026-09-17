@@ -33,6 +33,18 @@ export const CHECKLIST_ITEMS = [
   { key: 'removing_old_equipment', label: 'Removing old equipment', kind: 'yesno' },
 ]
 
+// The two halves of the checklist as the New quote form lays them out.
+//
+// Sizing comes first, above the system choice, because it decides which system
+// to quote: how many people, how many bathrooms, whether the unit fits. Site is
+// what the installer needs once the system is chosen, so it stays below it.
+// The drawer shows all of them in one block and ignores this.
+export const SIZING_KEYS = ['people_in_home', 'bathrooms', 'space_confirmed']
+export const SITE_KEYS = [
+  'shutoff_location', 'power_at_intake', 'drain_at_intake', 'irrigation_lines',
+  'removing_old_equipment',
+]
+
 // Already columns on the job. Listed so the checklist can show them and
 // count them, and so the drawer knows which edit field fixes each.
 export const JOB_FIELD_ITEMS = [

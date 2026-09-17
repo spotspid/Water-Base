@@ -1,5 +1,5 @@
 import {
-  CHECKLIST_ITEMS, CHECKLIST_TOTAL, JOB_FIELD_ITEMS, NO, UNKNOWN, YES,
+  CHECKLIST_ITEMS, JOB_FIELD_ITEMS, NO, UNKNOWN, YES,
   isAnswered, unansweredItems,
 } from '../lib/salesChecklist'
 
@@ -23,11 +23,22 @@ const CHOICES = {
   yesnounknown: [[YES, 'Yes'], [NO, 'No'], [UNKNOWN, 'Unknown']],
 }
 
+// keys limits which checklist items this block shows, and showJobFields
+// whether finish, RO type and payment type appear in it. The New quote form
+// uses both to split the checklist around the system choice; the drawer passes
+// neither and gets the whole checklist in one block. The count and the amber
+// are worked out over exactly what is shown, so a half never reports the
+// other half's gaps.
 export default function SalesChecklistFields({
   value, onChange, job, disabled, onFixJobField, jobFieldsNote,
+  keys = null, showJobFields = true, title = 'Sales checklist',
 }) {
-  const missing = unansweredItems(value, job)
-  const answered = CHECKLIST_TOTAL - missing.length
+  const items = keys ? CHECKLIST_ITEMS.filter(i => keys.includes(i.key)) : CHECKLIST_ITEMS
+  const jobItems = showJobFields ? JOB_FIELD_ITEMS : []
+  const shownKeys = new Set([...items, ...jobItems].map(i => i.key))
+  const missing = unansweredItems(value, job).filter(m => shownKeys.has(m.key))
+  const total = items.length + jobItems.length
+  const answered = total - missing.length
 
   function set(key, next) {
     const updated = { ...value, [key]: next }
@@ -38,17 +49,17 @@ export default function SalesChecklistFields({
   }
 
   return (
-    <section className="form-section" aria-label="Sales checklist">
-      <h2>Sales checklist</h2>
+    <section className="form-section" aria-label={title}>
+      <h2>{title}</h2>
       <p className={missing.length === 0 ? 'checklist-count checklist-count-done' : 'checklist-count'}
         role="status">
         {missing.length === 0
-          ? `All ${CHECKLIST_TOTAL} answered.`
-          : `${answered} of ${CHECKLIST_TOTAL} answered. ${missing.length} still to ask, shown in amber.`}
+          ? `All ${total} answered.`
+          : `${answered} of ${total} answered. ${missing.length} still to ask, shown in amber.`}
       </p>
 
       <div className="form-grid">
-        {CHECKLIST_ITEMS.map(item => {
+        {items.map(item => {
           const open = !isAnswered(value, item.key)
           const id = `sc_${item.key}`
           return (
@@ -97,7 +108,7 @@ export default function SalesChecklistFields({
           )
         })}
 
-        {JOB_FIELD_ITEMS.map(item => {
+        {jobItems.map(item => {
           const current = String(job?.[item.key] ?? '').trim()
           return (
             <div key={item.key} className={current ? 'field' : 'field field-unanswered'}>

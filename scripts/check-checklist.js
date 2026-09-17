@@ -1,5 +1,5 @@
 import {
-  CHECKLIST_ITEMS, CHECKLIST_TOTAL, YES, NO, UNKNOWN,
+  CHECKLIST_ITEMS, CHECKLIST_TOTAL, SITE_KEYS, SIZING_KEYS, YES, NO, UNKNOWN,
   checklistFromForm, checklistToForm, emptyChecklistForm, isAnswered,
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
@@ -147,6 +147,24 @@ check('a city typed with only spaces is refused',
   validateNewJob({ ...baseJob, status: 'quoted', city: '   ' }) === 'Enter a city.')
 check('the build sheet message uses the one name for it',
   validateNewJob({ ...baseJob, status: 'quoted', system_template: '' }) === 'Pick a build sheet.')
+
+// --- the New quote form splits the checklist around the system choice --------
+//
+// Sizing sits above the system, site below it. Every question has to land in
+// exactly one half: an item in neither would vanish from the form without any
+// error, and an item in both would be asked twice.
+
+check('sizing is people, bathrooms and space',
+  SIZING_KEYS.join() === 'people_in_home,bathrooms,space_confirmed')
+check('site is shutoff, power, drain, irrigation and old equipment',
+  SITE_KEYS.join() === 'shutoff_location,power_at_intake,drain_at_intake,irrigation_lines,removing_old_equipment')
+const halves = [...SIZING_KEYS, ...SITE_KEYS]
+check('every checklist question is in one half or the other',
+  CHECKLIST_ITEMS.every(i => halves.includes(i.key)),
+  CHECKLIST_ITEMS.filter(i => !halves.includes(i.key)).map(i => i.key).join())
+check('and no question is in both', new Set(halves).size === halves.length)
+check('and neither half names a question that does not exist',
+  halves.every(k => CHECKLIST_ITEMS.some(i => i.key === k)))
 
 console.log(failed === 0
   ? '\nAll checklist checks passed.'

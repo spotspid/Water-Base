@@ -7,7 +7,8 @@ import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
 import { validateNewJob } from '../lib/newJobForm'
 import {
-  checklistFromForm, emptyChecklistForm, isEmptyChecklist, validateChecklist,
+  SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm, isEmptyChecklist,
+  validateChecklist,
 } from '../lib/salesChecklist'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
@@ -222,6 +223,19 @@ export default function NewJob() {
 
           <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 
+          {/* Sizing above the system, because it decides which system to quote. */}
+          {checklistShown && (
+            <SalesChecklistFields
+              title="Sales checklist: sizing"
+              keys={SIZING_KEYS}
+              showJobFields={false}
+              value={checklist}
+              onChange={setChecklist}
+              job={form}
+              disabled={saving}
+            />
+          )}
+
           <JobSystemFields
             form={form}
             onChange={handleChange}
@@ -236,6 +250,8 @@ export default function NewJob() {
 
           {checklistShown && (
             <SalesChecklistFields
+              title="Sales checklist: site"
+              keys={SITE_KEYS}
               value={checklist}
               onChange={setChecklist}
               job={form}
