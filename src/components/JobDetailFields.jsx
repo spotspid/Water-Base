@@ -5,7 +5,18 @@ import { Link } from 'react-router-dom'
 // The scheduling half of the job form. Installer and helper are picked from
 // the roster rather than typed, so the calendar can group by person and a
 // rename does not strand a job under a name nobody uses any more.
+//
+// On a quote the date, window, crew, install date and pay are hidden: a quote
+// is a price, not a booking, and it is refused on save if it carries a date.
+// Status, invoice number, site conditions and notes stay, because those are
+// worth writing down before anyone agrees to anything.
+//
+// Hiding changes nothing about saving. The values are still in the form and
+// still sent, so a form that already held a date keeps it rather than having
+// it silently dropped on the way past.
 export default function JobDetailFields({ form, onChange, disabled, payHint }) {
+  // Everything the schedule and the install own. A quote has none of it.
+  const showScheduling = form.status !== 'quoted'
   const { timeWindows, loading: loadingSettings } = useSettings()
   const { installers, loading: loadingCrew, error: crewError } = useInstallers({
     activeOnly: true,
@@ -47,57 +58,67 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
             Leave blank and the next MWP number is given when the job is saved.
           </span>
         </div>
-        <div className="field">
-          <label htmlFor="scheduled_date">Scheduled date <span className="optional">(optional)</span></label>
-          <input id="scheduled_date" name="scheduled_date" type="date"
-            value={form.scheduled_date} onChange={onChange} disabled={disabled} />
-          <span className="field-hint">The day it is promised. Puts the job on the schedule.</span>
-        </div>
-        <div className="field">
-          <label htmlFor="time_window">Time window <span className="optional">(optional)</span></label>
-          <select id="time_window" name="time_window"
-            value={form.time_window} onChange={onChange} disabled={disabled || loadingSettings}>
-            <option value="">{loadingSettings ? 'Loading windows...' : 'No window'}</option>
-            {windowOptions.map(w => <option key={w} value={w}>{w}</option>)}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="installer_id">Installer <span className="optional">(optional)</span></label>
-          <select id="installer_id" name="installer_id"
-            value={form.installer_id} onChange={onChange} disabled={disabled || loadingCrew}>
-            <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-            {installers.map(i => (
-              <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
-            ))}
-          </select>
-          <span className="field-hint">
-            Managed on the <Link to="/settings" className="tpl-link">Settings page</Link>.
-          </span>
-        </div>
-        <div className="field">
-          <label htmlFor="helper_id">Helper <span className="optional">(optional)</span></label>
-          <select id="helper_id" name="helper_id"
-            value={form.helper_id} onChange={onChange} disabled={disabled || loadingCrew}>
-            <option value="">None</option>
-            {installers
-              .filter(i => i.id !== form.installer_id)
-              .map(i => (
+        {/* A quote has no date, no crew and no pay: it is a price, and none of
+            these can be filled in for it. schedule_job and the crew panel own
+            them once the job is sold, and a quote with a date is refused on
+            save. Hidden rather than disabled, because a row of dead boxes
+            reads as something you are failing to fill in. */}
+        {showScheduling && (
+          <>
+          <div className="field">
+            <label htmlFor="scheduled_date">Scheduled date <span className="optional">(optional)</span></label>
+            <input id="scheduled_date" name="scheduled_date" type="date"
+              value={form.scheduled_date} onChange={onChange} disabled={disabled} />
+            <span className="field-hint">The day it is promised. Puts the job on the schedule.</span>
+          </div>
+          <div className="field">
+            <label htmlFor="time_window">Time window <span className="optional">(optional)</span></label>
+            <select id="time_window" name="time_window"
+              value={form.time_window} onChange={onChange} disabled={disabled || loadingSettings}>
+              <option value="">{loadingSettings ? 'Loading windows...' : 'No window'}</option>
+              {windowOptions.map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="installer_id">Installer <span className="optional">(optional)</span></label>
+            <select id="installer_id" name="installer_id"
+              value={form.installer_id} onChange={onChange} disabled={disabled || loadingCrew}>
+              <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
+              {installers.map(i => (
                 <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
               ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="install_date">Install date <span className="optional">(optional)</span></label>
-          <input id="install_date" name="install_date" type="date"
-            value={form.install_date} onChange={onChange} disabled={disabled} />
-          <span className="field-hint">The day it actually happened. Left blank until then.</span>
-        </div>
-        <div className="field">
-          <label htmlFor="payout_amount">Installer pay ($) <span className="optional">(optional)</span></label>
-          <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
-            value={form.payout_amount} onChange={onChange} disabled={disabled} />
-          {payHint && <span className="field-hint">{payHint}</span>}
-        </div>
+            </select>
+            <span className="field-hint">
+              Managed on the <Link to="/settings" className="tpl-link">Settings page</Link>.
+            </span>
+          </div>
+          <div className="field">
+            <label htmlFor="helper_id">Helper <span className="optional">(optional)</span></label>
+            <select id="helper_id" name="helper_id"
+              value={form.helper_id} onChange={onChange} disabled={disabled || loadingCrew}>
+              <option value="">None</option>
+              {installers
+                .filter(i => i.id !== form.installer_id)
+                .map(i => (
+                  <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
+                ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="install_date">Install date <span className="optional">(optional)</span></label>
+            <input id="install_date" name="install_date" type="date"
+              value={form.install_date} onChange={onChange} disabled={disabled} />
+            <span className="field-hint">The day it actually happened. Left blank until then.</span>
+          </div>
+          <div className="field">
+            <label htmlFor="payout_amount">Installer pay ($) <span className="optional">(optional)</span></label>
+            <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
+              value={form.payout_amount} onChange={onChange} disabled={disabled} />
+            {payHint && <span className="field-hint">{payHint}</span>}
+          </div>
+          </>
+        )}
+
         <div className="field field-full">
           <label htmlFor="site_conditions">
             Site conditions <span className="optional">(optional)</span>
