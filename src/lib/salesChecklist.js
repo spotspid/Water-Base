@@ -2,20 +2,45 @@
 //
 // What the salesperson has to find out at the kitchen table so the install
 // does not turn into a second visit: how many people use the water, where the
-// shutoff is, whether there is room, power and a drain where the system goes,
+// shutoff is, whether there is room, whether there is a receptacle in reach,
+// how far the drain run is, what the main line is made of and how big it is,
 // whether irrigation is on the line, and whether old equipment comes out.
+//
+// Four of these are numbers or sizes rather than a yes, because the installer
+// bills against them. "Is there a drain" was answered yes on a run of forty
+// feet, which costs per foot beyond twenty five; the distance is the thing
+// that decides the charge, so the distance is what gets asked. Power is the
+// same question narrowed to the answer that matters: not whether the house
+// has electricity, but whether a receptacle is within reach of the unit.
 //
 // Stored as jobs.sales_checklist, one jsonb object. The three choices that
 // already have columns (faucet finish, RO type, payment type) are not copied
 // into it: they are part of the checklist on screen and read from the job, so
 // there is one place each answer lives.
 //
-// Unanswered is not the same as no. A blank "power at intake" means nobody
+// Unanswered is not the same as no. A blank "receptacle within 6 feet" means nobody
 // asked, and that is what goes amber. Saving is never blocked: a quote goes
 // out with gaps all the time, and the amber is there so the gaps are chased
 // before the install rather than discovered at it.
 //
 // Pure and importing nothing, so npm run check can run it under Node.
+
+// The choices for the two questions about the main line. Stored as these
+// strings and printed as the labels, so a row read years from now still says
+// what it meant.
+export const LINE_SIZES = [
+  ['half', '1/2 inch'],
+  ['three_quarter', '3/4 inch'],
+  ['one', '1 inch'],
+]
+
+export const LINE_MATERIALS = [
+  ['pex', 'PEX'],
+  ['cpvc', 'CPVC'],
+  ['pvc', 'PVC'],
+  ['copper', 'Copper'],
+  ['galvanized', 'Galvanized'],
+]
 
 export const YES = 'yes'
 export const NO = 'no'
@@ -27,8 +52,10 @@ export const CHECKLIST_ITEMS = [
   { key: 'bathrooms', label: 'Bathrooms', kind: 'count' },
   { key: 'shutoff_location', label: 'Main water shutoff location', kind: 'text' },
   { key: 'space_confirmed', label: 'Space confirmed for the unit', kind: 'yesno' },
-  { key: 'power_at_intake', label: 'Power at intake', kind: 'yesno' },
-  { key: 'drain_at_intake', label: 'Drain at intake', kind: 'yesno' },
+  { key: 'receptacle_within_6ft', label: 'Receptacle within 6 feet', kind: 'yesno' },
+  { key: 'drain_distance_ft', label: 'Drain distance from the install (feet)', kind: 'count' },
+  { key: 'main_line_size', label: 'Main water line size', kind: 'choice', options: LINE_SIZES },
+  { key: 'main_line_material', label: 'Main water line material', kind: 'choice', options: LINE_MATERIALS },
   { key: 'irrigation_lines', label: 'Irrigation lines', kind: 'yesnounknown' },
   { key: 'removing_old_equipment', label: 'Removing old equipment', kind: 'yesno' },
 ]
@@ -42,8 +69,8 @@ export const CHECKLIST_ITEMS = [
 // The drawer shows all of them in one block and ignores this.
 export const SIZING_KEYS = ['people_in_home', 'bathrooms', 'space_confirmed']
 export const SITE_KEYS = [
-  'shutoff_location', 'power_at_intake', 'drain_at_intake', 'irrigation_lines',
-  'removing_old_equipment',
+  'shutoff_location', 'receptacle_within_6ft', 'drain_distance_ft', 'main_line_size',
+  'main_line_material', 'irrigation_lines', 'removing_old_equipment',
 ]
 
 // Already columns on the job. Listed so the checklist can show them and
@@ -55,6 +82,14 @@ export const JOB_FIELD_ITEMS = [
 ]
 
 const KEYS = CHECKLIST_ITEMS.map(i => i.key)
+
+function itemFor(key) {
+  return CHECKLIST_ITEMS.find(i => i.key === key) || null
+}
+
+function optionValues(item) {
+  return (item?.options || []).map(([value]) => value)
+}
 
 // What a form holds for the checklist: every value a string, because that is
 // what an input holds. upcharge sits beside removing_old_equipment.
@@ -92,6 +127,7 @@ export function checklistToForm(raw) {
     const v = src[item.key]
     if (item.kind === 'count') form[item.key] = asCountString(v)
     else if (item.kind === 'text') form[item.key] = typeof v === 'string' ? v : ''
+    else if (item.kind === 'choice') form[item.key] = asChoice(v, optionValues(item))
     else if (item.kind === 'yesno') form[item.key] = asChoice(v, [YES, NO])
     else form[item.key] = asChoice(v, [YES, NO, UNKNOWN])
   }
@@ -122,13 +158,16 @@ export function checklistToForm(raw) {
 export function itemProblem(form, key) {
   const f = form || {}
 
-  if (key === 'people_in_home' || key === 'bathrooms') {
+  // Every counted item, rather than two named ones, so a number added to the
+  // checklist is checked the day it is added instead of the day somebody
+  // notices it never was.
+  const item = itemFor(key)
+  if (item?.kind === 'count') {
     const raw = String(f[key] ?? '').trim()
     if (raw === '') return ''
     const n = Number(raw)
     if (Number.isInteger(n) && n >= 0) return ''
-    const label = CHECKLIST_ITEMS.find(i => i.key === key).label
-    return `${label} must be a whole number, zero or more.`
+    return `${item.label} must be a whole number, zero or more.`
   }
 
   if (key === 'removing_old_equipment') {
@@ -176,6 +215,8 @@ export function checklistFromForm(form) {
       if (Number.isInteger(n) && n >= 0) out[item.key] = n
     } else if (item.kind === 'text') {
       out[item.key] = raw
+    } else if (item.kind === 'choice') {
+      if (optionValues(item).includes(raw)) out[item.key] = raw
     } else {
       const allowed = item.kind === 'yesno' ? [YES, NO] : [YES, NO, UNKNOWN]
       const v = raw.toLowerCase()

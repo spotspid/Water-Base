@@ -87,6 +87,17 @@ export default function SalesChecklistFields({
                   onChange={e => set(item.key, e.target.value)} />
               )}
 
+              {/* A named list rather than yes or no, for the two that have
+                  more than two answers. Same "Not answered" first option, so
+                  an untouched select still reads as a gap. */}
+              {item.kind === 'choice' && (
+                <select id={id} name={id} value={value[item.key]} disabled={disabled}
+                  onChange={e => set(item.key, e.target.value)}>
+                  <option value="">Not answered</option>
+                  {item.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+                </select>
+              )}
+
               {(item.kind === 'yesno' || item.kind === 'yesnounknown') && (
                 <select id={id} name={id} value={value[item.key]} disabled={disabled}
                   onChange={e => set(item.key, e.target.value)}>

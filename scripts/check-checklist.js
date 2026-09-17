@@ -1,5 +1,6 @@
 import {
-  CHECKLIST_ITEMS, CHECKLIST_TOTAL, SITE_KEYS, SIZING_KEYS, YES, NO, UNKNOWN,
+  CHECKLIST_ITEMS, CHECKLIST_TOTAL, LINE_MATERIALS, LINE_SIZES, SITE_KEYS, SIZING_KEYS,
+  YES, NO, UNKNOWN,
   checklistFromForm, checklistToForm, emptyChecklistForm, isAnswered, itemProblem,
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
@@ -29,25 +30,67 @@ function check(name, condition, detail = '') {
 
 const keys = CHECKLIST_ITEMS.map(i => i.key)
 for (const k of ['people_in_home', 'bathrooms', 'shutoff_location', 'space_confirmed',
-  'power_at_intake', 'drain_at_intake', 'irrigation_lines', 'removing_old_equipment']) {
+  'receptacle_within_6ft', 'drain_distance_ft', 'main_line_size', 'main_line_material',
+  'irrigation_lines', 'removing_old_equipment']) {
   check(`the checklist asks ${k}`, keys.includes(k))
 }
-check('eight asked, plus finish, RO type and payment type, is eleven', CHECKLIST_TOTAL === 11)
+check('ten asked, plus finish, RO type and payment type, is thirteen', CHECKLIST_TOTAL === 13)
 check('irrigation allows unknown', CHECKLIST_ITEMS.find(i => i.key === 'irrigation_lines').kind === 'yesnounknown')
+
+// --- the three that capture what the installer bills against ------------------
+//
+// A drain was a yes or a no, which said nothing about a forty foot run that
+// costs per foot beyond twenty five. Power was a yes about the house rather
+// than about the six feet that matter. Both now hold the number.
+
+check('drain distance is a count, not a yes or no',
+  CHECKLIST_ITEMS.find(i => i.key === 'drain_distance_ft').kind === 'count')
+check('and its label says the unit is feet',
+  CHECKLIST_ITEMS.find(i => i.key === 'drain_distance_ft').label.includes('feet'))
+check('the receptacle question names the six feet',
+  CHECKLIST_ITEMS.find(i => i.key === 'receptacle_within_6ft').label.includes('6 feet'))
+check('the old drain and power keys are gone, not left beside the new ones',
+  !keys.includes('drain_at_intake') && !keys.includes('power_at_intake'))
+check('main line size offers a half, a three quarter and a one inch',
+  LINE_SIZES.map(([v]) => v).join() === 'half,three_quarter,one')
+check('and reads as inches on screen',
+  LINE_SIZES.map(([, l]) => l).join() === '1/2 inch,3/4 inch,1 inch')
+check('main line material offers all five',
+  LINE_MATERIALS.map(([v]) => v).join() === 'pex,cpvc,pvc,copper,galvanized')
+check('both are choices with their options attached',
+  ['main_line_size', 'main_line_material'].every(k => {
+    const i = CHECKLIST_ITEMS.find(x => x.key === k)
+    return i.kind === 'choice' && Array.isArray(i.options) && i.options.length > 0
+  }))
+check('a size that is not on the list is not stored',
+  !('main_line_size' in checklistFromForm({ ...emptyChecklistForm(), main_line_size: 'two' })))
+check('and reads back blank rather than throwing',
+  checklistToForm({ main_line_material: 'lead' }).main_line_material === '')
+check('a real choice stores and reads back',
+  checklistFromForm({ ...emptyChecklistForm(), main_line_material: 'copper' }).main_line_material === 'copper'
+  && checklistToForm({ main_line_material: 'copper' }).main_line_material === 'copper')
+check('a drain distance of zero is an answer, not a blank',
+  isAnswered({ ...emptyChecklistForm(), drain_distance_ft: '0' }, 'drain_distance_ft'))
+check('a fractional drain distance goes amber with its own label',
+  itemProblem({ ...emptyChecklistForm(), drain_distance_ft: '12.5' }, 'drain_distance_ft')
+    === 'Drain distance from the install (feet) must be a whole number, zero or more.',
+  itemProblem({ ...emptyChecklistForm(), drain_distance_ft: '12.5' }, 'drain_distance_ft'))
+check('a negative drain distance is refused on save too',
+  validateChecklist({ ...emptyChecklistForm(), drain_distance_ft: '-3' }) !== '')
 
 // --- unanswered is not no ------------------------------------------------------
 
 const blank = emptyChecklistForm()
 const fullJob = { faucet_finish: 'Chrome', ro_type: 'Tank Style', payment_type: 'Zelle' }
 
-check('a blank checklist on a job with every pick has eight unanswered',
-  unansweredItems(blank, fullJob).length === 8)
+check('a blank checklist on a job with every pick has ten unanswered',
+  unansweredItems(blank, fullJob).length === 10)
 check('and a job with no picks adds three more',
-  unansweredItems(blank, {}).length === 11)
+  unansweredItems(blank, {}).length === 13)
 check('the three from the job are marked as living on the job',
   unansweredItems(blank, {}).filter(i => i.onJob).map(i => i.key).join() === 'faucet_finish,ro_type,payment_type')
 
-check('no is an answer', isAnswered({ ...blank, power_at_intake: NO }, 'power_at_intake'))
+check('no is an answer', isAnswered({ ...blank, receptacle_within_6ft: NO }, 'receptacle_within_6ft'))
 check('unknown is an answer for irrigation', isAnswered({ ...blank, irrigation_lines: UNKNOWN }, 'irrigation_lines'))
 check('zero people is an answer, not a blank', isAnswered({ ...blank, people_in_home: '0' }, 'people_in_home'))
 check('a yes to old equipment with no upcharge is still unanswered',
@@ -72,14 +115,18 @@ check('an upcharge on a no is refused rather than silently dropped',
 const answered = {
   ...blank,
   people_in_home: '4', bathrooms: '2', shutoff_location: '  Basement, north wall  ',
-  space_confirmed: YES, power_at_intake: NO, drain_at_intake: YES,
+  space_confirmed: YES, receptacle_within_6ft: NO, drain_distance_ft: '40',
+  main_line_size: 'three_quarter', main_line_material: 'copper',
   irrigation_lines: UNKNOWN, removing_old_equipment: YES, old_equipment_upcharge: '250',
 }
 const stored = checklistFromForm(answered)
 
 check('counts are stored as numbers', stored.people_in_home === 4 && stored.bathrooms === 2)
 check('text is trimmed', stored.shutoff_location === 'Basement, north wall')
-check('choices are stored as words', stored.power_at_intake === NO && stored.irrigation_lines === UNKNOWN)
+check('choices are stored as words', stored.receptacle_within_6ft === NO && stored.irrigation_lines === UNKNOWN)
+check('the drain distance is stored as a number', stored.drain_distance_ft === 40)
+check('the main line is stored as its value, not its label',
+  stored.main_line_size === 'three_quarter' && stored.main_line_material === 'copper')
 check('the upcharge is stored with a yes', stored.old_equipment_upcharge === 250)
 check('blanks are left out rather than stored', !('bathrooms' in checklistFromForm(blank)))
 check('an empty form stores an empty object', Object.keys(checklistFromForm(blank)).length === 0)
@@ -91,8 +138,8 @@ check('a stored checklist reads back into the same form values',
   back.people_in_home === '4' && back.shutoff_location === 'Basement, north wall'
   && back.removing_old_equipment === YES && back.old_equipment_upcharge === '250')
 check('rubbish in the row reads back blank rather than throwing',
-  checklistToForm({ people_in_home: 'lots', power_at_intake: 'maybe', bathrooms: -2 }).people_in_home === ''
-  && checklistToForm({ power_at_intake: 'maybe' }).power_at_intake === '')
+  checklistToForm({ people_in_home: 'lots', receptacle_within_6ft: 'maybe', bathrooms: -2 }).people_in_home === ''
+  && checklistToForm({ receptacle_within_6ft: 'maybe' }).receptacle_within_6ft === '')
 check('a null row reads back blank', checklistToForm(null).shutoff_location === '')
 check('an array row reads back blank', checklistToForm([1, 2]).bathrooms === '')
 
@@ -156,8 +203,10 @@ check('the build sheet message uses the one name for it',
 
 check('sizing is people, bathrooms and space',
   SIZING_KEYS.join() === 'people_in_home,bathrooms,space_confirmed')
-check('site is shutoff, power, drain, irrigation and old equipment',
-  SITE_KEYS.join() === 'shutoff_location,power_at_intake,drain_at_intake,irrigation_lines,removing_old_equipment')
+check('site is shutoff, receptacle, drain distance, the main line, irrigation and old equipment',
+  SITE_KEYS.join() === 'shutoff_location,receptacle_within_6ft,drain_distance_ft,main_line_size,'
+    + 'main_line_material,irrigation_lines,removing_old_equipment',
+  SITE_KEYS.join())
 const halves = [...SIZING_KEYS, ...SITE_KEYS]
 check('every checklist question is in one half or the other',
   CHECKLIST_ITEMS.every(i => halves.includes(i.key)),
