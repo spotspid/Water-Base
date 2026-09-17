@@ -51,7 +51,7 @@ export default function Schedule() {
     setLoading(true)
     setError('')
 
-    const [dated, undated] = await Promise.all([
+    const [dated, undated, tests] = await Promise.all([
       attempt(
         () => supabase
           .from('job_schedule')
@@ -70,17 +70,25 @@ export default function Schedule() {
           .order('created_at', { ascending: true }),
         'Unscheduled jobs could not be loaded.',
       ),
+      // job_schedule has no is_test, so the test jobs are named separately and
+      // left off the calendar, as on the dashboard and the jobs list.
+      attempt(
+        () => supabase.from('jobs').select('id').eq('is_test', true),
+        'Test jobs could not be read.',
+      ),
     ])
 
-    const firstError = dated.error || undated.error
+    const firstError = dated.error || undated.error || tests.error
+    const testIds = new Set((tests.data || []).map(t => t.id))
+    const real = list => (list || []).filter(j => !testIds.has(j.id))
 
     if (firstError) {
       setError(firstError)
       setRows([])
       setUnscheduled([])
     } else {
-      setRows(dated.data || [])
-      setUnscheduled(undated.data || [])
+      setRows(real(dated.data))
+      setUnscheduled(real(undated.data))
     }
 
     setLoading(false)

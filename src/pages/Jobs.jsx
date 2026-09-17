@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { STATUS_LABELS } from '../lib/constants'
-import { billableJobs } from '../lib/dashboard'
+import { billableJobs, realJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
 import { searchJobs } from '../lib/search'
 import { attempt } from '../lib/errors'
@@ -32,7 +32,7 @@ const JOB_MARGIN_COLUMNS =
   'deposits_taken, deposit_count, last_deposit_on, balance_due, template_line_count, ' +
   'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts, ' +
   'expected_parts_cost, parts_cost_effective, parts_cost_basis, unresolved_lines, ' +
-  'deposit_amount, deposit_outstanding'
+  'deposit_amount, deposit_outstanding, is_test'
 
 export default function Jobs() {
   // Every Slack message links to /jobs?job=<id>, because a webhook cannot
@@ -58,6 +58,9 @@ export default function Jobs() {
   const [error, setError] = useState('')
   const [status, setStatus] = useState(ALL_STATUSES)
   const [query, setQuery] = useState('')
+  // Test jobs are hidden unless asked for, so the attention list counts what
+  // the dashboard tile counts.
+  const [showTest, setShowTest] = useState(false)
 
   const openJobById = useCallback(id => {
     setParams(current => {
@@ -95,7 +98,9 @@ export default function Jobs() {
 
   useEffect(() => { load() }, [load])
 
-  const inView = useMemo(() => (view ? view.filter(jobs) : jobs), [jobs, view])
+  const testCount = useMemo(() => jobs.length - realJobs(jobs).length, [jobs])
+  const shown = useMemo(() => (showTest ? jobs : realJobs(jobs)), [jobs, showTest])
+  const inView = useMemo(() => (view ? view.filter(shown) : shown), [shown, view])
 
   const clearView = useCallback(() => {
     setParams(current => {
@@ -174,6 +179,12 @@ export default function Jobs() {
               <button type="button" className="btn-cancel btn-small" onClick={() => setQuery('')}>
                 Clear
               </button>
+            )}
+            {testCount > 0 && (
+              <label className="inv-filter jobs-show-test">
+                <input type="checkbox" checked={showTest} onChange={e => setShowTest(e.target.checked)} />
+                {' '}Show test jobs ({testCount})
+              </label>
             )}
           </div>
         )}

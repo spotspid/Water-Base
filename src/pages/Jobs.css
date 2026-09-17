@@ -173,3 +173,12 @@ td.job-margin-bad {
   color: var(--amber);
   font-weight: 600;
 }
+
+/* The test-jobs toggle sits in the toolbar as a quiet checkbox, not a filter box. */
+.jobs-show-test {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  align-self: end;
+}
