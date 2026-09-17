@@ -12,6 +12,7 @@ import {
 } from '../lib/salesChecklist'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
+import InstallRateCard from '../components/InstallRateCard'
 import JobDetailFields from '../components/JobDetailFields'
 import JobSystemFields from '../components/JobSystemFields'
 import NewJobActions from '../components/NewJobActions'
@@ -279,6 +280,8 @@ export default function NewJob() {
             disabled={saving}
             payHint={payHint}
           />
+
+          <InstallRateCard />
 
           {error && <p className="form-error" role="alert">{error}</p>}
 

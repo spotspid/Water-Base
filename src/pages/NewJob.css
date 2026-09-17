@@ -18,3 +18,61 @@
     grid-column: 1;
   }
 }
+
+/* The installer rate card. Quieter than a form section, because it is
+   something to read rather than something to answer. */
+.rate-card {
+  border: 1px solid var(--line, #dfe3ea);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--tint, #f7f8fa);
+}
+
+.rate-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rate-card-note {
+  margin: 10px 0 0;
+}
+
+.rate-card-heading {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #6b7280);
+}
+
+.rate-card-list {
+  margin: 0;
+}
+
+/* Label left, price right, with the gap between them doing the joining so no
+   leader dots are needed. Wraps to two lines on a narrow phone. */
+.rate-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line, #dfe3ea);
+  font-size: 14px;
+}
+
+.rate-card-row dt {
+  flex: 1 1 auto;
+}
+
+.rate-card-row dd {
+  margin: 0;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.rate-card-per {
+  font-weight: 400;
+  color: var(--muted, #6b7280);
+}
