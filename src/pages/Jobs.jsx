@@ -145,7 +145,14 @@ export default function Jobs() {
   const linkedJobMissing = hasData && Boolean(openJobId) && !openJob
 
   return (
-    <AppShell>
+    <AppShell
+      actions={(
+        <>
+          <Link to="/jobs/new" className="btn-cancel">New job</Link>
+          <Link to="/jobs/new?quote=1" className="btn-primary">New quote</Link>
+        </>
+      )}
+    >
       <div className="jobs-page">
 
         {hasData && jobs.length > 0 && (

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit } from '../lib/depositState'
+import { sendQuote } from '../lib/agreements'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import JobDetailFields from '../components/JobDetailFields'
@@ -24,7 +25,8 @@ const EMPTY_FORM = {
   faucet_finish: '',
   ro_type: '',
   valve_type: '',
-  status: 'sold',
+  // Quoted by default. Sold stays in the list for a sale closed on the phone.
+  status: 'quoted',
   scheduled_date: '',
   time_window: '',
   installer_id: '',
@@ -38,6 +40,9 @@ const EMPTY_FORM = {
 
 export default function NewJob() {
   const navigate = useNavigate()
+  // /jobs/new?quote=1 is New quote: the email is required and saving sends it.
+  const [params] = useSearchParams()
+  const quoteMode = params.get('quote') === '1'
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -110,6 +115,9 @@ export default function NewJob() {
 
     // optional, but a typo here means the agreement silently never arrives
     const email = form.customer_email.trim()
+    if (quoteMode && form.status === 'quoted' && !email) {
+      return 'A quote is sent by email, so the customer email is required.'
+    }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return 'That email address does not look right.'
     }
@@ -139,6 +147,10 @@ export default function NewJob() {
 
     if (form.installer_id && form.helper_id && form.installer_id === form.helper_id) {
       return 'The installer and the helper cannot be the same person.'
+    }
+
+    if (form.status === 'quoted' && (form.scheduled_date || form.install_date)) {
+      return 'A quote has no scheduled or install date. Clear the date, or mark it sold.'
     }
 
     if (!form.scheduled_date && form.time_window) {
@@ -208,6 +220,17 @@ export default function NewJob() {
       return
     }
 
+    if (sendsQuote) {
+      const { error: sendError } = await sendQuote(data.id)
+      setSaving(false)
+      if (sendError) {
+        setError(`The quote was saved but not sent. ${sendError} Open it from the jobs list to send it.`)
+        return
+      }
+      navigate(`/jobs?job=${data.id}`)
+      return
+    }
+
     if (!wantsInstall) {
       navigate('/jobs')
       return
@@ -232,6 +255,8 @@ export default function NewJob() {
 
     navigate('/jobs')
   }
+
+  const sendsQuote = quoteMode && form.status === 'quoted'
 
   // no default. it varies by installer and by job, so it is typed every time.
   const payHint = 'Flat amount for this job. Subtracted from margin.'
@@ -272,7 +297,7 @@ export default function NewJob() {
             </button>
             <button type="submit" className="btn-primary"
               disabled={saving || loadingTemplates || templates.length === 0}>
-              {saving ? 'Saving...' : 'Save job'}
+              {saving ? (sendsQuote ? 'Saving and sending...' : 'Saving...') : (sendsQuote ? 'Save and send quote' : 'Save job')}
             </button>
           </div>
 
