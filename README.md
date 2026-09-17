@@ -1,3 +1,5 @@
+> Every prompt in this repo starts with: `cd C:\Users\spots\Water-Base && git rev-parse --show-toplevel && git fetch && git status`, and aborts if this is not the Water-Base repo.
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
