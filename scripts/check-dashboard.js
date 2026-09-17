@@ -3,6 +3,7 @@ import {
 } from '../src/lib/dashboard.js'
 import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 import { daysSinceQuoteSent, quoteSummary } from '../src/lib/quotes.js'
+import { jobListDate, sortByKeyDate } from '../src/lib/jobDates.js'
 
 // Checks the dashboard's two summarising decisions, both of which are pure and
 // both of which have been quietly wrong before.
@@ -190,6 +191,41 @@ const marked = realJobs([
 ])
 check('a job marked is_test is counted nowhere', marked.map(j => j.id).join(',') === 'real,old',
   marked.map(j => j.id).join(','))
+
+// --- the jobs list is sorted by the date its Key date column shows -------------
+//
+// One function for both, so the order and the column cannot disagree. Sorting
+// on created_at instead would put an install that happened in August under a
+// job written up yesterday.
+
+const installed = { id: 'i', status: 'installed', install_date: '2026-08-25', created_at: '2026-09-16T18:35:27Z' }
+const booked = { id: 's', status: 'scheduled', scheduled_date: '2026-09-28', created_at: '2026-09-01T10:00:00Z' }
+const written = { id: 'w', status: 'sold', created_at: '2026-09-17T09:00:00Z' }
+const noDate = { id: 'x', status: 'installed', install_date: null, created_at: '2026-07-01T09:00:00Z' }
+const broken = { id: 'b', status: 'sold', created_at: 'not a date' }
+
+check('an installed job is filed under its install date',
+  jobListDate(installed).kind === 'Installed' && jobListDate(installed).date.getFullYear() === 2026
+  && jobListDate(installed).date.getMonth() === 7 && jobListDate(installed).date.getDate() === 25)
+check('a day string is read locally, not as UTC midnight',
+  jobListDate(installed).date.getDate() === 25, String(jobListDate(installed).date))
+check('a booked job is filed under its scheduled date', jobListDate(booked).kind === 'Scheduled')
+check('anything else is filed under when it was written up', jobListDate(written).kind === 'Written up')
+check('an installed job with no install date falls back rather than blanking',
+  jobListDate(noDate).kind === 'Written up')
+
+check('the list runs newest key date first',
+  sortByKeyDate([installed, booked, written, noDate]).map(j => j.id).join() === 's,w,i,x',
+  sortByKeyDate([installed, booked, written, noDate]).map(j => j.id).join())
+check('a row whose date cannot be read sinks to the bottom',
+  sortByKeyDate([broken, written]).map(j => j.id).join() === 'w,b')
+check('sorting returns a new array rather than reordering the one passed in', (() => {
+  const list = [installed, booked]
+  sortByKeyDate(list)
+  return list[0].id === 'i'
+})())
+check('an empty list sorts to an empty list', sortByKeyDate([]).length === 0)
+check('a null list does not throw', sortByKeyDate(null).length === 0)
 
 console.log(failed === 0
   ? '\nAll dashboard checks passed.\n'

@@ -2,6 +2,7 @@ import { formatCurrency } from '../lib/inventory'
 import { STATUS_LABELS } from '../lib/constants'
 import { agreementLabel, agreementTone } from '../lib/agreements'
 import { GROSS, NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
+import { jobListDate } from '../lib/jobDates'
 
 // The jobs list itself.
 //
@@ -20,20 +21,6 @@ import { GROSS, NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
 //
 // reasonFor, when a named list passes it, puts that list's reason under each
 // customer name, so a filtered list says why every row is on it.
-// The date that matters for where the job is: installed on, booked for, or
-// written up on. install_date and scheduled_date are plain YYYY-MM-DD days and
-// are read as local days, because new Date('2026-08-25') is UTC midnight and
-// shows Aug 24 in Michigan.
-function jobListDate(job) {
-  const day = iso => {
-    const [y, m, d] = iso.split('-').map(Number)
-    return new Date(y, m - 1, d)
-  }
-  if (job.status === 'installed' && job.install_date) return { kind: 'Installed', date: day(job.install_date) }
-  if (job.status === 'scheduled' && job.scheduled_date) return { kind: 'Scheduled', date: day(job.scheduled_date) }
-  return { kind: 'Written up', date: new Date(job.created_at) }
-}
-
 export default function JobsTable({ jobs, onOpen, reasonFor }) {
   return (
         <div className="table-wrap">

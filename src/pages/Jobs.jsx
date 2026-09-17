@@ -6,6 +6,7 @@ import { billableJobs, realJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
 import { searchJobs } from '../lib/search'
 import { JOB_MARGIN_COLUMNS } from '../lib/jobColumns'
+import { sortByKeyDate } from '../lib/jobDates'
 import { attempt } from '../lib/errors'
 import { jobViewOf } from '../lib/jobViews'
 import AppShell from '../components/AppShell'
@@ -100,11 +101,14 @@ export default function Jobs() {
     }, { replace: true })
   }, [setParams])
 
+  // Sorted by the date the Key date column shows, newest first, through the
+  // same jobListDate the column reads. Sorting on created_at instead would put
+  // an install that happened in August under a job written up yesterday.
   const visible = useMemo(
-    () => searchJobs(
+    () => sortByKeyDate(searchJobs(
       status === ALL_STATUSES ? inView : inView.filter(j => j.status === status),
       query,
-    ),
+    )),
     [inView, status, query],
   )
 
