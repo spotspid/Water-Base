@@ -39,6 +39,14 @@ export function isTestJob(job) {
 export function attentionReasons(job, now = new Date()) {
   if (!job || job.status === CANCELLED_STATUS) return []
 
+  // A quote is not a sale yet. Parts, pay, price and invoice only matter once
+  // it is sold, so until then the one thing worth flagging is that it has gone
+  // cold.
+  if (job.status === QUOTED_STATUS) {
+    const age = daysSinceQuoteSent(job, now)
+    return age != null && age >= STALE_QUOTE_DAYS ? [`Quote unsigned ${age} days`] : []
+  }
+
   const reasons = []
   const price = Number(job.sale_price)
   const unresolved = Number(job.unresolved_lines) || 0
@@ -62,10 +70,6 @@ export function attentionReasons(job, now = new Date()) {
 
   if (blank(job.invoice_number)) reasons.push('No invoice number')
 
-  const quoteAge = job.status === QUOTED_STATUS ? daysSinceQuoteSent(job, now) : null
-  if (quoteAge != null && quoteAge >= STALE_QUOTE_DAYS) {
-    reasons.push(`Quote unsigned ${quoteAge} days`)
-  }
 
   return reasons
 }

@@ -44,6 +44,10 @@ check('a quote unsigned 10 days is flagged',
 check('a quote unsigned 9 days is not',
   !attentionReasons({ ...quote, quote_sent_at: '2026-09-11T12:00:00' }, at).some(r => r.startsWith('Quote unsigned')))
 check('a quote never sent is not stale', !attentionReasons({ ...quote, quote_sent_at: null }, at).some(r => r.startsWith('Quote')))
+check('a quote is not asked for parts, pay, price or invoice',
+  attentionReasons({ ...quote, sale_price: 0, parts_cost_basis: 'none', unresolved_lines: 2, invoice_number: '', quote_sent_at: null }, at).length === 0)
+check('a stale quote gives only the quote reason',
+  attentionReasons({ ...quote, parts_cost_basis: 'none', invoice_number: '', quote_sent_at: '2026-09-01T12:00:00' }, at).join('|') === 'Quote unsigned 19 days')
 check('a signed quote is not stale', !attentionReasons({ ...quote, status: 'sold', payout_amount: 1, quote_sent_at: '2026-09-01T12:00:00' }, at).some(r => r.startsWith('Quote')))
 check('a test invoice is flagged', isTestJob({ customer_name: 'Real Person', invoice_number: 'MWP-TEST-09' }))
 check('a surname containing test letters is not', !isTestJob({ customer_name: 'Contessa Testarossa' }))
