@@ -1204,14 +1204,59 @@ a {
 }
 
 /* The jobs search sits beside the status filter and gets the room, because a
-   name and a street need more characters than a status does. */
+   name and a street need more characters than a status does. Pill shaped and
+   taller than the filters around it: it is the control on that bar somebody
+   actually types into, so it should look like a place to type rather than
+   another box in a row of boxes. */
 .inv-filter-search {
-  flex: 1 1 260px;
-  min-width: 200px;
+  flex: 1 1 420px;
+  min-width: 260px;
 }
 
 .inv-filter-search input {
   width: 100%;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14.5px;
+}
+
+.inv-filter-search input:focus-visible {
+  outline: 2px solid var(--navy, #1f3352);
+  outline-offset: 1px;
+}
+
+/* A column heading that sorts. Inherits the heading's own type so the row
+   still reads as headings rather than as a row of links, and the arrow only
+   appears on the column doing the sorting. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.th-sort:hover,
+.th-sort-on {
+  color: var(--navy, #1f3352);
+}
+
+.th-sort:focus-visible {
+  outline: 2px solid var(--navy, #1f3352);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.th-sort-arrow {
+  font-size: 11px;
+  line-height: 1;
 }
 
 /* A checkbox and its words on one line, clickable as one target. Used for

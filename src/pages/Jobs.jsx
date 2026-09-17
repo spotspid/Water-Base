@@ -6,7 +6,7 @@ import { billableJobs, realJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
 import { searchJobs } from '../lib/search'
 import { JOB_MARGIN_COLUMNS } from '../lib/jobColumns'
-import { sortByKeyDate } from '../lib/jobDates'
+import { DEFAULT_SORT, sortJobs, sortStateFor } from '../lib/jobSort'
 import { attempt } from '../lib/errors'
 import { jobViewOf } from '../lib/jobViews'
 import AppShell from '../components/AppShell'
@@ -14,6 +14,7 @@ import EmptyState from '../components/EmptyState'
 import JobDetailModal from '../components/JobDetailModal'
 import JobsSummary from '../components/JobsSummary'
 import JobsTable from '../components/JobsTable'
+import JobsToolbar from '../components/JobsToolbar'
 import JobsViewBanner from '../components/JobsViewBanner'
 import './Jobs.css'
 
@@ -44,6 +45,8 @@ export default function Jobs() {
   const [error, setError] = useState('')
   const [status, setStatus] = useState(ALL_STATUSES)
   const [query, setQuery] = useState('')
+  // Newest key date first, which is what the list has always opened on.
+  const [sort, setSort] = useState(DEFAULT_SORT)
   // Test jobs are hidden unless asked for, so the attention list counts what
   // the dashboard tile counts.
   const [showTest, setShowTest] = useState(false)
@@ -101,15 +104,15 @@ export default function Jobs() {
     }, { replace: true })
   }, [setParams])
 
-  // Sorted by the date the Key date column shows, newest first, through the
-  // same jobListDate the column reads. Sorting on created_at instead would put
-  // an install that happened in August under a job written up yesterday.
+  // Sorted by whichever column the person pressed, and by the date the Key
+  // date column shows until they press one. That default runs the same
+  // jobListDate the column reads, so the order and the column cannot disagree.
   const visible = useMemo(
-    () => sortByKeyDate(searchJobs(
+    () => sortJobs(searchJobs(
       status === ALL_STATUSES ? inView : inView.filter(j => j.status === status),
       query,
-    )),
-    [inView, status, query],
+    ), sort),
+    [inView, status, query, sort],
   )
 
   // Cancelled jobs stay in the list and in the status filter, but never in
@@ -164,42 +167,15 @@ export default function Jobs() {
         )}
 
         {hasData && jobs.length > 0 && (
-          <div className="inv-toolbar">
-            <div className="inv-filter">
-              <label htmlFor="status-filter">Status</label>
-              <select id="status-filter" value={status} onChange={e => setStatus(e.target.value)}>
-                <option value={ALL_STATUSES}>All statuses</option>
-                {Object.entries(STATUS_LABELS)
-                  .filter(([value]) => value !== QUOTED_STATUS)
-                  .map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-              </select>
-            </div>
-            {/* type=search rather than text, so a phone shows the right
-                keyboard and the browser offers its own clear button. */}
-            <div className="inv-filter inv-filter-search">
-              <label htmlFor="job-search">Search</label>
-              <input
-                id="job-search"
-                type="search"
-                value={query}
-                placeholder="Name, address or invoice number"
-                onChange={e => setQuery(e.target.value)}
-              />
-            </div>
-            {query.trim() !== '' && (
-              <button type="button" className="btn-cancel btn-small" onClick={() => setQuery('')}>
-                Clear
-              </button>
-            )}
-            {testCount > 0 && (
-              <label className="inv-filter jobs-show-test">
-                <input type="checkbox" checked={showTest} onChange={e => setShowTest(e.target.checked)} />
-                {' '}Show test jobs ({testCount})
-              </label>
-            )}
-          </div>
+          <JobsToolbar
+            status={status}
+            onStatus={setStatus}
+            query={query}
+            onQuery={setQuery}
+            testCount={testCount}
+            showTest={showTest}
+            onShowTest={setShowTest}
+          />
         )}
 
         {hasData && jobs.length > 0 && (
@@ -285,7 +261,13 @@ export default function Jobs() {
             which is where the eye looks for it anyway, and the table fits the
             page instead of hiding the date behind a scrollbar. */}
         {hasData && visible.length > 0 && (
-          <JobsTable jobs={visible} onOpen={openJobById} reasonFor={view?.reasonFor} />
+          <JobsTable
+            jobs={visible}
+            onOpen={openJobById}
+            reasonFor={view?.reasonFor}
+            sort={sort}
+            onSort={col => setSort(current => sortStateFor(col, current))}
+          />
         )}
 
         {hasData && visible.length > 0 && (

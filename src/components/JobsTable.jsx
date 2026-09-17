@@ -1,8 +1,9 @@
 import { formatCurrency } from '../lib/inventory'
 import { STATUS_LABELS } from '../lib/constants'
 import { agreementLabel, agreementTone } from '../lib/agreements'
-import { GROSS, NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
+import { NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
 import { jobListDate } from '../lib/jobDates'
+import { JOB_SORTS, ariaSortOf } from '../lib/jobSort'
 
 // The jobs list itself.
 //
@@ -21,21 +22,21 @@ import { jobListDate } from '../lib/jobDates'
 //
 // reasonFor, when a named list passes it, puts that list's reason under each
 // customer name, so a filtered list says why every row is on it.
-export default function JobsTable({ jobs, onOpen, reasonFor }) {
+export default function JobsTable({ jobs, onOpen, reasonFor, sort, onSort }) {
   return (
         <div className="table-wrap">
           <table className="jobs-table jobs-list">
             <thead>
               <tr>
-                <th>Customer</th>
-                <th>Build sheet</th>
-                <th className="col-num">Price</th>
-                <th className="col-num">Parts</th>
-                <th className="col-num">Pay</th>
-                <th className="col-num">{GROSS}</th>
-                <th>Status</th>
-                <th>Agreement</th>
-                <th>Key date</th>
+                <SortHead col="customer" sort={sort} onSort={onSort} />
+                <SortHead col="sheet" sort={sort} onSort={onSort} />
+                <SortHead col="price" sort={sort} onSort={onSort} numeric />
+                <SortHead col="parts" sort={sort} onSort={onSort} numeric />
+                <SortHead col="pay" sort={sort} onSort={onSort} numeric />
+                <SortHead col="profit" sort={sort} onSort={onSort} numeric />
+                <SortHead col="status" sort={sort} onSort={onSort} />
+                <SortHead col="agreement" sort={sort} onSort={onSort} />
+                <SortHead col="date" sort={sort} onSort={onSort} />
               </tr>
             </thead>
             <tbody>
@@ -116,5 +117,27 @@ export default function JobsTable({ jobs, onOpen, reasonFor }) {
             </tbody>
           </table>
         </div>
+  )
+}
+
+// One column heading, as the button that sorts by it.
+//
+// A button inside the th rather than a click handler on the th itself, so it
+// is reachable by keyboard and announced as a control. aria-sort tells a
+// screen reader which column is doing the sorting and which way, and the
+// arrow says the same thing to everyone else.
+function SortHead({ col, sort, onSort, numeric }) {
+  const spec = JOB_SORTS[col]
+  const active = sort?.column === col
+  const arrow = active ? (sort.direction === 'asc' ? '\u2191' : '\u2193') : ''
+
+  return (
+    <th className={numeric ? 'col-num' : undefined} aria-sort={ariaSortOf(col, sort)}>
+      <button type="button" className={active ? 'th-sort th-sort-on' : 'th-sort'}
+        onClick={() => onSort(col)}>
+        {spec.label}
+        <span className="th-sort-arrow" aria-hidden="true">{arrow}</span>
+      </button>
+    </th>
   )
 }

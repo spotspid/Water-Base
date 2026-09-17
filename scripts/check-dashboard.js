@@ -4,6 +4,7 @@ import {
 import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 import { daysSinceQuoteSent, quoteSummary } from '../src/lib/quotes.js'
 import { jobListDate, sortByKeyDate } from '../src/lib/jobDates.js'
+import { DEFAULT_SORT, sortJobs, sortStateFor } from '../src/lib/jobSort.js'
 
 // Checks the dashboard's two summarising decisions, both of which are pure and
 // both of which have been quietly wrong before.
@@ -226,6 +227,56 @@ check('sorting returns a new array rather than reordering the one passed in', ((
 })())
 check('an empty list sorts to an empty list', sortByKeyDate([]).length === 0)
 check('a null list does not throw', sortByKeyDate(null).length === 0)
+
+// --- sorting the jobs table by any column --------------------------------------
+//
+// The default has to stay the key date order the column produces, and a blank
+// has to sink whichever way the column points: a job with no parts figure is
+// not the cheapest job.
+
+const a = { id: 'a', customer_name: 'Ashley', status: 'sold', created_at: '2026-08-10T09:00:00Z',
+  sale_price: 2999, parts_cost_effective: 758.71, installer_pay: 0, margin: null, agreement_status: 'completed' }
+const b = { id: 'b', customer_name: 'neil', status: 'installed', install_date: '2026-09-08',
+  created_at: '2026-09-01T09:00:00Z', sale_price: 6999, parts_cost_effective: 1712.16, installer_pay: 1600,
+  margin: 3686.84, agreement_status: 'completed' }
+const c = { id: 'c', customer_name: 'Zoe', status: 'scheduled', scheduled_date: '2026-09-28',
+  created_at: '2026-07-01T09:00:00Z', sale_price: 1099, parts_cost_effective: null, installer_pay: 0,
+  margin: 1000, agreement_status: 'none' }
+const list = [a, b, c]
+const ids = sort => sortJobs(list, sort).map(j => j.id).join()
+
+check('the default is the key date order the column produces',
+  ids(DEFAULT_SORT) === sortByKeyDate(list).map(j => j.id).join(), ids(DEFAULT_SORT))
+check('and that is newest first', ids(DEFAULT_SORT) === 'c,b,a', ids(DEFAULT_SORT))
+check('no sort at all falls back to the same order', sortJobs(list).map(j => j.id).join() === 'c,b,a')
+check('an unknown column falls back rather than throwing',
+  sortJobs(list, { column: 'nonsense', direction: 'asc' }).map(j => j.id).join() === 'c,b,a')
+
+check('customer sorts A to Z, ignoring case', ids({ column: 'customer', direction: 'asc' }) === 'a,b,c')
+check('and Z to A the other way', ids({ column: 'customer', direction: 'desc' }) === 'c,b,a')
+check('price sorts biggest first', ids({ column: 'price', direction: 'desc' }) === 'b,a,c')
+check('pay sorts smallest first when asked', ids({ column: 'pay', direction: 'asc' }) === 'a,c,b')
+check('status sorts by how far along, not alphabetically',
+  ids({ column: 'status', direction: 'asc' }) === 'a,c,b', ids({ column: 'status', direction: 'asc' }))
+
+check('a job with no parts figure sinks when sorted descending',
+  ids({ column: 'parts', direction: 'desc' }) === 'b,a,c')
+check('and still sinks when sorted ascending, rather than reading as cheapest',
+  ids({ column: 'parts', direction: 'asc' }) === 'a,b,c', ids({ column: 'parts', direction: 'asc' }))
+check('a job with no profit figure sinks either way',
+  ids({ column: 'profit', direction: 'asc' }).endsWith('a') && ids({ column: 'profit', direction: 'desc' }).endsWith('a'))
+
+check('pressing a new column uses that column start direction',
+  sortStateFor('customer', DEFAULT_SORT).direction === 'asc')
+check('and money starts at the biggest', sortStateFor('price', DEFAULT_SORT).direction === 'desc')
+check('pressing the same column turns it round',
+  sortStateFor('date', DEFAULT_SORT).direction === 'asc')
+check('and turns it back', sortStateFor('date', sortStateFor('date', DEFAULT_SORT)).direction === 'desc')
+check('an unknown column leaves the sort alone',
+  sortStateFor('nonsense', DEFAULT_SORT) === DEFAULT_SORT)
+check('sorting returns a new array', sortJobs(list, { column: 'price', direction: 'asc' }) !== list)
+check('an empty list sorts to an empty list', sortJobs([], { column: 'price', direction: 'asc' }).length === 0)
+check('a null list does not throw', sortJobs(null, { column: 'price', direction: 'asc' }).length === 0)
 
 console.log(failed === 0
   ? '\nAll dashboard checks passed.\n'
