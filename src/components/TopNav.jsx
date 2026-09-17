@@ -88,7 +88,7 @@ export default function TopNav() {
         <div className="nav-right">
           <Link to="/jobs/new" className="nav-cta">
             <span className="nav-cta-plus" aria-hidden="true">+</span>
-            New job
+            New quote
           </Link>
 
           <AccountMenu

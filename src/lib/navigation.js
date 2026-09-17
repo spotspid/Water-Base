@@ -67,7 +67,7 @@ const TITLES = {
   '/dashboard': ['Dashboard', 'Today'],
   '/schedule': ['Schedule', 'Crew and dates'],
   '/jobs': ['Jobs', 'Status and margin'],
-  '/jobs/new': ['New job', 'Parts are claimed when it is scheduled'],
+  '/jobs/new': ['New quote', 'Parts are claimed when it is scheduled'],
   '/inventory': ['Inventory', 'On hand, promised, on order'],
   '/orders': ['Supplier orders', 'On order and arrival dates'],
   '/build-sheets': ['Build sheets', 'Parts per system'],
