@@ -2,6 +2,7 @@ import {
   atReorderPoint, billableJobs, groupActivity, monthStart, realJobs, soldNotBooked, splitMonthRevenue, stockShortages,
 } from '../src/lib/dashboard.js'
 import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
+import { daysSinceQuoteSent, quoteSummary } from '../src/lib/quotes.js'
 
 // Checks the dashboard's two summarising decisions, both of which are pure and
 // both of which have been quietly wrong before.
@@ -158,6 +159,26 @@ check('a quote is not sold revenue', aug.sold.count === 1 && aug.sold.revenue ==
 check('a signed quote is dated by sold_at, not the day it was written', aug.sold.revenue === 3000)
 check('a quote is not waiting to be booked', soldNotBooked(withQuote).length === 1)
 check('a quote is not billable', billableJobs(withQuote).length === 1)
+
+// --- quotes out tile and its list ---------------------------------------------
+
+const today = new Date(2026, 8, 20, 9, 0)
+const book = [
+  { id: 'q1', status: 'quoted', sale_price: 3000, quote_sent_at: '2026-09-18T15:00:00' },
+  { id: 'q2', status: 'quoted', sale_price: 4500, quote_sent_at: '2026-09-08T15:00:00' },
+  // a draft nobody has sent is not a quote out
+  { id: 'q3', status: 'quoted', sale_price: 9999, quote_sent_at: null },
+  { id: 's1', status: 'sold', sale_price: 2000, quote_sent_at: '2026-09-01T15:00:00' },
+]
+const qs = quoteSummary(book, today)
+check('quotes out counts only sent quotes', qs.count === 2, qs.count)
+check('quotes out totals their value', qs.value === 7500, qs.value)
+check('the oldest is in whole days since sent', qs.oldestDays === 12, qs.oldestDays)
+check('sent yesterday evening is one day old', daysSinceQuoteSent(book[0], new Date(2026, 8, 19, 8)) === 1)
+const quotesView = jobViewOf('quotes')
+check('the quotes list is the tile, oldest first',
+  quotesView && quotesView.filter(book).map(j => j.id).join(',') === 'q2,q1')
+check('the tile links to that view', jobViewLink('quotes') === '/jobs?view=quotes')
 
 // --- test jobs --------------------------------------------------------------
 

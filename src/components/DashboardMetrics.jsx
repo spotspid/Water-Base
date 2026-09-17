@@ -3,7 +3,7 @@ import { formatCurrency } from '../lib/inventory'
 import { jobViewLink } from '../lib/jobViews'
 import StatGrid from './StatGrid'
 
-const TILES = 6
+const TILES = 7
 
 // Five figures that answer "what needs doing", not "how did we do".
 //
@@ -26,7 +26,7 @@ const TILES = 6
 // range makes it mean something.
 export default function DashboardMetrics({
   sold, installed, both = 0, monthName, notBooked, attention = 0, bookedSoon, bookingDays,
-  inventoryValue, inventoryUnits, itemCount,
+  inventoryValue, inventoryUnits, itemCount, quotes = { count: 0, value: 0, oldestDays: null },
 }) {
   return (
     <StatGrid count={TILES} minWidth={180} gap={18} className="dash-metrics">
@@ -51,6 +51,24 @@ export default function DashboardMetrics({
             : `${installed.count} ${installed.count === 1 ? 'job' : 'jobs'} delivered and earned${both > 0 ? ', counted in both tiles' : ''}`}
         </span>
       </article>
+
+      {/* Quotes with customers and not signed yet. Not revenue, which is why it
+          is its own tile: a quote counted as sold would be a promise nobody
+          made. Opens the same list, oldest first. */}
+      <Link
+        to={jobViewLink('quotes')}
+        className={quotes.oldestDays != null && quotes.oldestDays >= 10
+          ? 'dash-tile dash-tile-link dash-tile-attention'
+          : 'dash-tile dash-tile-link'}
+      >
+        <span className="dash-tile-label">Quotes out</span>
+        <span className="dash-tile-value">{quotes.count}</span>
+        <span className="dash-tile-foot">
+          {quotes.count === 0
+            ? 'No quotes waiting on a signature'
+            : `${formatCurrency(quotes.value)}, oldest sent ${quotes.oldestDays} ${quotes.oldestDays === 1 ? 'day' : 'days'} ago`}
+        </span>
+      </Link>
 
       {/* A count you cannot open is a count you cannot act on. The link lands
           on the jobs list filtered by soldNotBooked, the same rule the number

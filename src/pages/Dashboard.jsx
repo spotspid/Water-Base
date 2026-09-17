@@ -8,6 +8,7 @@ import {
   stockShortages,
 } from '../lib/dashboard'
 import { needsAttention } from '../lib/attention'
+import { quoteSummary } from '../lib/quotes'
 import { pendingPaperwork } from '../lib/paperwork'
 import { todayBlockers } from '../lib/today'
 import AppShell from '../components/AppShell'
@@ -145,6 +146,7 @@ export default function Dashboard() {
   const pipeline = useMemo(() => pipelineSummary(jobs), [jobs])
   const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
   const attention = useMemo(() => needsAttention(jobs).length, [jobs])
+  const quotes = useMemo(() => quoteSummary(jobs), [jobs])
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const shortages = useMemo(() => stockShortages(stock), [stock])
   const paperwork = useMemo(() => pendingPaperwork(jobs), [jobs])
@@ -229,6 +231,7 @@ export default function Dashboard() {
               both={revenue.both}
               monthName={monthLabel(start)}
               notBooked={notBooked}
+              quotes={quotes}
               attention={attention}
               bookedSoon={bookedSoon}
               bookingDays={BOOKING_DAYS}

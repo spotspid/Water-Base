@@ -1,5 +1,6 @@
 import { soldNotBooked } from './dashboard.js'
 import { attentionReasons, needsAttention } from './attention.js'
+import { daysSinceQuoteSent, quotesOut } from './quotes.js'
 
 // Named lists a link can open the jobs page on.
 //
@@ -17,6 +18,18 @@ export const JOB_VIEWS = {
   },
   // Each row says why it is here, because a list of names with no reason is a
   // list nobody can work through.
+  // Sent and not signed, oldest first is how somebody works a list of calls.
+  quotes: {
+    title: 'Quotes out',
+    filter: jobs => [...quotesOut(jobs)]
+      .sort((a, b) => String(a.quote_sent_at).localeCompare(String(b.quote_sent_at))),
+    reasonFor: job => {
+      const days = daysSinceQuoteSent(job)
+      return days == null ? '' : `Sent ${days} ${days === 1 ? 'day' : 'days'} ago, not signed`
+    },
+    describe: count => `${count} ${count === 1 ? 'quote is' : 'quotes are'} with customers and not signed.`,
+    empty: 'No quotes are waiting on a signature.',
+  },
   attention: {
     title: 'Needs attention',
     filter: needsAttention,
