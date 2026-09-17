@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
-import { suggestedDeposit } from '../lib/depositState'
+import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
@@ -47,16 +47,9 @@ export default function NewJob() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // The deposit follows the price at thirty percent until somebody types in
-  // it. After that it is theirs, and a later change to the price leaves it
-  // alone, because the deposit that was agreed is not a formula.
+  // Once somebody types a deposit it stops following the price. The rule is
+  // withPrice in depositState, where check:deposits can reach it.
   const [depositTouched, setDepositTouched] = useState(false)
-
-  function withPrice(f, price) {
-    return depositTouched
-      ? { ...f, sale_price: price }
-      : { ...f, sale_price: price, deposit_amount: suggestedDeposit(price) }
-  }
 
   // the pick lists moved into JobSystemFields and JobDetailFields, which read
   // them from the same context, so this page reads no settings of its own.
@@ -95,13 +88,13 @@ export default function NewJob() {
     if (name === 'system_template') {
       const tpl = templates.find(t => t.label === value)
       setForm(f => ({
-        ...withPrice(f, tpl?.default_price != null ? String(tpl.default_price) : f.sale_price),
+        ...withPrice(f, tpl?.default_price != null ? String(tpl.default_price) : f.sale_price, depositTouched),
         system_template: value,
       }))
       return
     }
     if (name === 'sale_price') {
-      setForm(f => withPrice(f, value))
+      setForm(f => withPrice(f, value, depositTouched))
       return
     }
     if (name === 'deposit_amount') setDepositTouched(true)

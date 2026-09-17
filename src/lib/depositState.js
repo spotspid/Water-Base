@@ -35,6 +35,20 @@ export function suggestedDeposit(price) {
 }
 
 /**
+ * A form with a new price, and the deposit that goes with it.
+ *
+ * The deposit follows the price at thirty percent until somebody types in it.
+ * After that it is theirs and a later price change leaves it alone, because a
+ * deposit that was agreed with a customer is not a formula. Picking a build
+ * sheet with a preset counts as a price change, so choosing Well Water Bundle
+ * moves the deposit to 1,139.70 on an untouched form.
+ */
+export function withPrice(form, price, depositTouched) {
+  const next = { ...form, sale_price: price }
+  return depositTouched ? next : { ...next, deposit_amount: suggestedDeposit(price) }
+}
+
+/**
  * The deposit agreed on a job, and how much of it has arrived.
  *
  *   recorded  false when no deposit term was ever written down, which is

@@ -1,6 +1,6 @@
 import {
   balanceState, depositTerm, depositsTaken, hasDeposits, isRefund, paidShare,
-  suggestedDeposit,
+  suggestedDeposit, withPrice,
 } from '../src/lib/depositState.js'
 
 // Checks the one judgement deposits make on screen: what a balance means.
@@ -142,6 +142,34 @@ const termSplit = { sale_price: 3000, deposits_taken: 3000, balance_due: 0, depo
 check('a job paid in two halves by two methods is settled',
   balanceState(termSplit).state === 'settled')
 check('and its deposit is covered', depositTerm(termSplit).outstanding === 0)
+
+// --- the deposit follows the price until somebody types one ----------------
+//
+// Preset prices from the Sept 17 call. Picking a build sheet counts as a price
+// change, so an untouched form moves its deposit with the preset.
+
+const blank = { sale_price: '', deposit_amount: '' }
+
+check('Well Water Bundle at 3,799 suggests 1,139.70',
+  withPrice(blank, '3799', false).deposit_amount === '1139.70')
+check('RO Only at 1,200 suggests 360.00',
+  withPrice(blank, '1200', false).deposit_amount === '360.00')
+check('Softener Only at 2,999 suggests 899.70',
+  withPrice(blank, '2999', false).deposit_amount === '899.70')
+
+const followed = withPrice(withPrice(blank, '3799', false), '1200', false)
+check('changing the price again recomputes the deposit',
+  followed.deposit_amount === '360.00' && followed.sale_price === '1200')
+
+const typed = { sale_price: '3799', deposit_amount: '500.00' }
+const kept = withPrice(typed, '2999', true)
+check('a deposit somebody typed survives a price change',
+  kept.deposit_amount === '500.00' && kept.sale_price === '2999')
+
+check('clearing the price clears a following deposit rather than leaving a stale one',
+  withPrice({ sale_price: '3799', deposit_amount: '1139.70' }, '', false).deposit_amount === '')
+check('other fields on the form are left alone',
+  withPrice({ ...blank, customer_name: 'A' }, '1200', false).customer_name === 'A')
 
 console.log(failed === 0
   ? '\nAll deposit checks passed.'
