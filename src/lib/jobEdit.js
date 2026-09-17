@@ -163,7 +163,7 @@ export async function saveJobDetails(job, form, templateId) {
       p_phone: form.phone.trim(),
       p_customer_email: form.customer_email.trim() || null,
       p_address: form.address.trim(),
-      p_city: form.city,
+      p_city: form.city.trim(),
       p_water_source: form.water_source,
       p_template_id: templateId || null,
       p_sale_price: Number(form.sale_price),

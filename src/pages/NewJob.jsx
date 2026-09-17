@@ -115,7 +115,7 @@ export default function NewJob() {
       return 'That email address does not look right.'
     }
 
-    if (!form.city) return 'Pick a city.'
+    if (!form.city.trim()) return 'Enter a city.'
     if (!form.system_template) return 'Pick a system template.'
     if (!form.payment_type) return 'Pick a payment type.'
     if (!form.faucet_finish) return 'Pick a faucet finish.'
@@ -178,7 +178,7 @@ export default function NewJob() {
       phone: form.phone.trim(),
       customer_email: form.customer_email.trim() || null,
       address: form.address.trim(),
-      city: form.city,
+      city: form.city.trim(),
       water_source: form.water_source,
       system_template: form.system_template,
       template_id: selectedTemplate?.id || null,

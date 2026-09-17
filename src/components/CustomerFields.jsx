@@ -1,8 +1,12 @@
-import { useSettings, withCurrent } from '../lib/settings'
+import { useSettings } from '../lib/settings'
 
 export default function CustomerFields({ form, onChange, disabled }) {
-  const { cities, loading } = useSettings()
-  const cityOptions = withCurrent(cities, form.city)
+  // Suggestions, not a list to pick from. The dropdown only held what Settings
+  // held, so a customer in Redford Township or Sterling Heights could not be
+  // entered without the list being edited first, and two real jobs went in as
+  // free text around it. Typing anything is allowed; Settings supplies the
+  // names worth not retyping.
+  const { cities } = useSettings()
 
   return (
     <section className="form-section">
@@ -32,11 +36,15 @@ export default function CustomerFields({ form, onChange, disabled }) {
         </div>
         <div className="field">
           <label htmlFor="city">City</label>
-          <select id="city" name="city" required
-            value={form.city} onChange={onChange} disabled={disabled || loading}>
-            <option value="">{loading ? 'Loading cities...' : 'Select city...'}</option>
-            {cityOptions.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <input id="city" name="city" type="text" required
+            list="service-city-suggestions" autoComplete="address-level2"
+            value={form.city} onChange={onChange} disabled={disabled} />
+          {/* The browser shows these as the person types. An empty list, which
+              is what Settings holds until Steve refills it, is simply a text
+              box with nothing to suggest. */}
+          <datalist id="service-city-suggestions">
+            {(cities || []).map(c => <option key={c} value={c} />)}
+          </datalist>
         </div>
         <div className="field">
           <label htmlFor="water_source">Water source</label>
