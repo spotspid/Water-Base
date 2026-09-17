@@ -279,6 +279,11 @@ export function unansweredItems(form, job) {
 
 export const CHECKLIST_TOTAL = CHECKLIST_ITEMS.length + JOB_FIELD_ITEMS.length
 
+// The stored value printed as a person says it. A value not on the list
+// prints nothing, because a row holding something unrecognised is not
+// something to put in front of an installer.
+const MATERIAL_LABELS = Object.fromEntries(LINE_MATERIALS)
+
 function money(n) {
   return `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -286,10 +291,16 @@ function money(n) {
 /**
  * The lines the work order adds to site conditions.
  *
- * Two of the checklist answers matter to the installer at the door: where the
- * shutoff is, and whether old equipment comes out and at what charge. The
- * rest decided the sale and the system, and are already reflected in what is
- * on the truck.
+ * Four of the checklist answers matter to the installer at the door: where the
+ * shutoff is, whether old equipment comes out and at what charge, how far the
+ * drain run is, and what the main line is made of. The rest decided the sale
+ * and the system, and are already reflected in what is on the truck.
+ *
+ * The drain run is here because it is charged per foot beyond twenty five, so
+ * the installer needs the number rather than the office's word for it, and the
+ * material because it decides which fittings come off the truck. Both print
+ * after the two that were already here, so a work order somebody has read a
+ * hundred times still opens the same way.
  *
  * Mirrored in supabase/functions/send-agreement/siteConditions.ts, which is
  * what actually prints. check:checklist loads both and asserts they agree.
@@ -309,6 +320,17 @@ export function workOrderSiteLines(stored) {
   } else if (s.removing_old_equipment === NO) {
     lines.push('Old equipment stays')
   }
+
+  // Zero feet is an answer and prints. Absent, or anything that is not a whole
+  // number of feet, prints nothing rather than a guess at what was meant.
+  const drain = Number(s.drain_distance_ft)
+  if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
+    && s.drain_distance_ft !== '' && Number.isInteger(drain) && drain >= 0) {
+    lines.push(`Drain run: ${drain} ft`)
+  }
+
+  const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
+  if (material) lines.push(`Main water line: ${material}`)
 
   return lines
 }

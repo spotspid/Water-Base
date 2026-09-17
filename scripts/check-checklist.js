@@ -145,9 +145,35 @@ check('an array row reads back blank', checklistToForm([1, 2]).bathrooms === '')
 
 // --- what the work order prints --------------------------------------------------
 
-check('shutoff and removal both print',
-  workOrderSiteLines(stored).join(' | ') === 'Main water shutoff: Basement, north wall | Remove old equipment (upcharge $250.00)',
+check('all four print, in the order the installer reads them',
+  workOrderSiteLines(stored).join(' | ')
+    === 'Main water shutoff: Basement, north wall | Remove old equipment (upcharge $250.00)'
+      + ' | Drain run: 40 ft | Main water line: Copper',
   workOrderSiteLines(stored).join(' | '))
+check('the drain run and the material come after the two that were there first',
+  workOrderSiteLines(stored).slice(0, 2).every(l => !l.startsWith('Drain run') && !l.startsWith('Main water line')))
+check('a zero foot drain run prints, because zero is an answer',
+  workOrderSiteLines({ drain_distance_ft: 0 }).join() === 'Drain run: 0 ft',
+  workOrderSiteLines({ drain_distance_ft: 0 }).join())
+check('an unanswered drain run prints nothing',
+  workOrderSiteLines({ drain_distance_ft: null }).length === 0
+  && workOrderSiteLines({ drain_distance_ft: '' }).length === 0)
+check('a drain run that is not a whole number of feet prints nothing rather than a guess',
+  workOrderSiteLines({ drain_distance_ft: 12.5 }).length === 0
+  && workOrderSiteLines({ drain_distance_ft: 'far' }).length === 0
+  && workOrderSiteLines({ drain_distance_ft: -4 }).length === 0)
+check('a stored material prints as a person says it',
+  workOrderSiteLines({ main_line_material: 'cpvc' }).join() === 'Main water line: CPVC')
+check('every material on the list prints',
+  LINE_MATERIALS.every(([v, label]) =>
+    workOrderSiteLines({ main_line_material: v }).join() === `Main water line: ${label}`),
+  LINE_MATERIALS.filter(([v, label]) =>
+    workOrderSiteLines({ main_line_material: v }).join() !== `Main water line: ${label}`).map(([v]) => v).join())
+check('a material nobody recognises prints nothing',
+  workOrderSiteLines({ main_line_material: 'lead' }).length === 0
+  && workOrderSiteLines({ main_line_material: null }).length === 0)
+check('the line size is not printed, only the material',
+  workOrderSiteLines({ main_line_size: 'one' }).length === 0)
 check('a no prints that old equipment stays',
   workOrderSiteLines({ removing_old_equipment: NO }).join() === 'Old equipment stays')
 check('a yes with no amount says the upcharge is not recorded',
@@ -165,6 +191,13 @@ const cases = [
   ['', { removing_old_equipment: YES }], ['', { removing_old_equipment: NO, old_equipment_upcharge: 9 }],
   ['Gate code 1234', { shutoff_location: 'Garage', removing_old_equipment: YES, old_equipment_upcharge: 1234.5 }],
   ['x', 'not an object'],
+  ['', { drain_distance_ft: 0 }], ['', { drain_distance_ft: 40 }], ['', { drain_distance_ft: 12.5 }],
+  ['', { drain_distance_ft: '25' }], ['', { drain_distance_ft: -1 }], ['', { drain_distance_ft: null }],
+  ['', { main_line_material: 'lead' }], ['', { main_line_material: null }],
+  ['', { main_line_size: 'one' }],
+  ...LINE_MATERIALS.map(([v]) => ['', { main_line_material: v }]),
+  ['Dog in yard', { shutoff_location: 'Garage', removing_old_equipment: NO,
+    drain_distance_ft: 40, main_line_material: 'galvanized', main_line_size: 'half' }],
 ]
 for (const [typed, s] of cases) {
   const app = workOrderSiteConditions(typed, s)
