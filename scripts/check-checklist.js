@@ -1,6 +1,6 @@
 import {
   CHECKLIST_ITEMS, CHECKLIST_TOTAL, SITE_KEYS, SIZING_KEYS, YES, NO, UNKNOWN,
-  checklistFromForm, checklistToForm, emptyChecklistForm, isAnswered,
+  checklistFromForm, checklistToForm, emptyChecklistForm, isAnswered, itemProblem,
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
 import * as printed from '../supabase/functions/send-agreement/siteConditions.ts'
@@ -165,6 +165,30 @@ check('every checklist question is in one half or the other',
 check('and no question is in both', new Set(halves).size === halves.length)
 check('and neither half names a question that does not exist',
   halves.every(k => CHECKLIST_ITEMS.some(i => i.key === k)))
+
+// --- an invalid value is amber as it is typed, not only on save ---------------
+//
+// It used to count as answered until the save refused it, so the box read fine
+// and the section said "All 3 answered" over 2.5 bathrooms. itemProblem is the
+// one rule both the screen and the save use.
+
+check('a fractional count is not answered', !isAnswered({ ...blank, bathrooms: '2.5' }, 'bathrooms'))
+check('and names the problem in the save sentence',
+  itemProblem({ ...blank, bathrooms: '2.5' }, 'bathrooms') === 'Bathrooms must be a whole number, zero or more.')
+check('a negative count is not answered', !isAnswered({ ...blank, people_in_home: '-1' }, 'people_in_home'))
+check('a valid count has no problem', itemProblem({ ...blank, people_in_home: '4' }, 'people_in_home') === '')
+check('a blank has no problem, only a gap', itemProblem(blank, 'bathrooms') === '')
+check('a negative upcharge makes old equipment unanswered',
+  !isAnswered({ ...blank, removing_old_equipment: YES, old_equipment_upcharge: '-5' }, 'removing_old_equipment'))
+check('and reports against old equipment',
+  itemProblem({ ...blank, removing_old_equipment: YES, old_equipment_upcharge: '-5' }, 'removing_old_equipment')
+    === 'The old equipment upcharge must be zero or more.')
+check('an invalid value counts as a gap, not an answer',
+  unansweredItems({ ...answered, bathrooms: '2.5' }, fullJob).map(i => i.key).join() === 'bathrooms')
+check('the save still refuses with the same sentence the box shows',
+  validateChecklist({ ...blank, bathrooms: '2.5' }) === itemProblem({ ...blank, bathrooms: '2.5' }, 'bathrooms'))
+check('and reports the first bad box in screen order',
+  validateChecklist({ ...blank, people_in_home: '-1', bathrooms: '2.5' }).startsWith('People in home'))
 
 console.log(failed === 0
   ? '\nAll checklist checks passed.'

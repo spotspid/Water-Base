@@ -106,26 +106,33 @@ export function checklistToForm(raw) {
 }
 
 /**
- * The first problem with what was typed, or an empty string.
+ * What is wrong with one item as typed, or an empty string.
  *
- * Only answers that are present and wrong are problems. Blanks are not, see
- * the note at the top of this file.
+ * Blanks are never a problem here, see the note at the top of this file. Only
+ * a value that is present and unusable is: a count that is not a whole number
+ * of zero or more, or an upcharge that is negative or sits on anything but a
+ * yes. The upcharge belongs to removing_old_equipment, so its problems are
+ * reported against that item, which is the box the amber lands on.
+ *
+ * The screen calls this as the person types, so a bad value goes amber at
+ * once; validateChecklist calls it on save. One rule and one sentence for
+ * both, so what the box says and what the save refuses cannot drift apart.
  */
-export function validateChecklist(form) {
+export function itemProblem(form, key) {
   const f = form || {}
 
-  for (const key of ['people_in_home', 'bathrooms']) {
+  if (key === 'people_in_home' || key === 'bathrooms') {
     const raw = String(f[key] ?? '').trim()
-    if (raw === '') continue
+    if (raw === '') return ''
     const n = Number(raw)
-    if (!Number.isInteger(n) || n < 0) {
-      const label = CHECKLIST_ITEMS.find(i => i.key === key).label
-      return `${label} must be a whole number, zero or more.`
-    }
+    if (Number.isInteger(n) && n >= 0) return ''
+    const label = CHECKLIST_ITEMS.find(i => i.key === key).label
+    return `${label} must be a whole number, zero or more.`
   }
 
-  const up = String(f.old_equipment_upcharge ?? '').trim()
-  if (up !== '') {
+  if (key === 'removing_old_equipment') {
+    const up = String(f.old_equipment_upcharge ?? '').trim()
+    if (up === '') return ''
     const n = Number(up)
     if (!Number.isFinite(n) || n < 0) return 'The old equipment upcharge must be zero or more.'
     if (f.removing_old_equipment !== YES) {
@@ -133,6 +140,18 @@ export function validateChecklist(form) {
     }
   }
 
+  return ''
+}
+
+/**
+ * The first problem with what was typed, or an empty string. Checked in screen
+ * order, so the message on save names the first amber box a person would see.
+ */
+export function validateChecklist(form) {
+  for (const item of CHECKLIST_ITEMS) {
+    const problem = itemProblem(form, item.key)
+    if (problem) return problem
+  }
   return ''
 }
 
@@ -181,11 +200,15 @@ export function isEmptyChecklist(stored) {
  *
  * Removing old equipment is only answered when a yes also says what the
  * upcharge is, because a yes with no amount is the exact gap that turns into
- * an argument on install day.
+ * an argument on install day. A value itemProblem refuses is not answered
+ * either.
  */
 export function isAnswered(form, key) {
   const v = String(form?.[key] ?? '').trim()
   if (v === '') return false
+  // An unusable value is not an answer. It will not be stored, so counting it
+  // would say "All 3 answered" over a box holding 2.5 bathrooms.
+  if (itemProblem(form, key)) return false
   if (key === 'removing_old_equipment' && v === YES) {
     return String(form?.old_equipment_upcharge ?? '').trim() !== ''
   }

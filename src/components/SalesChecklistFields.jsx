@@ -1,6 +1,6 @@
 import {
   CHECKLIST_ITEMS, JOB_FIELD_ITEMS, NO, UNKNOWN, YES,
-  isAnswered, unansweredItems,
+  isAnswered, itemProblem, unansweredItems,
 } from '../lib/salesChecklist'
 
 // The sales checklist, as fields.
@@ -61,13 +61,17 @@ export default function SalesChecklistFields({
       <div className="form-grid">
         {items.map(item => {
           const open = !isAnswered(value, item.key)
+          // A value typed wrong goes amber as it is typed, with the sentence
+          // the save would refuse it with, rather than passing as answered
+          // until the button is pressed.
+          const problem = itemProblem(value, item.key)
           const id = `sc_${item.key}`
           return (
             <div key={item.key}
               className={`field${item.kind === 'text' ? ' field-full' : ''}${open ? ' field-unanswered' : ''}`}>
               <label htmlFor={id}>
                 {item.label}
-                {open && <span className="unanswered-tag">Not answered</span>}
+                {open && <span className="unanswered-tag">{problem ? 'Check this' : 'Not answered'}</span>}
               </label>
 
               {item.kind === 'count' && (
@@ -99,6 +103,10 @@ export default function SalesChecklistFields({
                     value={value.old_equipment_upcharge} disabled={disabled}
                     onChange={e => onChange({ ...value, old_equipment_upcharge: e.target.value })} />
                 </div>
+              )}
+
+              {problem && (
+                <span className="field-hint checklist-problem" aria-live="polite">{problem}</span>
               )}
 
               {(item.key === 'shutoff_location' || item.key === 'removing_old_equipment') && (

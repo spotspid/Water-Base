@@ -1280,6 +1280,14 @@ a {
   vertical-align: middle;
 }
 
+/* The sentence under a checklist box holding a value the save would refuse.
+   Amber ink rather than error red, matching the box: it is a gap to fix before
+   saving, not a failure that has happened. */
+.checklist-problem {
+  color: var(--amber-ink);
+  font-weight: 600;
+}
+
 .checklist-upcharge {
   display: flex;
   flex-direction: column;
