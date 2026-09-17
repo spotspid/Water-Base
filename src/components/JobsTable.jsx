@@ -20,6 +20,20 @@ import { GROSS, NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
 //
 // reasonFor, when a named list passes it, puts that list's reason under each
 // customer name, so a filtered list says why every row is on it.
+// The date that matters for where the job is: installed on, booked for, or
+// written up on. install_date and scheduled_date are plain YYYY-MM-DD days and
+// are read as local days, because new Date('2026-08-25') is UTC midnight and
+// shows Aug 24 in Michigan.
+function jobListDate(job) {
+  const day = iso => {
+    const [y, m, d] = iso.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+  if (job.status === 'installed' && job.install_date) return { kind: 'Installed', date: day(job.install_date) }
+  if (job.status === 'scheduled' && job.scheduled_date) return { kind: 'Scheduled', date: day(job.scheduled_date) }
+  return { kind: 'Written up', date: new Date(job.created_at) }
+}
+
 export default function JobsTable({ jobs, onOpen, reasonFor }) {
   return (
         <div className="table-wrap">
@@ -34,11 +48,11 @@ export default function JobsTable({ jobs, onOpen, reasonFor }) {
                 <th className="col-num">{GROSS}</th>
                 <th>Status</th>
                 <th>Agreement</th>
-                <th>Date</th>
+                <th>Key date</th>
               </tr>
             </thead>
             <tbody>
-              {jobs.map(job => (
+              {jobs.map(job => { const when = jobListDate(job); return (
                 <tr key={job.id} className="inv-row" tabIndex={0}
                   onClick={() => onOpen(job.id)}
                   onKeyDown={e => {
@@ -105,12 +119,13 @@ export default function JobsTable({ jobs, onOpen, reasonFor }) {
                     </span>
                   </td>
                   <td className="col-nowrap">
-                    {new Date(job.created_at).toLocaleDateString('en-US', {
+                    {when.date.toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric', year: 'numeric',
                     })}
+                    <span className="cell-sub">{when.kind}</span>
                   </td>
                 </tr>
-              ))}
+              ) })}
             </tbody>
           </table>
         </div>
