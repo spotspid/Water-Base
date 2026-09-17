@@ -209,6 +209,27 @@ Deno.serve(async req => {
   if (jobError) return fail(`That job could not be read. ${jobError.message}`, 500)
   if (!job) return fail('That job does not exist, or you cannot see it.', 404)
 
+  // The sales checklist, for the two lines the work order adds to site
+  // conditions. Read from jobs rather than job_margin, so the view does not
+  // have to be dropped and rebuilt for one column.
+  //
+  // A failure here is not a reason to stop a document going out. If the
+  // column is not there yet (the function deployed ahead of its migration) or
+  // the read fails for any other reason, the work order prints what the office
+  // typed and nothing else, which is exactly what it printed before.
+  const { data: checklistRow, error: checklistError } = await supabase
+    .from('jobs')
+    .select('sales_checklist')
+    .eq('id', jobId)
+    .maybeSingle()
+
+  if (checklistError) {
+    console.warn(`sales_checklist not read for ${jobId}: ${checklistError.message}`)
+  }
+
+  ;(job as Record<string, unknown>).sales_checklist =
+    checklistError ? null : (checklistRow?.sales_checklist ?? null)
+
   // ---------------------------------------------------------------------
   // whatever else this agreement type needs before its fields can be built
   // ---------------------------------------------------------------------

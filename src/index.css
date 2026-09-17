@@ -1241,6 +1241,71 @@ a {
   margin-bottom: 12px;
 }
 
+/* The sales checklist. Unanswered items carry the amber the app already uses
+   for "needs attention but is not broken", with a left rule and a tag rather
+   than a filled box, so a half answered checklist reads as a list of gaps and
+   not as a wall of warnings. Shared by /jobs/new and the drawer on /jobs. */
+.checklist-count {
+  margin: -6px 0 14px;
+  font-size: 13px;
+  color: var(--amber-ink);
+}
+
+.checklist-count-done {
+  color: var(--muted);
+}
+
+.field-unanswered {
+  border-left: 3px solid var(--amber);
+  padding-left: 10px;
+  margin-left: -13px;
+}
+
+.field-unanswered input,
+.field-unanswered select {
+  border-color: var(--amber);
+  background: var(--amber-soft);
+}
+
+.unanswered-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--amber-ink);
+  background: var(--amber-soft);
+  vertical-align: middle;
+}
+
+.checklist-upcharge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.checklist-job-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.checklist-job-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 38px;
+  font-size: 14px;
+}
+
+.job-sales-checklist {
+  margin-top: 20px;
+}
+
 /* A name in a table or a list that opens the thing it names. Inherits its
    colour so a table of these does not turn into a wall of blue, and earns its
    underline on hover, because a row of permanently underlined names is harder

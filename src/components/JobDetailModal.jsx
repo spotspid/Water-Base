@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CANCELLED_STATUS } from '../lib/constants'
+import { CANCELLED_STATUS, QUOTED_STATUS } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
 import { GROSS, NOT_COSTED, basisTag, canShowProfit, partsNote, profitNote } from '../lib/profit'
 import { useInstallers } from '../lib/useInstallers'
@@ -19,6 +19,7 @@ import JobCrewPay from './JobCrewPay'
 import JobStatusActions from './JobStatusActions'
 import JobParts from './JobParts'
 import JobEditModal from './JobEditModal'
+import JobSalesChecklist from './JobSalesChecklist'
 import Modal from './Modal'
 
 export default function JobDetailModal({ job, fixField = '', onClose, onChanged }) {
@@ -37,6 +38,9 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
   // an alert that says "Faucet finish not chosen" lands on the faucet finish
   // rather than on the job that has one somewhere.
   const [editing, setEditing] = useState(Boolean(fixField))
+  // Which field the edit form opens on. Starts as the one the link named, and
+  // the checklist sets it when Choose is pressed on finish, RO type or payment.
+  const [editFocus, setEditFocus] = useState(fixField)
   const [install, setInstall] = useState({
     // an install that happened today usually happened on the day it was
     // promised, so the date it was booked for is the sensible starting point
@@ -146,7 +150,7 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
       </p>
 
       <div className="form-actions job-edit-row">
-        <button type="button" className="btn-cancel" onClick={() => setEditing(true)}>
+        <button type="button" className="btn-cancel" onClick={() => { setEditFocus(''); setEditing(true) }}>
           Edit job details
         </button>
       </div>
@@ -172,6 +176,17 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
       {!cancelled && <JobDeposits job={job} onChanged={onChanged} />}
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
+
+      {/* Quoted jobs only, from the Sept 17 call: the questions asked in the
+          house before the quote goes out. Two of the answers print on the
+          work order under site conditions. */}
+      {job.status === QUOTED_STATUS && (
+        <JobSalesChecklist
+          job={job}
+          onChanged={onChanged}
+          onFixJobField={field => { setEditFocus(field); setEditing(true) }}
+        />
+      )}
 
       {!cancelled && <JobSiteConditions job={job} onChanged={onChanged} />}
 
@@ -236,7 +251,7 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
       {editing && (
         <JobEditModal
           job={job}
-          focusField={fixField}
+          focusField={editFocus}
           hasOwnParts={job.has_job_parts === true}
           onClose={() => setEditing(false)}
           onSaved={message => {

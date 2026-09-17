@@ -5,10 +5,15 @@ import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
+import { validateNewJob } from '../lib/newJobForm'
+import {
+  checklistFromForm, emptyChecklistForm, isEmptyChecklist, validateChecklist,
+} from '../lib/salesChecklist'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import JobDetailFields from '../components/JobDetailFields'
 import JobSystemFields from '../components/JobSystemFields'
+import SalesChecklistFields from '../components/SalesChecklistFields'
 import './NewJob.css'
 
 const EMPTY_FORM = {
@@ -50,6 +55,11 @@ export default function NewJob() {
   // Once somebody types a deposit it stops following the price. The rule is
   // withPrice in depositState, where check:deposits can reach it.
   const [depositTouched, setDepositTouched] = useState(false)
+
+  // Kept apart from the job form: its values are an object stored in one
+  // column, and its blanks are allowed where the form's are not.
+  const [checklist, setChecklist] = useState(emptyChecklistForm)
+  const checklistShown = form.status === 'quoted'
 
   // the pick lists moved into JobSystemFields and JobDetailFields, which read
   // them from the same context, so this page reads no settings of its own.
@@ -101,65 +111,10 @@ export default function NewJob() {
     setForm(f => ({ ...f, [name]: value }))
   }
 
-  function validate() {
-    if (!form.customer_name.trim()) return 'Customer name is required.'
-    if (!form.phone.trim()) return 'Phone is required.'
-    if (!form.address.trim()) return 'Address is required.'
-
-    // optional, but a typo here means the agreement silently never arrives
-    const email = form.customer_email.trim()
-    if (quoteMode && form.status === 'quoted' && !email) {
-      return 'A quote is sent by email, so the customer email is required.'
-    }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return 'That email address does not look right.'
-    }
-
-    if (!form.city.trim()) return 'Enter a city.'
-    if (!form.system_template) return 'Pick a system template.'
-    if (!form.payment_type) return 'Pick a payment type.'
-    if (!form.faucet_finish) return 'Pick a faucet finish.'
-    if (!form.ro_type) return 'Pick an RO type.'
-
-    const price = Number(form.sale_price)
-    if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'
-
-    // A new job always records a term. It starts filled, so a blank here is
-    // somebody clearing it, and zero is how to say no deposit.
-    if (String(form.deposit_amount).trim() === '') {
-      return 'Enter the deposit, or 0 if this sale takes no deposit.'
-    }
-    const deposit = Number(form.deposit_amount)
-    if (!Number.isFinite(deposit) || deposit < 0) return 'The deposit must be zero or more.'
-    if (deposit > price) return 'The deposit is more than the sale price.'
-
-    if (form.payout_amount !== '') {
-      const payout = Number(form.payout_amount)
-      if (!Number.isFinite(payout) || payout < 0) return 'Payout amount must be zero or greater.'
-    }
-
-    if (form.installer_id && form.helper_id && form.installer_id === form.helper_id) {
-      return 'The installer and the helper cannot be the same person.'
-    }
-
-    if (form.status === 'quoted' && (form.scheduled_date || form.install_date)) {
-      return 'A quote has no scheduled or install date. Clear the date, or mark it sold.'
-    }
-
-    if (!form.scheduled_date && form.time_window) {
-      return 'Pick a scheduled date before picking a time window, or clear the window.'
-    }
-
-    if (form.status === 'installed' && !selectedTemplate) {
-      return 'That template is no longer available, so parts cannot be deducted. Reload and pick another.'
-    }
-
-    return ''
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
-    const problem = validate()
+    const problem = validateNewJob(form, { quoteMode, selectedTemplate })
+      || (checklistShown ? validateChecklist(checklist) : '')
     if (problem) {
       setError(problem)
       return
@@ -184,8 +139,8 @@ export default function NewJob() {
       template_id: selectedTemplate?.id || null,
       sale_price: Number(form.sale_price),
       deposit_amount: Number(form.deposit_amount),
-      payment_type: form.payment_type,
-      faucet_finish: form.faucet_finish,
+      payment_type: form.payment_type || null,
+      faucet_finish: form.faucet_finish || null,
       ro_type: form.ro_type || null,
       // Optional here. An RO only job has no control valve, and the parts
       // preview flags an unresolved valve line on a sheet that needs one.
@@ -201,6 +156,11 @@ export default function NewJob() {
       site_conditions: form.site_conditions.trim() || null,
       notes: form.notes.trim() || null,
     }
+
+    // Left out when nothing was answered, which stores the column default of
+    // an empty object and so means the same thing.
+    const storedChecklist = checklistShown ? checklistFromForm(checklist) : {}
+    if (!isEmptyChecklist(storedChecklist)) payload.sales_checklist = storedChecklist
 
     const { data, error: insertError } = await attempt(
       () => supabase.from('jobs').insert(payload).select('id').single(),
@@ -273,6 +233,16 @@ export default function NewJob() {
             selectedTemplate={selectedTemplate}
           />
 
+
+          {checklistShown && (
+            <SalesChecklistFields
+              value={checklist}
+              onChange={setChecklist}
+              job={form}
+              disabled={saving}
+              jobFieldsNote="Faucet finish, RO type and payment type are chosen in the System section above."
+            />
+          )}
 
           <JobDetailFields
             form={form}

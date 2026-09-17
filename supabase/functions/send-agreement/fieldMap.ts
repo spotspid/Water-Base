@@ -9,6 +9,8 @@
 // _service matches on one exact name each, because that template was built to
 // this list and a near miss there should be an error rather than a guess.
 
+import { workOrderSiteConditions } from './siteConditions.ts'
+
 export type Part = { sku: string; name: string; quantity: number; category?: string }
 
 // Which half of the work order a part is listed in.
@@ -279,11 +281,14 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
       } },
 
     // What the installer needs to know about the house before he gets there.
-    // The only field on this document with nothing derived behind it, so it
-    // has a column on the job. Sent blank and locked when the job has none,
-    // rather than filled with a placeholder saying there is nothing to say.
+    // What the office typed on the job, then the two sales checklist answers
+    // that matter at the door: where the main shutoff is, and whether old
+    // equipment comes out and at what charge. Sent blank and locked when there
+    // is none of either, rather than filled with a placeholder saying there is
+    // nothing to say.
     { key: 'site_conditions', required: false, names: ['site_conditions'],
-      lockBlank: true, value: ctx => text(ctx.job.site_conditions) },
+      lockBlank: true,
+      value: ctx => workOrderSiteConditions(ctx.job.site_conditions, ctx.job.sales_checklist) },
 
     // the system as sold, with the three choices that decide which parts go
     // on the truck. The valve type is here and not on the customer agreement:

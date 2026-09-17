@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "check:dates": "node scripts/check-dates.js",
     "check:dashboard": "node scripts/check-dashboard.js",
-    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:readiness && npm run check:paperwork && npm run check:documents && npm run check:pipeline && npm run check:styles && npm run check:functions && npm run check:templates && npm run check:profit && npm run check:search && npm run check:warranty && npm run check:embeds && npm run check:outstanding && npm run check:attention && npm run check:nav && npm run check:quote",
+    "check": "npm run check:dates && npm run check:dashboard && npm run check:notifications && npm run check:orders && npm run check:deposits && npm run check:readiness && npm run check:paperwork && npm run check:documents && npm run check:pipeline && npm run check:styles && npm run check:functions && npm run check:templates && npm run check:profit && npm run check:search && npm run check:checklist && npm run check:warranty && npm run check:embeds && npm run check:outstanding && npm run check:attention && npm run check:nav && npm run check:quote",
     "check:notifications": "node scripts/check-notifications.js",
     "check:orders": "node scripts/check-orders.js",
     "check:deposits": "node scripts/check-deposits.js",
@@ -29,7 +29,8 @@
     "check:outstanding": "node scripts/check-outstanding.js",
     "check:attention": "node scripts/check-attention.js",
     "check:nav": "node scripts/check-nav.js",
-    "check:quote": "node scripts/check-quote.js"
+    "check:quote": "node scripts/check-quote.js",
+    "check:checklist": "node scripts/check-checklist.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",
