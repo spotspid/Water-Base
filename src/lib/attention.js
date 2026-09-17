@@ -1,4 +1,8 @@
-import { CANCELLED_STATUS } from './constants.js'
+import { CANCELLED_STATUS, QUOTED_STATUS } from './constants.js'
+import { daysSinceQuoteSent } from './quotes.js'
+
+// A quote left this long without a signature is a sale going cold.
+export const STALE_QUOTE_DAYS = 10
 
 // What is missing or wrong on a job, in words.
 //
@@ -32,7 +36,7 @@ export function isTestJob(job) {
 /**
  * The reasons a job needs looking at, most costly first. Empty when it is fine.
  */
-export function attentionReasons(job) {
+export function attentionReasons(job, now = new Date()) {
   if (!job || job.status === CANCELLED_STATUS) return []
 
   const reasons = []
@@ -58,9 +62,14 @@ export function attentionReasons(job) {
 
   if (blank(job.invoice_number)) reasons.push('No invoice number')
 
+  const quoteAge = job.status === QUOTED_STATUS ? daysSinceQuoteSent(job, now) : null
+  if (quoteAge != null && quoteAge >= STALE_QUOTE_DAYS) {
+    reasons.push(`Quote unsigned ${quoteAge} days`)
+  }
+
   return reasons
 }
 
-export function needsAttention(jobs) {
-  return (jobs || []).filter(job => attentionReasons(job).length > 0)
+export function needsAttention(jobs, now = new Date()) {
+  return (jobs || []).filter(job => attentionReasons(job, now).length > 0)
 }

@@ -99,7 +99,7 @@ export default function DashboardMetrics({
         <span className="dash-tile-foot">
           {attention === 0
             ? 'Nothing missing on any open job'
-            : `${attention === 1 ? 'Job is' : 'Jobs are'} missing a price, parts, pay or invoice`}
+            : `${attention === 1 ? 'Job is' : 'Jobs are'} missing a price, parts, pay or invoice, or a quote is going cold`}
         </span>
       </Link>
 

@@ -37,6 +37,14 @@ check('pay is not demanded before booking', !reasons({ status: 'sold', payout_am
   .includes('Installer pay not set'))
 check('a missing invoice number is flagged', reasons({ invoice_number: '  ' }).includes('No invoice number'))
 check('a test name is flagged', isTestJob({ customer_name: 'ZZ Test - Steve Burgess' }))
+const quote = { ...clean, status: 'quoted', payout_amount: null }
+const at = new Date(2026, 8, 20, 9)
+check('a quote unsigned 10 days is flagged',
+  attentionReasons({ ...quote, quote_sent_at: '2026-09-10T12:00:00' }, at).includes('Quote unsigned 10 days'))
+check('a quote unsigned 9 days is not',
+  !attentionReasons({ ...quote, quote_sent_at: '2026-09-11T12:00:00' }, at).some(r => r.startsWith('Quote unsigned')))
+check('a quote never sent is not stale', !attentionReasons({ ...quote, quote_sent_at: null }, at).some(r => r.startsWith('Quote')))
+check('a signed quote is not stale', !attentionReasons({ ...quote, status: 'sold', payout_amount: 1, quote_sent_at: '2026-09-01T12:00:00' }, at).some(r => r.startsWith('Quote')))
 check('a test invoice is flagged', isTestJob({ customer_name: 'Real Person', invoice_number: 'MWP-TEST-09' }))
 check('a surname containing test letters is not', !isTestJob({ customer_name: 'Contessa Testarossa' }))
 check('a cancelled job is never flagged', attentionReasons({ ...clean, status: 'cancelled', sale_price: 0 }).length === 0)
