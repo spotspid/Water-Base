@@ -1,4 +1,4 @@
-import { CANCELLED_STATUS, STATUS_LABELS } from './constants.js'
+import { CANCELLED_STATUS, QUOTED_STATUS, STATUS_LABELS } from './constants.js'
 import { availableOf, committedOf, isLowStock } from './inventory.js'
 
 // A local ISO day, so date comparisons never touch a timezone. scheduled_date
@@ -28,7 +28,7 @@ export function bookedWithin(jobs, days, today = new Date()) {
   const end = isoDay(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days))
 
   return jobs.filter(job => {
-    if (job.status === CANCELLED_STATUS || job.status === 'installed') return false
+    if (job.status === CANCELLED_STATUS || job.status === 'installed' || job.status === QUOTED_STATUS) return false
     const when = job.scheduled_date
     return Boolean(when) && when >= start && when <= end
   })
@@ -37,8 +37,10 @@ export function bookedWithin(jobs, days, today = new Date()) {
 // A cancelled job never earned anything, so it is dropped before any money
 // is added up. It is deliberately left in the status breakdown, where the
 // count is the point.
+//
+// A quote is dropped the same way: it is a price nobody has agreed to.
 export function billableJobs(jobs) {
-  return jobs.filter(job => job.status !== CANCELLED_STATUS)
+  return jobs.filter(job => job.status !== CANCELLED_STATUS && job.status !== QUOTED_STATUS)
 }
 
 // The month boundary is taken in the browser's own timezone, so "this month"
@@ -93,7 +95,7 @@ export function splitMonthRevenue(jobs, start) {
   let both = 0
 
   for (const job of jobs) {
-    if (job.status === CANCELLED_STATUS) continue
+    if (job.status === CANCELLED_STATUS || job.status === QUOTED_STATUS) continue
 
     const price = Number(job.sale_price) || 0
 
@@ -110,7 +112,9 @@ export function splitMonthRevenue(jobs, start) {
     // written this month, whatever has become of it since. An installed job
     // still counts here: it was sold this month too, and removing it would
     // shrink the month's bookings as the work got done.
-    const written = new Date(job.created_at).getTime()
+    // Dated by sold_at, the day the sale closed, which for a signed quote is
+    // the signature rather than the day the quote was written.
+    const written = new Date(job.sold_at || job.created_at).getTime()
     const soldThisMonth = Number.isFinite(written) && written >= cutoff && written < until
 
     if (soldThisMonth) {

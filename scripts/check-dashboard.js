@@ -1,5 +1,5 @@
 import {
-  atReorderPoint, groupActivity, monthStart, realJobs, soldNotBooked, splitMonthRevenue, stockShortages,
+  atReorderPoint, billableJobs, groupActivity, monthStart, realJobs, soldNotBooked, splitMonthRevenue, stockShortages,
 } from '../src/lib/dashboard.js'
 import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 
@@ -145,6 +145,19 @@ check('the list is exactly the jobs the tile counts', listIds === tileIds, `${li
 check('only sold jobs with no date are counted', tileIds === 'a,b', tileIds)
 check('the tile links to that view', jobViewLink('not-booked') === '/jobs?view=not-booked', jobViewLink('not-booked'))
 check('an unknown view is refused, not guessed', jobViewOf('toString') === null && jobViewOf('nope') === null)
+
+// --- quotes -------------------------------------------------------------------
+
+const withQuote = [
+  { status: 'quoted', created_at: '2026-08-03T12:00:00Z', sold_at: null, install_date: null, sale_price: 5000, scheduled_date: null },
+  // written in July as a quote, signed in August: an August sale
+  { status: 'sold', created_at: '2026-07-28T12:00:00Z', sold_at: '2026-08-02T15:00:00Z', install_date: null, sale_price: 3000, scheduled_date: null },
+]
+const aug = splitMonthRevenue(withQuote, monthStart(new Date(2026, 7, 23)))
+check('a quote is not sold revenue', aug.sold.count === 1 && aug.sold.revenue === 3000, JSON.stringify(aug.sold))
+check('a signed quote is dated by sold_at, not the day it was written', aug.sold.revenue === 3000)
+check('a quote is not waiting to be booked', soldNotBooked(withQuote).length === 1)
+check('a quote is not billable', billableJobs(withQuote).length === 1)
 
 // --- test jobs --------------------------------------------------------------
 

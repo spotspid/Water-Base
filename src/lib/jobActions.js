@@ -75,6 +75,10 @@ export async function changeStatus(job, next) {
     }
   }
 
+  if (job.status === 'quoted' && next === 'sold') {
+    return { message: 'Marked sold. The quote is now a sale dated today.' }
+  }
+
   if (job.status === CANCELLED_STATUS) {
     return {
       message: `Job reopened as ${statusLabel(next)}.`

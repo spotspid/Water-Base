@@ -29,6 +29,7 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
           <label htmlFor="status">Status</label>
           <select id="status" name="status" required
             value={form.status} onChange={onChange} disabled={disabled}>
+            <option value="quoted">Quoted</option>
             <option value="sold">Sold</option>
             <option value="scheduled">Scheduled</option>
             <option value="installed">Installed</option>

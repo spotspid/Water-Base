@@ -24,6 +24,7 @@ export default function JobStatusActions({
   actionError, notice, onMarkInstalled, onRevert, onSchedule, onPlainStatus,
 }) {
   const installed = job.status === 'installed'
+  const quoted = job.status === 'quoted'
   const cancelled = job.status === CANCELLED_STATUS
   const open = !installed && !cancelled
 
@@ -43,7 +44,14 @@ export default function JobStatusActions({
         )}
       </p>
 
-      {open && (
+      {quoted && (
+        <p className="field-hint">
+          A quote promises no parts and counts toward no revenue. It becomes sold when the
+          customer signs the agreement, or mark it sold here if they closed on the phone.
+        </p>
+      )}
+
+      {open && !quoted && (
         <div className="form-grid job-install-grid">
           {job.status === 'sold' && (
             <div className="field">
@@ -97,7 +105,7 @@ export default function JobStatusActions({
       {/* Marking installed records the crew and pay on the job. Doing it over
           unsaved changes would record the old values while the screen showed
           new ones, so it waits until they are saved or undone. */}
-      {open && crewDirty && (
+      {open && !quoted && crewDirty && (
         <p className="form-warning" role="status">
           Save or undo the crew and pay changes above before marking this installed.
         </p>
@@ -107,6 +115,12 @@ export default function JobStatusActions({
       {notice && <p className="job-notice" role="status">{notice}</p>}
 
       <div className="modal-actions job-action-buttons">
+        {quoted && (
+          <button type="button" className="btn-cancel"
+            onClick={() => onPlainStatus('sold')} disabled={busy}>
+            Mark sold
+          </button>
+        )}
         {job.status === 'sold' && (
           <button type="button" className="btn-cancel"
             onClick={() => onSchedule(schedule.scheduled_date)}
@@ -138,10 +152,12 @@ export default function JobStatusActions({
               onClick={() => onConfirmCancel(true)}>
               Cancel job
             </button>
-            <button type="button" className="btn-primary" onClick={onMarkInstalled}
-              disabled={busy || crewDirty}>
-              {busy ? 'Working...' : 'Mark installed and deduct parts'}
-            </button>
+            {!quoted && (
+              <button type="button" className="btn-primary" onClick={onMarkInstalled}
+                disabled={busy || crewDirty}>
+                {busy ? 'Working...' : 'Mark installed and deduct parts'}
+              </button>
+            )}
           </>
         ))}
         {cancelled && (

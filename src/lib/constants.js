@@ -46,6 +46,7 @@ export const PICK_SOURCE_LABELS = {
 }
 
 export const STATUS_LABELS = {
+  quoted: 'Quoted',
   sold: 'Sold',
   scheduled: 'Scheduled',
   installed: 'Installed',
@@ -56,6 +57,9 @@ export const STATUS_LABELS = {
 // and it earns nothing, so the money totals leave it out while the pipeline
 // breakdown still counts it.
 export const CANCELLED_STATUS = 'cancelled'
+
+// A price the customer has not agreed to. No parts, no revenue, no booking.
+export const QUOTED_STATUS = 'quoted'
 
 // The statuses that hold a live claim on inventory. A job in one of these is
 // booked but not yet installed, so its parts are committed rather than
