@@ -191,12 +191,14 @@ export default function NewJob() {
         setError(`The quote was saved but not sent. ${sendError} Open it from the jobs list to send it.`)
         return
       }
-      navigate(`/jobs?job=${data.id}`)
+      navigate(`/quotes?job=${data.id}`)
       return
     }
 
     if (!wantsInstall) {
-      navigate('/jobs')
+      // A quote belongs on the quotes page; anything already sold goes to the
+      // jobs list, which is where it will be from now on.
+      navigate(payload.status === 'quoted' ? '/quotes' : '/jobs')
       return
     }
 
@@ -233,7 +235,9 @@ export default function NewJob() {
 
           <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 
-          {/* Sizing above the system, because it decides which system to quote. */}
+          {/* Both halves of the checklist come before the system: sizing decides
+              which system to quote, and site is asked in the same walk round the
+              house, before anyone sits down to pick equipment. */}
           {checklistShown && (
             <SalesChecklistFields
               title="Sales checklist: sizing"
@@ -243,6 +247,18 @@ export default function NewJob() {
               onChange={setChecklist}
               job={form}
               disabled={saving}
+            />
+          )}
+
+          {checklistShown && (
+            <SalesChecklistFields
+              title="Sales checklist: site"
+              keys={SITE_KEYS}
+              value={checklist}
+              onChange={setChecklist}
+              job={form}
+              disabled={saving}
+              jobFieldsNote="Faucet finish, RO type and payment type are chosen in the System section below."
             />
           )}
 
@@ -256,19 +272,6 @@ export default function NewJob() {
             onReloadTemplates={reloadTemplates}
             selectedTemplate={selectedTemplate}
           />
-
-
-          {checklistShown && (
-            <SalesChecklistFields
-              title="Sales checklist: site"
-              keys={SITE_KEYS}
-              value={checklist}
-              onChange={setChecklist}
-              job={form}
-              disabled={saving}
-              jobFieldsNote="Faucet finish, RO type and payment type are chosen in the System section above."
-            />
-          )}
 
           <JobDetailFields
             form={form}

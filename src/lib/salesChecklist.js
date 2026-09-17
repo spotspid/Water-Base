@@ -35,9 +35,10 @@ export const CHECKLIST_ITEMS = [
 
 // The two halves of the checklist as the New quote form lays them out.
 //
-// Sizing comes first, above the system choice, because it decides which system
-// to quote: how many people, how many bathrooms, whether the unit fits. Site is
-// what the installer needs once the system is chosen, so it stays below it.
+// Both come before the system choice. Sizing is first because it decides which
+// system to quote: how many people, how many bathrooms, whether the unit fits.
+// Site follows it, because it is asked in the same walk round the house, before
+// anyone picks equipment. They stay two sections so each counts its own gaps.
 // The drawer shows all of them in one block and ignores this.
 export const SIZING_KEYS = ['people_in_home', 'bathrooms', 'space_confirmed']
 export const SITE_KEYS = [
