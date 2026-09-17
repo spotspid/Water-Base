@@ -1288,6 +1288,14 @@ a {
   font-weight: 600;
 }
 
+/* The line under a form's buttons saying why one of them is disabled. Right
+   aligned to sit under the buttons it explains. */
+.form-actions-note {
+  display: block;
+  text-align: right;
+  margin-top: -18px;
+}
+
 .checklist-upcharge {
   display: flex;
   flex-direction: column;

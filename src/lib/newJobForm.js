@@ -7,14 +7,20 @@
 //
 // Pure and importing nothing.
 
-export function validateNewJob(form, { quoteMode = false, selectedTemplate = null } = {}) {
+// sending is true for Save and send quote. A quote goes out by email, so only
+// that button needs the customer email, and only a job still Quoted can be sent
+// as a quote. Save quote never sends and needs neither.
+export function validateNewJob(form, { sending = false, selectedTemplate = null } = {}) {
   if (!form.customer_name.trim()) return 'Customer name is required.'
   if (!form.phone.trim()) return 'Phone is required.'
   if (!form.address.trim()) return 'Address is required.'
 
   // optional, but a typo here means the agreement silently never arrives
   const email = form.customer_email.trim()
-  if (quoteMode && form.status === 'quoted' && !email) {
+  if (sending && form.status !== 'quoted') {
+    return 'Only a quote can be sent. Set the status to Quoted, or use Save quote.'
+  }
+  if (sending && !email) {
     return 'A quote is sent by email, so the customer email is required.'
   }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

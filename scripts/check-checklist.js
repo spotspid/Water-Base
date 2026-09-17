@@ -190,6 +190,23 @@ check('the save still refuses with the same sentence the box shows',
 check('and reports the first bad box in screen order',
   validateChecklist({ ...blank, people_in_home: '-1', bathrooms: '2.5' }).startsWith('People in home'))
 
+// --- Save quote and Save and send quote ---------------------------------------
+//
+// Only the send button needs the email, and only a Quoted job can be sent.
+// Save quote never sends, so it needs neither.
+
+const quoteNoEmail = { ...baseJob, status: 'quoted', customer_email: '' }
+check('Save quote saves a quote with no email', validateNewJob(quoteNoEmail) === '')
+check('Save and send quote refuses without the email',
+  validateNewJob(quoteNoEmail, { sending: true }) === 'A quote is sent by email, so the customer email is required.')
+check('and sends once the email is there',
+  validateNewJob({ ...quoteNoEmail, customer_email: 'a@b.co' }, { sending: true }) === '')
+check('a job that is not Quoted cannot be sent as a quote',
+  validateNewJob({ ...baseJob, status: 'sold', payment_type: 'Cash', faucet_finish: 'Chrome', ro_type: 'Tank Style',
+    customer_email: 'a@b.co' }, { sending: true }).startsWith('Only a quote can be sent'))
+check('the old quoteMode option no longer changes anything',
+  validateNewJob(quoteNoEmail, { quoteMode: true }) === '')
+
 console.log(failed === 0
   ? '\nAll checklist checks passed.'
   : `\n${failed} checklist check(s) failed.`)

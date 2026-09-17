@@ -148,12 +148,9 @@ export default function Jobs() {
     <AppShell
       actions={(
         <>
-          {/* Two ways in, two different labels. The plain form saves a quote
-              and sends nothing; the other requires an email and sends the
-              quote on save. Both reading "New quote" would hide which one
-              emails a customer. */}
-          <Link to="/jobs/new" className="btn-cancel">New quote</Link>
-          <Link to="/jobs/new?quote=1" className="btn-primary">Send a quote</Link>
+          {/* One way in. Whether the quote is sent is chosen on the form, by
+              which of its two buttons is pressed. */}
+          <Link to="/jobs/new" className="btn-primary">New quote</Link>
         </>
       )}
     >

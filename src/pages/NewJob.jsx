@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
@@ -14,6 +14,7 @@ import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import JobDetailFields from '../components/JobDetailFields'
 import JobSystemFields from '../components/JobSystemFields'
+import NewJobActions from '../components/NewJobActions'
 import SalesChecklistFields from '../components/SalesChecklistFields'
 import './NewJob.css'
 
@@ -46,11 +47,11 @@ const EMPTY_FORM = {
 
 export default function NewJob() {
   const navigate = useNavigate()
-  // /jobs/new?quote=1 is New quote: the email is required and saving sends it.
-  const [params] = useSearchParams()
-  const quoteMode = params.get('quote') === '1'
   const [form, setForm] = useState(EMPTY_FORM)
-  const [saving, setSaving] = useState(false)
+  // '' when idle, otherwise which button is running, so only that one says
+  // Saving and the other is simply disabled.
+  const [savingAs, setSavingAs] = useState('')
+  const saving = savingAs !== ''
   const [error, setError] = useState('')
 
   // Once somebody types a deposit it stops following the price. The rule is
@@ -112,9 +113,18 @@ export default function NewJob() {
     setForm(f => ({ ...f, [name]: value }))
   }
 
-  async function handleSubmit(e) {
+  // Enter in a field submits the form, and that is Save quote. A keystroke
+  // must never be the thing that emails a customer.
+  function handleSubmit(e) {
     e.preventDefault()
-    const problem = validateNewJob(form, { quoteMode, selectedTemplate })
+    save(false)
+  }
+
+  // send is true only for Save and send quote. Both buttons save through the
+  // same insert; send then runs sendQuote on the job that was just written.
+  async function save(send) {
+    if (saving) return
+    const problem = validateNewJob(form, { sending: send, selectedTemplate })
       || (checklistShown ? validateChecklist(checklist) : '')
     if (problem) {
       setError(problem)
@@ -122,7 +132,7 @@ export default function NewJob() {
     }
 
     setError('')
-    setSaving(true)
+    setSavingAs(send ? 'send' : 'save')
 
     // A job never enters the installed state by plain insert. It is created in
     // its pre install state and mark_job_installed does the deduction, which is
@@ -170,13 +180,13 @@ export default function NewJob() {
 
     if (insertError) {
       setError(insertError)
-      setSaving(false)
+      setSavingAs('')
       return
     }
 
-    if (sendsQuote) {
+    if (send) {
       const { error: sendError } = await sendQuote(data.id)
-      setSaving(false)
+      setSavingAs('')
       if (sendError) {
         setError(`The quote was saved but not sent. ${sendError} Open it from the jobs list to send it.`)
         return
@@ -200,7 +210,7 @@ export default function NewJob() {
       'The job was saved but its parts could not be deducted.',
     )
 
-    setSaving(false)
+    setSavingAs('')
 
     if (installError) {
       setError(`${installError} The job was saved as Scheduled. Fix the problem, then install it from the jobs list.`)
@@ -210,7 +220,7 @@ export default function NewJob() {
     navigate('/jobs')
   }
 
-  const sendsQuote = quoteMode && form.status === 'quoted'
+  const canSend = form.status === 'quoted'
 
   // no default. it varies by installer and by job, so it is typed every time.
   const payHint = 'Flat amount for this job. Subtracted from margin.'
@@ -269,16 +279,13 @@ export default function NewJob() {
 
           {error && <p className="form-error" role="alert">{error}</p>}
 
-          <div className="form-actions">
-            <button type="button" className="btn-cancel"
-              onClick={() => navigate('/jobs')} disabled={saving}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary"
-              disabled={saving || loadingTemplates || templates.length === 0}>
-              {saving ? (sendsQuote ? 'Saving and sending...' : 'Saving...') : (sendsQuote ? 'Save and send quote' : 'Save job')}
-            </button>
-          </div>
+          <NewJobActions
+            savingAs={savingAs}
+            canSend={canSend}
+            unavailable={loadingTemplates || templates.length === 0}
+            onCancel={() => navigate('/jobs')}
+            onSend={() => save(true)}
+          />
 
         </form>
       </div>
