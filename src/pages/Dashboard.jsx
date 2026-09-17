@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
   bookedWithin, groupActivity, inventoryUnits, inventoryValue,
-  monthLabel, monthStart, pipelineSummary, soldNotBooked, splitMonthRevenue,
+  monthLabel, monthStart, pipelineSummary, realJobs, soldNotBooked, splitMonthRevenue,
   stockShortages,
 } from '../lib/dashboard'
 import { needsAttention } from '../lib/attention'
@@ -47,7 +47,7 @@ const JOB_COLUMNS =
   'invoice_number, payout_amount, unresolved_lines, parts_cost_basis, ' +
   'sale_price, parts_cost, installer_pay, margin, installer_name, ' +
   'installer_id, installer_email, template_id, template_line_count, system_template, ' +
-  'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
+  'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at, is_test'
 
 // committed and available are what the reservation layer contributes, and the
 // meter is meaningless without them. They were missing here, and because
@@ -129,7 +129,7 @@ export default function Dashboard() {
       setStock([])
       setActivity([])
     } else {
-      setJobs(jobRes.data || [])
+      setJobs(realJobs(jobRes.data || []))
       setStock(stockRes.data || [])
       setActivity(activityRes.data || [])
     }

@@ -1,5 +1,5 @@
 import {
-  atReorderPoint, groupActivity, monthStart, soldNotBooked, splitMonthRevenue, stockShortages,
+  atReorderPoint, groupActivity, monthStart, realJobs, soldNotBooked, splitMonthRevenue, stockShortages,
 } from '../src/lib/dashboard.js'
 import { jobViewLink, jobViewOf } from '../src/lib/jobViews.js'
 
@@ -145,6 +145,17 @@ check('the list is exactly the jobs the tile counts', listIds === tileIds, `${li
 check('only sold jobs with no date are counted', tileIds === 'a,b', tileIds)
 check('the tile links to that view', jobViewLink('not-booked') === '/jobs?view=not-booked', jobViewLink('not-booked'))
 check('an unknown view is refused, not guessed', jobViewOf('toString') === null && jobViewOf('nope') === null)
+
+// --- test jobs --------------------------------------------------------------
+
+const marked = realJobs([
+  { id: 'real', is_test: false },
+  { id: 'test', is_test: true },
+  // a database one migration behind has no is_test at all: count the job
+  { id: 'old' },
+])
+check('a job marked is_test is counted nowhere', marked.map(j => j.id).join(',') === 'real,old',
+  marked.map(j => j.id).join(','))
 
 console.log(failed === 0
   ? '\nAll dashboard checks passed.\n'

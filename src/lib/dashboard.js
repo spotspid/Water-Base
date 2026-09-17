@@ -9,6 +9,12 @@ function isoDay(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// A job marked is_test is kept in the book but counted nowhere. Applied once to
+// the fetched rows, so every tile and the paperwork panel agree.
+export function realJobs(jobs) {
+  return jobs.filter(job => job.is_test !== true)
+}
+
 // Sold, agreed, and still waiting on a date. This is the queue David works
 // from, and it is the number that should be falling.
 export function soldNotBooked(jobs) {

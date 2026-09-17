@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { sendAgreement } from '../lib/agreements'
+import { realJobs } from '../lib/dashboard'
 import {
   BLOCKED, OUT, SECTIONS, SIGNED,
   documentCounts, documentRows, groupByReason, inSection,
@@ -24,7 +25,7 @@ const JOB_COLUMNS =
   'id, created_at, customer_name, customer_email, status, scheduled_date, invoice_number, '
   + 'installer_id, installer_name, installer_email, installer_pay, '
   + 'template_id, template_line_count, system_template, '
-  + 'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at'
+  + 'agreement_status, agreement_sent_at, work_order_status, work_order_sent_at, is_test'
 
 const TABS = [
   { key: 'all', label: 'All' },
@@ -56,7 +57,7 @@ export default function Documents() {
       setError(err)
       setJobs([])
     } else {
-      setJobs(data || [])
+      setJobs(realJobs(data || []))
     }
 
     setLoading(false)
