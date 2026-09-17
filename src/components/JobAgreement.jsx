@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   agreementLabel, agreementStatusOf, agreementTone, canSendAgreement,
-  isAwaitingSignature, sendAgreement,
+  isAwaitingSignature, sendAgreement, sendQuote,
 } from '../lib/agreements'
 import { formatDateTime } from '../lib/inventory'
 import './Agreement.css'
@@ -23,6 +23,8 @@ export default function JobAgreement({ job, onChanged }) {
   const signed = status === 'completed'
   const email = job.customer_email || ''
   const views = Number(job.agreement_view_count) || 0
+  const quoted = job.status === 'quoted'
+  const quoteSent = quoted && Number(job.quote_sent_count) > 0
 
   // Three or more looks with no signature stops being interest and starts
   // being hesitation.
@@ -34,7 +36,9 @@ export default function JobAgreement({ job, onChanged }) {
     setNotice('')
     setBusy(true)
 
-    const { data, error: err, details: extra } = await sendAgreement(job.id, 'customer_install')
+    const { data, error: err, details: extra } = quoted
+      ? await sendQuote(job.id)
+      : await sendAgreement(job.id, 'customer_install')
 
     setBusy(false)
     setConfirming(false)
@@ -47,6 +51,11 @@ export default function JobAgreement({ job, onChanged }) {
     }
 
     const count = data?.send_count || 1
+    if (quoted) {
+      setNotice(`Quote ${quoteSent ? 'resent' : 'sent'} to ${data?.sent_to || email}.`)
+      onChanged()
+      return
+    }
     setNotice(count > 1
       ? `Resent to ${data?.sent_to || email}. This is send ${count}.`
       : `Sent to ${data?.sent_to || email}. ${data?.fields_prefilled?.length || 0} fields were prefilled.`)
@@ -66,6 +75,13 @@ export default function JobAgreement({ job, onChanged }) {
         </div>
         <span className={`agr-badge agr-${agreementTone(job)}`}>{agreementLabel(job)}</span>
       </div>
+
+      {quoted && job.quote_sent_at && (
+        <p className="agr-timeline">
+          Quote sent {formatDateTime(job.quote_sent_at)}.
+          {Number(job.quote_sent_count) > 1 && <> {job.quote_sent_count} sends.</>}
+        </p>
+      )}
 
       {(job.agreement_sent_at || job.agreement_completed_at) && (
         <p className="agr-timeline">
@@ -131,7 +147,9 @@ export default function JobAgreement({ job, onChanged }) {
           {confirming ? (
             <>
               <span className="agr-confirm-text">
-                This emails {email || 'the customer'} a signature request. Send it?
+                {quoted
+                  ? <>This emails {email || 'the customer'} the quote with the agreement to sign. Send it?</>
+                  : <>This emails {email || 'the customer'} a signature request. Send it?</>}
               </span>
               <button type="button" className="btn-primary" disabled={busy} onClick={run}>
                 {busy ? 'Sending...' : awaiting ? 'Yes, resend' : 'Yes, send it'}
@@ -144,11 +162,13 @@ export default function JobAgreement({ job, onChanged }) {
           ) : (
             <button
               type="button"
-              className={awaiting ? 'btn-cancel' : 'btn-primary'}
+              className={(quoted ? quoteSent : awaiting) ? 'btn-cancel' : 'btn-primary'}
               disabled={busy || !email || !canSendAgreement(job)}
               onClick={() => { setConfirming(true); setError(''); setNotice('') }}
             >
-              {awaiting ? 'Resend Agreement' : 'Send agreement'}
+              {quoted
+                ? (quoteSent ? 'Resend quote' : 'Send quote')
+                : (awaiting ? 'Resend Agreement' : 'Send agreement')}
             </button>
           )}
         </div>

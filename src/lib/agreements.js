@@ -62,10 +62,10 @@ export function canSendAgreement(job) {
  * unwrapping every failure would read "Edge Function returned a non-2xx status
  * code", which tells an operator nothing about what to fix.
  */
-export async function sendAgreement(jobId, type = 'customer_install') {
+export async function sendAgreement(jobId, type = 'customer_install', { quote = false } = {}) {
   try {
     const { data, error } = await supabase.functions.invoke('send-agreement', {
-      body: { job_id: jobId, type },
+      body: { job_id: jobId, type, ...(quote ? { quote: true } : {}) },
     })
 
     if (!error) return { data, error: null }
@@ -91,6 +91,11 @@ export async function sendAgreement(jobId, type = 'customer_install') {
   }
 }
 
+// A quote is the customer agreement with the quote written into DocuSeal's
+// email. Same function, same record, and a signature on it closes the sale.
+export function sendQuote(jobId) {
+  return sendAgreement(jobId, 'customer_install', { quote: true })
+}
 
 /* ---------------------------------------------------------------------------
    Work orders.

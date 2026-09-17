@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { Context, Part, SPECS, matchFields } from './fieldMap.ts'
+import { includedLines, quoteMessage } from './quote.ts'
 
 // send-agreement
 //
@@ -75,6 +76,7 @@ Deno.serve(async req => {
     template_id?: string
     after?: string | number
     archived?: boolean
+    quote?: boolean
   }
   try {
     body = await req.json()
@@ -322,6 +324,31 @@ Deno.serve(async req => {
 
   const ctx: Context = { job, installer, parts, today: new Date() }
 
+  // A quote is the customer agreement sent with the quote written into the
+  // email. Only a quoted job can be quoted, and only the customer agreement
+  // carries it.
+  const asQuote = body.quote === true
+  let quoteText: { subject: string; body: string } | null = null
+
+  if (asQuote) {
+    if (type !== 'customer_install') return fail('Only the customer agreement can carry a quote.', 400)
+    if (job.status !== 'quoted') {
+      return fail('This job is not a quote any more, so there is no quote to send. Send the agreement instead.', 422)
+    }
+    if (!String(job.customer_email || '').trim()) {
+      return fail('A quote needs the customer email. Add it to the job first.', 422)
+    }
+    const { data: sheet, error: sheetError } = await supabase.rpc('resolve_job_parts', { p_job_id: jobId })
+    if (sheetError) return fail(`The build sheet could not be read for the quote. ${sheetError.message}`, 500)
+    quoteText = quoteMessage({
+      customerName: String(job.customer_name || ''),
+      systemName: String(job.system_template || 'water system'),
+      salePrice: Number(job.sale_price) || 0,
+      depositAmount: job.deposit_amount == null ? null : Number(job.deposit_amount),
+      lines: includedLines((sheet || []) as Array<Record<string, unknown>>),
+    })
+  }
+
   const email = spec.submitterEmail(ctx)
   if (!email) {
     return fail(
@@ -551,6 +578,7 @@ Deno.serve(async req => {
       body: JSON.stringify({
         template_id: Number(templateId) || templateId,
         send_email: true,
+        ...(quoteText ? { message: quoteText } : {}),
         submitters: [{
           role: submitterRole,
           email,
@@ -625,8 +653,33 @@ Deno.serve(async req => {
     )
   }
 
+  if (asQuote) {
+    const { data: counted } = await supabase
+      .from('jobs')
+      .select('quote_sent_count')
+      .eq('id', jobId)
+      .maybeSingle()
+
+    const { error: quoteError } = await supabase
+      .from('jobs')
+      .update({
+        quote_sent_at: row.sent_at,
+        quote_sent_count: (Number(counted?.quote_sent_count) || 0) + 1,
+      })
+      .eq('id', jobId)
+
+    if (quoteError) {
+      return fail(
+        'The quote was sent, but the send could not be recorded on the job. '
+        + `Do not resend. ${quoteError.message}`,
+        500,
+      )
+    }
+  }
+
   return json({
     ok: true,
+    quote: asQuote,
     submission_id: submissionId,
     slug,
     sent_to: email,
