@@ -1,5 +1,5 @@
 import {
-  buildDeclined, buildNag, buildOrderArrived, buildSigned, buildViewed,
+  buildDeclined, buildNag, buildOrderArrived, buildQuoteNag, buildSigned, buildViewed,
   channelForDocument, documentLabel, jobLink, orderLink,
 } from '../supabase/functions/notify/messages.ts'
 import {
@@ -71,6 +71,14 @@ const nagFacts = {
   work_order_status: 'completed',
   installer_name: 'Anthony Thomas',
 }
+
+const quoteNag = buildQuoteNag({ job_id: 'q1', customer_name: 'Steve Burgess', system_template: 'Flagship Bundle',
+  sale_price: 2999, days_since_sent: 5, quote_sent_count: 1, agreement_view_count: 2 }, '2026-09-20')
+check('a quote reminder goes to the sales channel', quoteNag.channel === 'new_sale')
+check('a quote reminder says how long it has been unsigned', quoteNag.message.includes('unsigned 5 days'), quoteNag.message)
+check('a quote reminder links to the job to resend', quoteNag.message.includes('/jobs?job=q1|Open the job to resend the quote'))
+check('a quote reminder is once per job per day', quoteNag.dedupe_key === 'nag.quote:q1:2026-09-20')
+check('ten days carries the warning marker', buildQuoteNag({ job_id: 'q1', days_since_sent: 10 }, 'd').message.startsWith(':warning:'))
 
 const nag = buildNag(nagFacts, '2026-08-25')
 check('a nag keys on the job and the day, so the sweep can run twice',

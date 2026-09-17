@@ -265,6 +265,43 @@ export function buildNag(facts: NagFacts, day: string, appUrl?: string): Built {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Unsigned quotes, to the sales channel
+--------------------------------------------------------------------------- */
+
+export type QuoteNagFacts = {
+  job_id: string
+  customer_name?: string | null
+  system_template?: string | null
+  sale_price?: number | string | null
+  days_since_sent: number
+  quote_sent_count?: number | null
+  agreement_view_count?: number | null
+}
+
+// The view only returns quotes on day 2, 5 or 10, so this never decides when;
+// it only says it. The link opens the job, where Resend quote sits in the
+// customer agreement section.
+export function buildQuoteNag(facts: QuoteNagFacts, day: string, appUrl?: string): Built {
+  const age = facts.days_since_sent
+  const views = Number(facts.agreement_view_count) || 0
+  const what = [String(facts.system_template || '').trim(), money(facts.sale_price)].filter(Boolean).join(', ')
+  const lead = age >= 10 ? ':warning: ' : ''
+
+  return {
+    channel: 'new_sale',
+    event_type: 'nag.quote',
+    dedupe_key: `nag.quote:${facts.job_id}:${day}`,
+    job_id: facts.job_id,
+    payload: { days_since_sent: age, quote_sent_count: facts.quote_sent_count ?? null },
+    message: [
+      `${lead}Quote for *${name(facts)}*${what ? ` (${what})` : ''} unsigned ${age} days.`,
+      views > 0 ? `Opened ${views} ${views === 1 ? 'time' : 'times'}, not signed.` : 'Not opened yet.',
+      `<${jobLink(facts.job_id, appUrl)}|Open the job to resend the quote>`,
+    ].join('\n'),
+  }
+}
+
 // "Customer agreement unsigned for 9 days" / "never sent"
 function describeDocument(
   label: string, status: string | null | undefined, daysUnsigned: number | null,

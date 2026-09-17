@@ -2,7 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
   type Built, type Channel, type JobFacts, type OrderFacts,
-  buildDeclined, buildNag, buildOrderArrived, buildSigned, buildViewed,
+  buildDeclined, buildNag, buildOrderArrived, buildQuoteNag, buildSigned, buildViewed,
 } from './messages.ts'
 import { configuredChannels, postToSlack } from './slack.ts'
 
@@ -395,8 +395,31 @@ async function handleNag(
     }
   }
 
-  console.log('daily nag finished', { day, ...results })
-  return json({ ok: true, day, ...results, problems: problems.slice(0, 5) })
+  // Unsigned quotes at 2, 5 and 10 days. Read separately, so a problem with
+  // one list never silences the other.
+  const quoteResults = { considered: 0, sent: 0, duplicates: 0, failed: 0 }
+  const { data: quoteRows, error: quoteError } = await supabase
+    .from('quote_nag_candidates')
+    .select('*')
+    .order('days_since_sent', { ascending: false })
+
+  if (quoteError) {
+    problems.push(`Quotes due a reminder could not be read. ${quoteError.message}`)
+  } else {
+    for (const row of quoteRows || []) {
+      quoteResults.considered += 1
+      const outcome = await deliver(supabase, buildQuoteNag(row as Parameters<typeof buildQuoteNag>[0], day, appUrl))
+      if (outcome.sent) quoteResults.sent += 1
+      else if (outcome.duplicate) quoteResults.duplicates += 1
+      else {
+        quoteResults.failed += 1
+        if (outcome.error) problems.push(outcome.error)
+      }
+    }
+  }
+
+  console.log('daily nag finished', { day, ...results, quotes: quoteResults })
+  return json({ ok: true, day, ...results, quotes: quoteResults, problems: problems.slice(0, 5) })
 }
 
 /**
