@@ -18,6 +18,7 @@ const Schedule = lazy(() => import('./pages/Schedule'))
 const Inventory = lazy(() => import('./pages/Inventory'))
 const Orders = lazy(() => import('./pages/Orders'))
 const Templates = lazy(() => import('./pages/Templates'))
+const Quotes = lazy(() => import('./pages/Quotes'))
 const Warranty = lazy(() => import('./pages/Warranty'))
 const Documents = lazy(() => import('./pages/Documents'))
 const Expenses = lazy(() => import('./pages/Expenses'))
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+            <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
             <Route path="/jobs/new" element={<ProtectedRoute><NewJob /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />

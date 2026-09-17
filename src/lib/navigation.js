@@ -24,7 +24,8 @@ export const GROUPS = [
     items: [
       { to: '/dashboard', text: 'Dashboard', hint: 'Shortages, revenue, recent activity' },
       { to: '/schedule', text: 'Schedule', hint: 'Crew, dates, parts readiness' },
-      { to: '/jobs', text: 'Jobs', hint: 'Status, documents, margin' },
+      { to: '/quotes', text: 'Quotes', hint: 'Prices out, waiting on a signature' },
+      { to: '/jobs', text: 'Jobs', hint: 'Sold and beyond: status, documents, margin' },
       { to: '/documents', text: 'Documents', hint: 'Agreements and work orders' },
     ],
   },
@@ -66,7 +67,8 @@ export const ACCOUNT_ITEMS = []
 const TITLES = {
   '/dashboard': ['Dashboard', 'Today'],
   '/schedule': ['Schedule', 'Crew and dates'],
-  '/jobs': ['Jobs', 'Status and margin'],
+  '/jobs': ['Jobs', 'Sold and beyond'],
+  '/quotes': ['Quotes', 'Written up, not sold yet'],
   '/jobs/new': ['New quote', 'Parts are claimed when it is scheduled'],
   '/inventory': ['Inventory', 'On hand, promised, on order'],
   '/orders': ['Supplier orders', 'On order and arrival dates'],

@@ -56,7 +56,7 @@ export default function DashboardMetrics({
           is its own tile: a quote counted as sold would be a promise nobody
           made. Opens the same list, oldest first. */}
       <Link
-        to={jobViewLink('quotes')}
+        to="/quotes?view=out"
         className={quotes.oldestDays != null && quotes.oldestDays >= 10
           ? 'dash-tile dash-tile-link dash-tile-attention'
           : 'dash-tile dash-tile-link'}

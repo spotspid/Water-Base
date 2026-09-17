@@ -28,6 +28,7 @@ const ROUTES = [
   ['/auth/callback', 'src/pages/AuthCallback.jsx'],
   ['/dashboard', 'src/pages/Dashboard.jsx'],
   ['/jobs', 'src/pages/Jobs.jsx'],
+  ['/quotes', 'src/pages/Quotes.jsx'],
   ['/jobs/new', 'src/pages/NewJob.jsx'],
   ['/schedule', 'src/pages/Schedule.jsx'],
   ['/inventory', 'src/pages/Inventory.jsx'],

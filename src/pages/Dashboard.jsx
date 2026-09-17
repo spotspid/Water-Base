@@ -8,6 +8,7 @@ import {
   stockShortages,
 } from '../lib/dashboard'
 import { needsAttention } from '../lib/attention'
+import { QUOTED_STATUS } from '../lib/constants'
 import { quoteSummary } from '../lib/quotes'
 import { pendingPaperwork } from '../lib/paperwork'
 import { todayBlockers } from '../lib/today'
@@ -145,7 +146,14 @@ export default function Dashboard() {
   const revenue = useMemo(() => splitMonthRevenue(jobs, start), [jobs, start])
   const pipeline = useMemo(() => pipelineSummary(jobs), [jobs])
   const notBooked = useMemo(() => soldNotBooked(jobs).length, [jobs])
-  const attention = useMemo(() => needsAttention(jobs).length, [jobs])
+  // Quotes are not on the jobs list any more, and this tile opens that list,
+  // so counting them here would send somebody to a list shorter than the
+  // number they pressed. A quote going cold is on the Quotes out tile beside
+  // this one, which turns red at ten days.
+  const attention = useMemo(
+    () => needsAttention(jobs.filter(j => j.status !== QUOTED_STATUS)).length,
+    [jobs],
+  )
   const quotes = useMemo(() => quoteSummary(jobs), [jobs])
   const bookedSoon = useMemo(() => bookedWithin(jobs, BOOKING_DAYS).length, [jobs])
   const shortages = useMemo(() => stockShortages(stock), [stock])

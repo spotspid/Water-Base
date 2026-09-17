@@ -1,7 +1,8 @@
 import { GROUPS } from '../lib/navigation'
 import {
   IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconSchedule, IconSettings,
+  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconQuotes,
+  IconSchedule, IconSettings,
   IconWarranty,
 } from './NavIcons'
 
@@ -19,6 +20,7 @@ import {
 const ICONS = {
   '/dashboard': IconDashboard,
   '/schedule': IconSchedule,
+  '/quotes': IconQuotes,
   '/jobs': IconJobs,
   '/documents': IconDocuments,
   '/inventory': IconInventory,

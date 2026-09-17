@@ -131,6 +131,18 @@ export function IconOrders() {
 
 // A plain ring, drawn when a destination has no icon of its own. It exists so
 // a missing map entry costs an icon rather than the whole menu.
+// A quote: a page with a price on it, waiting on a signature.
+export function IconQuotes() {
+  return (
+    <svg {...base}>
+      <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M12 11v6" />
+      <path d="M13.8 12.4a1.7 1.7 0 0 0-1.8-.9c-1 0-1.7.5-1.7 1.3 0 1.8 3.4 1 3.4 2.8 0 .8-.7 1.4-1.7 1.4a1.9 1.9 0 0 1-1.9-1" />
+    </svg>
+  )
+}
+
 export function IconFallback() {
   return (
     <svg {...base}>

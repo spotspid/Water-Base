@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { STATUS_LABELS } from '../lib/constants'
+import { QUOTED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { billableJobs, realJobs } from '../lib/dashboard'
 import { GROSS, profitTotals } from '../lib/profit'
 import { searchJobs } from '../lib/search'
+import { JOB_MARGIN_COLUMNS } from '../lib/jobColumns'
 import { attempt } from '../lib/errors'
 import { jobViewOf } from '../lib/jobViews'
 import AppShell from '../components/AppShell'
@@ -17,22 +18,6 @@ import './Jobs.css'
 
 const ALL_STATUSES = 'all'
 
-const JOB_MARGIN_COLUMNS =
-  'id, created_at, customer_name, city, system_template, template_id, status, install_date, ' +
-  'installer, invoice_number, faucet_finish, parts_deducted_at, parts_deduct_batch, ' +
-  'sale_price, installer_pay, parts_cost, parts_count, margin, margin_pct, ' +
-  'address, phone, scheduled_date, time_window, installer_id, installer_name, ' +
-  'helper_id, helper_name, customer_email, agreement_status, agreement_signed_url, ' +
-  'agreement_id, agreement_sent_at, agreement_completed_at, agreement_audit_log_url, ' +
-  'agreement_last_error, agreement_send_count, ro_type, ' +
-  'work_order_id, work_order_status, work_order_sent_at, work_order_completed_at, ' +
-  'work_order_signed_url, work_order_audit_log_url, work_order_last_error, ' +
-  'work_order_send_count, installer_email, site_conditions, ' +
-  'agreement_view_count, work_order_view_count, nag_snoozed_until, ' +
-  'deposits_taken, deposit_count, last_deposit_on, balance_due, template_line_count, ' +
-  'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts, ' +
-  'expected_parts_cost, parts_cost_effective, parts_cost_basis, unresolved_lines, ' +
-  'deposit_amount, deposit_outstanding, is_test, sold_at, quote_sent_at, quote_sent_count'
 
 export default function Jobs() {
   // Every Slack message links to /jobs?job=<id>, because a webhook cannot
@@ -98,8 +83,13 @@ export default function Jobs() {
 
   useEffect(() => { load() }, [load])
 
-  const testCount = useMemo(() => jobs.length - realJobs(jobs).length, [jobs])
-  const shown = useMemo(() => (showTest ? jobs : realJobs(jobs)), [jobs, showTest])
+  // A quote is not a job here. It is a price nobody has agreed to, it holds no
+  // parts and it is in none of the money on this page, so it is listed on
+  // /quotes instead of sitting in this table under a status filter.
+  const sold = useMemo(() => jobs.filter(j => j.status !== QUOTED_STATUS), [jobs])
+
+  const testCount = useMemo(() => sold.length - realJobs(sold).length, [sold])
+  const shown = useMemo(() => (showTest ? sold : realJobs(sold)), [sold, showTest])
   const inView = useMemo(() => (view ? view.filter(shown) : shown), [shown, view])
 
   const clearView = useCallback(() => {
@@ -136,6 +126,11 @@ export default function Jobs() {
     [jobs, openJobId],
   )
 
+  // Slack, the dashboard and the documents page all link to /jobs?job=<id>,
+  // and some of those ids are quotes. Rather than telling somebody the job is
+  // not here, send them to where it now lives.
+  const openJobIsQuote = openJob?.status === QUOTED_STATUS
+
   const searching = query.trim() !== ''
 
   const hasData = !loading && !error
@@ -143,6 +138,10 @@ export default function Jobs() {
   // A link from Slack can outlive the job it points at. Saying so beats a page
   // that silently ignores the id in the address bar.
   const linkedJobMissing = hasData && Boolean(openJobId) && !openJob
+
+  if (openJobIsQuote) {
+    return <Navigate to={`/quotes?job=${encodeURIComponent(openJobId)}`} replace />
+  }
 
   return (
     <AppShell
@@ -166,9 +165,11 @@ export default function Jobs() {
               <label htmlFor="status-filter">Status</label>
               <select id="status-filter" value={status} onChange={e => setStatus(e.target.value)}>
                 <option value={ALL_STATUSES}>All statuses</option>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
+                {Object.entries(STATUS_LABELS)
+                  .filter(([value]) => value !== QUOTED_STATUS)
+                  .map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
               </select>
             </div>
             {/* type=search rather than text, so a phone shows the right
