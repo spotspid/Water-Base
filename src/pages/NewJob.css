@@ -76,3 +76,60 @@
   font-weight: 400;
   color: var(--muted, #6b7280);
 }
+
+/* The qualifier on a rate ("on top of the normal RO price") is longer than a
+   phone is wide. Left as one unbreakable column it pushed the whole page
+   sideways, so on a narrow screen the row stacks and the price sits under its
+   label rather than fighting it for the same line. */
+@media (max-width: 620px) {
+  .rate-card-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .rate-card-row dd {
+    justify-self: start;
+  }
+}
+
+/* ---- the phone ----
+   The quote form is six phone screens long, and Save quote lived at the
+   bottom of all six. Somebody filling a quote in at a kitchen table had to
+   scroll past everything they had just typed to reach the button, which is
+   how it came to be described as not there at all.
+   
+   The actions ride the bottom of the screen instead. Sticky rather than
+   fixed, so the bar stays inside the form: it cannot cover another page's
+   content, and it stops at the end of the form rather than hovering over the
+   footer forever. */
+@media (max-width: 860px) {
+  .newjob-form .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    /* out to the edges of the canvas, so the bar reads as a bar rather than a
+       floating row with the page showing past it */
+    margin: 0 -14px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    gap: 8px;
+  }
+
+  /* Each button gets its share rather than Cancel taking as much as the one
+     people actually press. */
+  .newjob-form .form-actions button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* It sat under a bar that is now stuck to the bottom of the screen, where a
+     negative margin pulled it underneath. */
+  .newjob-form .form-actions-note {
+    margin-top: 10px;
+    text-align: left;
+  }
+}

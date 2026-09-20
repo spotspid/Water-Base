@@ -510,4 +510,27 @@
   .nav-panel {
     min-width: min(286px, calc(100vw - 28px));
   }
+
+  /* Four menus will not fit across a phone even shrunk, and with nothing to
+     stop them they ran out under the avatar: "Setup" and the initials were
+     printed on top of each other. The row scrolls sideways within the bar
+     instead, so the last menu is a swipe away rather than underneath
+     something. The bar itself no longer overflows the page, which is what was
+     making every screen scroll sideways by a thumb's width. */
+  .nav-groups {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-groups::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A scrolling row clips what hangs out of it, and the menu panel hangs out
+     of it by design. It is positioned off the bar, so it is free to sit
+     outside the strip that scrolls. */
+  .nav-menu {
+    position: static;
+  }
 }
