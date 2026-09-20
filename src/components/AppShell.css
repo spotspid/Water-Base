@@ -511,26 +511,119 @@
     min-width: min(286px, calc(100vw - 28px));
   }
 
-  /* Four menus will not fit across a phone even shrunk, and with nothing to
-     stop them they ran out under the avatar: "Setup" and the initials were
-     printed on top of each other. The row scrolls sideways within the bar
-     instead, so the last menu is a swipe away rather than underneath
-     something. The bar itself no longer overflows the page, which is what was
-     making every screen scroll sideways by a thumb's width. */
-  .nav-groups {
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
+}
 
-  .nav-groups::-webkit-scrollbar {
+/* ---- the drawer ----
+   Below 720px the bar cannot hold four menus. Shrinking them ran the last one
+   under the avatar; scrolling the row left "Setup" cut off mid word with
+   nothing to say it could be swiped, which reads as a bug rather than a
+   control. One button, and the menus move inside it.
+
+   The button is hidden above that width and the menu bar is hidden below it,
+   so exactly one is ever on screen and nothing has to measure anything. */
+
+.nav-burger-wrap {
+  display: none;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--rail-text);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.nav-burger:hover,
+.nav-burger-open {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+}
+
+.nav-burger:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+.nav-burger-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Hung off the bar and the full width of the screen, rather than a panel
+   floating under one button. There is no room on a phone for anything that
+   only uses half the width. */
+.nav-drawer {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  padding: 10px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--white);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 16px 34px rgba(19, 37, 56, 0.22);
+  z-index: 60;
+}
+
+.nav-drawer-cta {
+  display: block;
+  margin: 2px 0 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  background: var(--teal, #1F6F82);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 14.5px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nav-drawer-group + .nav-drawer-group {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.nav-drawer-label {
+  margin: 8px 0 2px;
+  padding: 0 10px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The group the current page belongs to, so the drawer says where you are
+   the way the bar does with its lit trigger. */
+.nav-drawer-label-on {
+  color: var(--teal, #1F6F82);
+}
+
+@media (max-width: 720px) {
+  .nav-groups {
     display: none;
   }
 
-  /* A scrolling row clips what hangs out of it, and the menu panel hangs out
-     of it by design. It is positioned off the bar, so it is free to sit
-     outside the strip that scrolls. */
-  .nav-menu {
-    position: static;
+  .nav-burger-wrap {
+    display: block;
+  }
+
+  /* The drawer carries New quote, so the bar does not need to. */
+  .nav-right {
+    flex: 0 0 auto;
   }
 }

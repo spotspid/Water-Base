@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { groupForPath } from '../lib/navigation'
 import { NAV_GROUPS } from './navGroups'
 import NavMenu from './NavMenu'
+import NavDrawer from './NavDrawer'
 import AccountMenu from './AccountMenu'
 import emblem from '../assets/emblem.png'
 
@@ -69,6 +70,17 @@ export default function TopNav() {
             <span className="nav-brand-sub">Michigan Water Pros</span>
           </span>
         </Link>
+
+        {/* One of these two is on screen, never both: the bar below 720px
+            cannot hold four menus, so they move into the drawer. CSS decides
+            which, so there is no width listener and nothing to disagree with
+            the stylesheet. */}
+        <NavDrawer
+          open={openId === 'drawer'}
+          currentGroup={currentGroup}
+          onToggle={() => toggle('drawer')}
+          onClose={close}
+        />
 
         <nav className="nav-groups" aria-label="Main">
           {NAV_GROUPS.map(group => (
