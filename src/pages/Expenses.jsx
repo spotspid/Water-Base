@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState'
 import ExpenseModal from '../components/ExpenseModal'
 import ExpenseBatches from '../components/ExpenseBatches'
 import ImportWizard from '../components/ImportWizard'
+import RecurringOverhead from '../components/RecurringOverhead'
 import './Expenses.css'
 
 const ALL = 'all'
@@ -117,6 +118,11 @@ export default function Expenses() {
       </>
     )}>
       <div className="exp-page">
+
+        {/* Ad spend and subscriptions arrive whether anyone types them or not,
+            so they get their own panel above the ledger rather than waiting to
+            be remembered as one-off entries. */}
+        <RecurringOverhead categories={expenseCategories} onPosted={load} />
 
         <div className="exp-filters">
           <div className="field">

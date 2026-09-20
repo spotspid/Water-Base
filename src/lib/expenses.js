@@ -4,6 +4,8 @@
 export const EXPENSE_SOURCES = {
   manual: 'Manual',
   import: 'Imported',
+  // Posted from a standing monthly cost. Not manual: nobody typed it.
+  recurring: 'Recurring',
 }
 
 export function formatCurrency(value) {

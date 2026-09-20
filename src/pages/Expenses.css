@@ -164,3 +164,156 @@
     flex: 1 1 140px;
   }
 }
+
+/* ---- monthly overhead ----
+   Above the ledger, because it is about what is missing from it. Quieter than
+   the table: a list of standing costs and what each one still needs. */
+.rec-panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.rec-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.rec-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.rec-sub {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rec-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-empty {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.rec-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.rec-what {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-vendor {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.rec-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.rec-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.rec-badge-good {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+/* Amber, the same amber the checklist uses for a question nobody has answered,
+   because this is the same kind of thing: a gap waiting on a person. */
+.rec-badge-attention {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.rec-badge-ready {
+  background: var(--teal-soft);
+  color: var(--teal, #1F6F82);
+}
+
+.rec-act {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-amount-label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.rec-amount {
+  width: 96px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-posted {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.rec-edit {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.rec-edit:hover {
+  color: var(--ink);
+}
+
+.rec-varies {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13.5px;
+}
+
+@media (max-width: 620px) {
+  .rec-act {
+    width: 100%;
+  }
+}
