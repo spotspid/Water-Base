@@ -1,0 +1,96 @@
+.pnl-page {
+  width: 100%;
+}
+
+.pnl-summary {
+  margin-bottom: 22px;
+}
+
+.pnl-net .inv-stat-value {
+  font-size: 24px;
+}
+
+/* costs read as deductions without needing a minus sign in every cell */
+.pnl-cost {
+  color: var(--gray-500);
+}
+
+.pnl-table {
+  font-size: 14px;
+}
+
+.pnl-table th:first-child,
+.pnl-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--white);
+}
+
+/* The header row went light everywhere else and the sticky month cell kept
+   the navy from before, so one cell in seven read as selected. Same ground as
+   the rest of the row. */
+.pnl-table thead th:first-child {
+  background: var(--raised);
+}
+
+.pnl-total-row td {
+  border-top: 2px solid var(--navy);
+  background: var(--gray-100);
+  font-weight: 700;
+}
+
+.pnl-total-row td:first-child {
+  background: var(--gray-100);
+}
+
+.pnl-blank {
+  color: var(--gray-300);
+  user-select: none;
+}
+
+@media (max-width: 760px) {
+  .pnl-page {
+    padding: 20px 16px;
+  }
+
+}
+
+/* ---------------------------------------------------------------------------
+   Cash received.
+
+   Its own section below the accrual table, with a rule above it, because the
+   one thing that must not happen is somebody reading cash as extra income.
+   Separating them physically does more for that than any label would.
+--------------------------------------------------------------------------- */
+.pnl-cash {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.pnl-cash-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pnl-cash-head h2 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.pnl-cash-note {
+  flex: 1 1 260px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* The tile in the summary row. Deliberately quieter than net, which is the
+   figure that actually says how the business did. */
+.pnl-cash-stat .inv-stat-value {
+  color: var(--teal-deep);
+}
