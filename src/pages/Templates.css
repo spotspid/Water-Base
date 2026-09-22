@@ -50,6 +50,20 @@
   gap: 8px;
 }
 
+/* The customer facing name, under the office one. Quiet, because the office
+   navigates by the short label; it is here so nobody has to open the form to
+   find out whether a sheet still reads as an internal code on a quote. */
+.tpl-card-long {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--body-text);
+}
+
+.tpl-card-long-missing {
+  color: var(--muted);
+  font-style: italic;
+}
+
 .tpl-card-meta {
   margin-top: 4px;
   font-size: 13px;

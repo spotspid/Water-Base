@@ -28,7 +28,7 @@ export default function Templates() {
       attempt(
         () => supabase
           .from('system_templates')
-          .select('id, label, default_price, active, sort_order, notes'),
+          .select('id, label, long_label, default_price, active, sort_order, notes'),
         'Build sheets could not be loaded.',
       ),
       attempt(

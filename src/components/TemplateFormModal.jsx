@@ -6,6 +6,7 @@ import Modal from './Modal'
 function initialForm(template) {
   return {
     label: template?.label || '',
+    long_label: template?.long_label || '',
     default_price: template?.default_price == null ? '' : String(template.default_price),
     sort_order: template?.sort_order == null ? '' : String(template.sort_order),
     active: template?.active ?? true,
@@ -29,6 +30,7 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
   function validate() {
     if (!form.label.trim()) return 'A template needs a name.'
     if (form.label.trim().length > 80) return 'Keep the name under 80 characters.'
+    if (form.long_label.trim().length > 200) return 'Keep the long name under 200 characters.'
 
     if (form.default_price !== '') {
       const price = Number(form.default_price)
@@ -56,6 +58,7 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
 
     const payload = {
       label: form.label.trim(),
+      long_label: form.long_label.trim() || null,
       default_price: form.default_price === '' ? null : Number(form.default_price),
       sort_order: form.sort_order === '' ? 0 : Number(form.sort_order),
       active: form.active,
@@ -96,6 +99,22 @@ export default function TemplateFormModal({ template, onClose, onSaved }) {
             <input id="label" name="label" type="text" value={form.label}
               onChange={handleChange} disabled={saving} autoFocus />
             <span className="field-hint">Shown in the system dropdown on a new job.</span>
+          </div>
+
+          {/* The customer facing name. The RO clause is added per job from its
+              RO type, so this is written without one: a tanked job reads
+              "... plus under sink tanked reverse osmosis system and separate
+              faucet for drinking water", a No RO job reads this alone. */}
+          <div className="field field-full">
+            <label htmlFor="long_label">Long name <span className="optional">(optional)</span></label>
+            <input id="long_label" name="long_label" type="text" value={form.long_label}
+              onChange={handleChange} disabled={saving}
+              placeholder="Whole home water softening system" />
+            <span className="field-hint">
+              What the customer reads on the quote, agreement and work order. Leave out
+              the reverse osmosis part: it is added from each job&rsquo;s RO type. Blank
+              means those documents use the short name, as they do today.
+            </span>
           </div>
 
           <div className="field">

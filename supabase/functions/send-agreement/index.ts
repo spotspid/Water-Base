@@ -217,9 +217,14 @@ Deno.serve(async req => {
   // column is not there yet (the function deployed ahead of its migration) or
   // the read fails for any other reason, the work order prints what the office
   // typed and nothing else, which is exactly what it printed before.
+  //
+  // system_long_name comes with it, for the same reason and on the same terms:
+  // the customer facing name of what was sold, composed when the job was
+  // written. Null where the sheet has no long name, and every document falls
+  // back to the short one, which is what they printed before this existed.
   const { data: checklistRow, error: checklistError } = await supabase
     .from('jobs')
-    .select('sales_checklist')
+    .select('sales_checklist, system_long_name')
     .eq('id', jobId)
     .maybeSingle()
 
@@ -229,6 +234,8 @@ Deno.serve(async req => {
 
   ;(job as Record<string, unknown>).sales_checklist =
     checklistError ? null : (checklistRow?.sales_checklist ?? null)
+  ;(job as Record<string, unknown>).system_long_name =
+    checklistError ? null : (checklistRow?.system_long_name ?? null)
 
   // ---------------------------------------------------------------------
   // whatever else this agreement type needs before its fields can be built
@@ -363,7 +370,9 @@ Deno.serve(async req => {
     if (sheetError) return fail(`The build sheet could not be read for the quote. ${sheetError.message}`, 500)
     quoteText = quoteMessage({
       customerName: String(job.customer_name || ''),
-      systemName: String(job.system_template || 'water system'),
+      // The long name if the sheet has one, because this is the sentence a
+      // customer reads in their inbox. The short one is an office label.
+      systemName: String(job.system_long_name || job.system_template || 'water system'),
       salePrice: Number(job.sale_price) || 0,
       depositAmount: job.deposit_amount == null ? null : Number(job.deposit_amount),
       lines: includedLines((sheet || []) as Array<Record<string, unknown>>),

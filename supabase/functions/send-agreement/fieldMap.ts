@@ -78,6 +78,28 @@ function text(value: unknown): string {
   return String(value).trim()
 }
 
+/*
+ * What was sold, as a document names it.
+ *
+ * The long name when the sheet has one: it is written for a customer and
+ * already carries the RO clause, so the RO type is not repeated after it. The
+ * short label otherwise, with every pick in brackets, which is what both
+ * documents printed before long names existed.
+ *
+ * extras are the picks the long name does not say: the faucet finish on a
+ * customer agreement, and the finish and the valve on a work order.
+ */
+function systemsLine(ctx: Context, extras: string[]): string {
+  // N/A is the faucet finish of a job with no RO. It is a real answer on the
+  // job and nothing at all to a customer, who would read "(N/A)" and wonder
+  // what was left out.
+  const picks = extras.filter(p => p && p !== 'N/A')
+  const long = text(ctx.job.system_long_name)
+  const base = long || text(ctx.job.system_template)
+  const shown = long ? picks : [text(ctx.job.ro_type), ...picks].filter(p => p && p !== 'N/A')
+  return shown.length > 0 ? `${base} (${shown.join(', ')})` : base
+}
+
 function money(value: unknown): string {
   const n = Number(value)
   if (!Number.isFinite(n)) return ''
@@ -200,11 +222,7 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     // order prints the same sentence plus the valve type, which the installer
     // needs and the customer never chose.
     { key: 'systems', required: true, names: ['systems'],
-      value: ctx => {
-        const picks = [text(ctx.job.ro_type), text(ctx.job.faucet_finish)].filter(Boolean)
-        const base = text(ctx.job.system_template)
-        return picks.length > 0 ? `${base} (${picks.join(', ')})` : base
-      } },
+      value: ctx => systemsLine(ctx, [text(ctx.job.faucet_finish)]) },
 
     { key: 'sale_price', required: true, names: ['sale_price'],
       value: ctx => money(ctx.job.sale_price) },
@@ -295,13 +313,7 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
     // the installer has to know which control valve to take, and the customer
     // never chose it.
     { key: 'systems', required: true, names: ['systems'],
-      value: ctx => {
-        const picks = [
-          text(ctx.job.ro_type), text(ctx.job.faucet_finish), text(ctx.job.valve_type),
-        ].filter(Boolean)
-        const base = text(ctx.job.system_template)
-        return picks.length > 0 ? `${base} (${picks.join(', ')})` : base
-      } },
+      value: ctx => systemsLine(ctx, [text(ctx.job.faucet_finish), text(ctx.job.valve_type)]) },
 
     // the point of the document, in two columns since template 5532104 was
     // split on 2026-09-16. One line per part, quantity first, from the same

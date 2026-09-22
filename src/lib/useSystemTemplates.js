@@ -29,7 +29,7 @@ export function useSystemTemplates({ activeOnly = false, keepIds = [] } = {}) {
       () => {
         const query = supabase
           .from('system_templates')
-          .select('id, label, default_price, active, sort_order, notes')
+          .select('id, label, long_label, default_price, active, sort_order, notes')
 
         if (!activeOnly) return query
         if (!keep) return query.eq('active', true)

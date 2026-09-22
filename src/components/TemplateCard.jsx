@@ -31,6 +31,11 @@ export default function TemplateCard({
             {template.label}
             {!template.active && <span className="inv-inactive">Inactive</span>}
           </h2>
+          {/* What a customer sees. Named here so the office can tell at a
+              glance which sheets still read as an internal label on a quote. */}
+          <p className={template.long_label ? 'tpl-card-long' : 'tpl-card-long tpl-card-long-missing'}>
+            {template.long_label || 'No long name yet, so documents use the short one'}
+          </p>
           <p className="tpl-card-meta">
             {price == null ? 'Price set per job' : `${formatCurrency(price)} default price`}
             {' · '}
