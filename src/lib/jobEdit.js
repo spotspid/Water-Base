@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { attempt } from './errors'
+import { roPickProblem } from './roPicks'
 
 // Editing a saved job. The form's shape, its validation, and the one call
 // that saves it.
@@ -132,6 +133,9 @@ export function validateEdit(form, { job, hasOwnParts = false } = {}) {
     return 'Taking the build sheet off this job would leave it with no parts list at all. '
       + 'Pick another sheet, or list this job’s parts against the job first.'
   }
+
+  const roProblem = roPickProblem(form)
+  if (roProblem) return roProblem
 
   const price = Number(form.sale_price)
   if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'

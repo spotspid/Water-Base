@@ -1,6 +1,6 @@
 import {
   CHECKLIST_ITEMS, CHECKLIST_TOTAL, LINE_MATERIALS, LINE_SIZES, SITE_KEYS, SIZING_KEYS,
-  YES, NO, UNKNOWN,
+  YES, NO, UNKNOWN, NOT_SURE, NOT_SURE_LABEL, isNotSure, notSureItems, supportsNotSure,
   checklistFromForm, checklistToForm, emptyChecklistForm, isAnswered, itemProblem,
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
@@ -198,6 +198,10 @@ const cases = [
   ...LINE_MATERIALS.map(([v]) => ['', { main_line_material: v }]),
   ['Dog in yard', { shutoff_location: 'Garage', removing_old_equipment: NO,
     drain_distance_ft: 40, main_line_material: 'galvanized', main_line_size: 'half' }],
+  ['', { shutoff_location: NOT_SURE }], ['', { removing_old_equipment: NOT_SURE }],
+  ['', { drain_distance_ft: NOT_SURE }], ['', { main_line_material: NOT_SURE }],
+  ['Gate code 1234', { shutoff_location: NOT_SURE, removing_old_equipment: NOT_SURE,
+    drain_distance_ft: NOT_SURE, main_line_material: NOT_SURE, main_line_size: NOT_SURE }],
 ]
 for (const [typed, s] of cases) {
   const app = workOrderSiteConditions(typed, s)
@@ -288,6 +292,63 @@ check('a job that is not Quoted cannot be sent as a quote',
     customer_email: 'a@b.co' }, { sending: true }).startsWith('Only a quote can be sent'))
 check('the old quoteMode option no longer changes anything',
   validateNewJob(quoteNoEmail, { quoteMode: true }) === '')
+
+// --- Not sure yet ------------------------------------------------------------
+//
+// Asked, and nobody in the house knew. Not a blank, which is nobody asked, and
+// not an answer. On a quote it clears the amber; once the job is sold it goes
+// amber again, because then somebody has to find out.
+
+const nsForm = { ...emptyChecklistForm() }
+for (const item of CHECKLIST_ITEMS) if (supportsNotSure(item)) nsForm[item.key] = NOT_SURE
+
+check('every question offers it except irrigation, which already has Unknown',
+  CHECKLIST_ITEMS.filter(i => !supportsNotSure(i)).map(i => i.key).join() === 'irrigation_lines')
+check('the words on screen are Not sure yet', NOT_SURE_LABEL === 'Not sure yet')
+
+const quoteJob = { ...fullJob, status: 'quoted' }
+const soldJob = { ...fullJob, status: 'sold' }
+check('on a quote, not sure clears every amber it can',
+  unansweredItems(nsForm, quoteJob).map(i => i.key).join() === 'irrigation_lines',
+  unansweredItems(nsForm, quoteJob).map(i => i.key).join())
+check('once sold, every not sure is amber again',
+  unansweredItems(nsForm, soldJob).length === 10, String(unansweredItems(nsForm, soldJob).length))
+check('with no status it is treated as a quote, which is the only place it shows',
+  unansweredItems(nsForm, fullJob).length === 1)
+check('isAnswered takes the stage, and a quote is the default',
+  isAnswered(nsForm, 'bathrooms') && !isAnswered(nsForm, 'bathrooms', { quote: false }))
+check('it is never mistaken for a real answer', notSureItems(nsForm).length === 9)
+check('and a real answer is never counted as not sure',
+  notSureItems({ ...blank, bathrooms: '2', receptacle_within_6ft: NO }).length === 0)
+check('isNotSure reads it', isNotSure(nsForm, 'drain_distance_ft') && !isNotSure(blank, 'drain_distance_ft'))
+
+check('not sure in a count box is not a problem', itemProblem(nsForm, 'drain_distance_ft') === '')
+check('and the save does not refuse it', validateChecklist(nsForm) === '')
+check('a real bad number still is', itemProblem({ ...blank, bathrooms: 'lots' }, 'bathrooms') !== '')
+
+const nsStored = checklistFromForm(nsForm)
+check('it is stored as not_sure for a count, text, yes or no, and a list',
+  ['people_in_home', 'shutoff_location', 'space_confirmed', 'main_line_material']
+    .every(k => nsStored[k] === NOT_SURE), JSON.stringify(nsStored))
+check('and not as a number, a zero or a blank', nsStored.drain_distance_ft === NOT_SURE)
+const nsBack = checklistToForm(nsStored)
+check('it reads back unchanged', Object.keys(nsStored).every(k => nsBack[k] === NOT_SURE))
+check('irrigation will not store it, because it is not offered there',
+  !('irrigation_lines' in checklistFromForm({ ...blank, irrigation_lines: NOT_SURE })))
+check('a not sure upcharge is not carried: only a yes has one',
+  !('old_equipment_upcharge' in checklistFromForm({ ...blank, removing_old_equipment: NOT_SURE,
+    old_equipment_upcharge: '100' })))
+
+const nsLines = workOrderSiteLines(nsStored)
+check('the work order never prints the stored word', !nsLines.join(' ').includes('not_sure'),
+  nsLines.join(' | '))
+check('and they read, in order, as sentences an installer can act on', nsLines.join(' | ') === [
+  'Main water shutoff: not confirmed, find it on arrival',
+  'Old equipment: not decided, confirm with the customer before starting',
+  'Drain run: not measured',
+  'Main water line: material not confirmed',
+].join(' | '), nsLines.join(' | '))
+
 
 console.log(failed === 0
   ? '\nAll checklist checks passed.'

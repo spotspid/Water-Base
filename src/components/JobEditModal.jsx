@@ -5,6 +5,7 @@ import {
 } from '../lib/jobEdit'
 import CustomerFields from './CustomerFields'
 import JobSystemFields from './JobSystemFields'
+import { applyRoPick } from '../lib/roPicks'
 import JobEditDetailFields from './JobEditDetailFields'
 import Modal from './Modal'
 
@@ -78,7 +79,8 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
     // Unlike the new job form, picking a sheet here does not rewrite the sale
     // price. The price on a saved job is what was agreed with the customer,
     // and a default overwriting it would be a quiet discount or a quiet raise.
-    setForm(f => ({ ...f, [name]: value }))
+    // Picking No RO sets the faucet to N/A in the same step; see roPicks.js.
+    setForm(f => applyRoPick(f, name, value))
   }
 
   async function handleSubmit(e) {

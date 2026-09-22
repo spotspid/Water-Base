@@ -46,6 +46,34 @@ export const YES = 'yes'
 export const NO = 'no'
 export const UNKNOWN = 'unknown'
 
+// "Not sure yet": the question was asked and nobody in the house knew. That is
+// different from a blank, which means nobody asked, and different from a real
+// answer. On a quote it clears the amber, because a quote goes out with
+// things still to find out and the salesperson did their part. Once the job
+// is sold it goes amber again, because by then somebody has to go and find
+// out. On screen it never looks like an answer.
+//
+// Irrigation does not get it. It already has Unknown, which means the same
+// thing and has always counted as an answer.
+export const NOT_SURE = 'not_sure'
+export const NOT_SURE_LABEL = 'Not sure yet'
+
+export function supportsNotSure(item) {
+  return Boolean(item) && item.kind !== 'yesnounknown'
+}
+
+export function isNotSure(form, key) {
+  return String(form?.[key] ?? '').trim() === NOT_SURE
+}
+
+// The one place that decides whether this checklist belongs to a quote. The
+// New quote form passes its own form, whose status can be changed before it
+// is saved; the drawer passes the job. Anything with no status is treated as
+// a quote, which is the only place the checklist is shown.
+function onQuote(job) {
+  return (job?.status ?? 'quoted') === 'quoted'
+}
+
 // The order is the order the questions get asked in a house.
 export const CHECKLIST_ITEMS = [
   { key: 'people_in_home', label: 'People in home', kind: 'count' },
@@ -125,7 +153,8 @@ export function checklistToForm(raw) {
 
   for (const item of CHECKLIST_ITEMS) {
     const v = src[item.key]
-    if (item.kind === 'count') form[item.key] = asCountString(v)
+    if (v === NOT_SURE && supportsNotSure(item)) form[item.key] = NOT_SURE
+    else if (item.kind === 'count') form[item.key] = asCountString(v)
     else if (item.kind === 'text') form[item.key] = typeof v === 'string' ? v : ''
     else if (item.kind === 'choice') form[item.key] = asChoice(v, optionValues(item))
     else if (item.kind === 'yesno') form[item.key] = asChoice(v, [YES, NO])
@@ -164,7 +193,7 @@ export function itemProblem(form, key) {
   const item = itemFor(key)
   if (item?.kind === 'count') {
     const raw = String(f[key] ?? '').trim()
-    if (raw === '') return ''
+    if (raw === '' || (raw === NOT_SURE && supportsNotSure(item))) return ''
     const n = Number(raw)
     if (Number.isInteger(n) && n >= 0) return ''
     return `${item.label} must be a whole number, zero or more.`
@@ -210,6 +239,10 @@ export function checklistFromForm(form) {
   for (const item of CHECKLIST_ITEMS) {
     const raw = String(f[item.key] ?? '').trim()
     if (raw === '') continue
+    if (raw === NOT_SURE && supportsNotSure(item)) {
+      out[item.key] = NOT_SURE
+      continue
+    }
     if (item.kind === 'count') {
       const n = Number(raw)
       if (Number.isInteger(n) && n >= 0) out[item.key] = n
@@ -245,9 +278,11 @@ export function isEmptyChecklist(stored) {
  * an argument on install day. A value itemProblem refuses is not answered
  * either.
  */
-export function isAnswered(form, key) {
+export function isAnswered(form, key, { quote = true } = {}) {
   const v = String(form?.[key] ?? '').trim()
   if (v === '') return false
+  // Not sure yet clears the amber on a quote and nowhere else. See NOT_SURE.
+  if (v === NOT_SURE && supportsNotSure(itemFor(key))) return quote
   // An unusable value is not an answer. It will not be stored, so counting it
   // would say "All 3 answered" over a box holding 2.5 bathrooms.
   if (itemProblem(form, key)) return false
@@ -264,8 +299,9 @@ export function isAnswered(form, key) {
  * quote form and the job row in the drawer.
  */
 export function unansweredItems(form, job) {
+  const quote = onQuote(job)
   const missing = CHECKLIST_ITEMS
-    .filter(item => !isAnswered(form, item.key))
+    .filter(item => !isAnswered(form, item.key, { quote }))
     .map(item => ({ key: item.key, label: item.label, onJob: false }))
 
   for (const item of JOB_FIELD_ITEMS) {
@@ -278,6 +314,17 @@ export function unansweredItems(form, job) {
 }
 
 export const CHECKLIST_TOTAL = CHECKLIST_ITEMS.length + JOB_FIELD_ITEMS.length
+
+/**
+ * The questions answered Not sure yet, in screen order. Counted apart from
+ * real answers so the checklist never reports "All 10 answered" over three
+ * shrugs.
+ */
+export function notSureItems(form) {
+  return CHECKLIST_ITEMS
+    .filter(item => supportsNotSure(item) && isNotSure(form, item.key))
+    .map(item => ({ key: item.key, label: item.label }))
+}
 
 // The stored value printed as a person says it. A value not on the list
 // prints nothing, because a row holding something unrecognised is not
@@ -309,10 +356,16 @@ export function workOrderSiteLines(stored) {
   const s = stored && typeof stored === 'object' ? stored : {}
   const lines = []
 
+  // Not sure yet prints as a sentence the installer can act on, never as the
+  // stored word. It is on the work order at all because by then it is a thing
+  // to check at the door.
   const shutoff = typeof s.shutoff_location === 'string' ? s.shutoff_location.trim() : ''
-  if (shutoff) lines.push(`Main water shutoff: ${shutoff}`)
+  if (shutoff === NOT_SURE) lines.push('Main water shutoff: not confirmed, find it on arrival')
+  else if (shutoff) lines.push(`Main water shutoff: ${shutoff}`)
 
-  if (s.removing_old_equipment === YES) {
+  if (s.removing_old_equipment === NOT_SURE) {
+    lines.push('Old equipment: not decided, confirm with the customer before starting')
+  } else if (s.removing_old_equipment === YES) {
     const up = Number(s.old_equipment_upcharge)
     lines.push(Number.isFinite(up) && s.old_equipment_upcharge !== undefined && s.old_equipment_upcharge !== null
       ? `Remove old equipment (upcharge ${money(up)})`
@@ -324,13 +377,19 @@ export function workOrderSiteLines(stored) {
   // Zero feet is an answer and prints. Absent, or anything that is not a whole
   // number of feet, prints nothing rather than a guess at what was meant.
   const drain = Number(s.drain_distance_ft)
-  if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
+  if (s.drain_distance_ft === NOT_SURE) {
+    lines.push('Drain run: not measured')
+  } else if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
     && s.drain_distance_ft !== '' && Number.isInteger(drain) && drain >= 0) {
     lines.push(`Drain run: ${drain} ft`)
   }
 
-  const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
-  if (material) lines.push(`Main water line: ${material}`)
+  if (s.main_line_material === NOT_SURE) {
+    lines.push('Main water line: material not confirmed')
+  } else {
+    const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
+    if (material) lines.push(`Main water line: ${material}`)
+  }
 
   return lines
 }

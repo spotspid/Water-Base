@@ -33,6 +33,9 @@ const MATERIAL_LABELS: Record<string, string> = {
   galvanized: 'Galvanized',
 }
 
+// The stored value for "Not sure yet", as src/lib/salesChecklist.js calls it.
+const NOT_SURE = 'not_sure'
+
 function money(n: number): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -42,9 +45,12 @@ export function workOrderSiteLines(stored: unknown): string[] {
   const lines: string[] = []
 
   const shutoff = typeof s.shutoff_location === 'string' ? s.shutoff_location.trim() : ''
-  if (shutoff) lines.push(`Main water shutoff: ${shutoff}`)
+  if (shutoff === NOT_SURE) lines.push('Main water shutoff: not confirmed, find it on arrival')
+  else if (shutoff) lines.push(`Main water shutoff: ${shutoff}`)
 
-  if (s.removing_old_equipment === 'yes') {
+  if (s.removing_old_equipment === NOT_SURE) {
+    lines.push('Old equipment: not decided, confirm with the customer before starting')
+  } else if (s.removing_old_equipment === 'yes') {
     const up = Number(s.old_equipment_upcharge)
     lines.push(Number.isFinite(up) && s.old_equipment_upcharge !== undefined && s.old_equipment_upcharge !== null
       ? `Remove old equipment (upcharge ${money(up)})`
@@ -54,13 +60,19 @@ export function workOrderSiteLines(stored: unknown): string[] {
   }
 
   const drain = Number(s.drain_distance_ft)
-  if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
+  if (s.drain_distance_ft === NOT_SURE) {
+    lines.push('Drain run: not measured')
+  } else if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
     && s.drain_distance_ft !== '' && Number.isInteger(drain) && drain >= 0) {
     lines.push(`Drain run: ${drain} ft`)
   }
 
-  const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
-  if (material) lines.push(`Main water line: ${material}`)
+  if (s.main_line_material === NOT_SURE) {
+    lines.push('Main water line: material not confirmed')
+  } else {
+    const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
+    if (material) lines.push(`Main water line: ${material}`)
+  }
 
   return lines
 }

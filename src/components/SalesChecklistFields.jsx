@@ -1,6 +1,6 @@
 import {
-  CHECKLIST_ITEMS, JOB_FIELD_ITEMS, NO, UNKNOWN, YES,
-  isAnswered, itemProblem, unansweredItems,
+  CHECKLIST_ITEMS, JOB_FIELD_ITEMS, NO, NOT_SURE, NOT_SURE_LABEL, UNKNOWN, YES,
+  isAnswered, isNotSure, itemProblem, notSureItems, supportsNotSure, unansweredItems,
 } from '../lib/salesChecklist'
 
 // The sales checklist, as fields.
@@ -38,7 +38,13 @@ export default function SalesChecklistFields({
   const shownKeys = new Set([...items, ...jobItems].map(i => i.key))
   const missing = unansweredItems(value, job).filter(m => shownKeys.has(m.key))
   const total = items.length + jobItems.length
-  const answered = total - missing.length
+  // Not sure yet clears the amber on a quote, so it is not in missing there,
+  // but it is not an answer either. Counted apart so the header never says
+  // "All answered" over questions nobody could answer.
+  const quote = (job?.status ?? 'quoted') === 'quoted'
+  const notSure = notSureItems(value).filter(m => shownKeys.has(m.key))
+  const notSureCleared = quote ? notSure.length : 0
+  const answered = total - missing.length - notSureCleared
 
   function set(key, next) {
     const updated = { ...value, [key]: next }
@@ -53,14 +59,13 @@ export default function SalesChecklistFields({
       <h2>{title}</h2>
       <p className={missing.length === 0 ? 'checklist-count checklist-count-done' : 'checklist-count'}
         role="status">
-        {missing.length === 0
-          ? `All ${total} answered.`
-          : `${answered} of ${total} answered. ${missing.length} still to ask, shown in amber.`}
+        {countSentence({ total, answered, missing: missing.length, notSure: notSureCleared })}
       </p>
 
       <div className="form-grid">
         {items.map(item => {
-          const open = !isAnswered(value, item.key)
+          const open = !isAnswered(value, item.key, { quote })
+          const unsure = supportsNotSure(item) && isNotSure(value, item.key)
           // A value typed wrong goes amber as it is typed, with the sentence
           // the save would refuse it with, rather than passing as answered
           // until the button is pressed.
@@ -68,23 +73,38 @@ export default function SalesChecklistFields({
           const id = `sc_${item.key}`
           return (
             <div key={item.key}
-              className={`field${item.kind === 'text' ? ' field-full' : ''}${open ? ' field-unanswered' : ''}`}>
+              className={`field${item.kind === 'text' ? ' field-full' : ''}`
+                + `${open ? ' field-unanswered' : ''}${unsure && !open ? ' field-notsure' : ''}`}>
               <label htmlFor={id}>
                 {item.label}
-                {open && <span className="unanswered-tag">{problem ? 'Check this' : 'Not answered'}</span>}
+                {/* Not sure yet has its own tag, in amber once the job is past
+                    quoting and in slate while it is still a quote. */}
+                {unsure
+                  ? <span className={open ? 'unanswered-tag' : 'notsure-tag'}>{NOT_SURE_LABEL}</span>
+                  : open && <span className="unanswered-tag">{problem ? 'Check this' : 'Not answered'}</span>}
               </label>
 
+              {/* A box holding Not sure yet is shown empty and greyed rather
+                  than filled with the stored word. */}
               {item.kind === 'count' && (
                 <input id={id} name={id} type="number" min="0" step="1" inputMode="numeric"
-                  value={value[item.key]} disabled={disabled}
+                  value={unsure ? '' : value[item.key]} disabled={disabled || unsure}
                   onChange={e => set(item.key, e.target.value)} />
               )}
 
               {item.kind === 'text' && (
                 <input id={id} name={id} type="text"
-                  placeholder="Basement by the water heater, garage, crawlspace..."
-                  value={value[item.key]} disabled={disabled}
+                  placeholder={unsure ? '' : 'Basement by the water heater, garage, crawlspace...'}
+                  value={unsure ? '' : value[item.key]} disabled={disabled || unsure}
                   onChange={e => set(item.key, e.target.value)} />
+              )}
+
+              {(item.kind === 'count' || item.kind === 'text') && supportsNotSure(item) && (
+                <label className="notsure-toggle">
+                  <input type="checkbox" checked={unsure} disabled={disabled}
+                    onChange={e => set(item.key, e.target.checked ? NOT_SURE : '')} />
+                  {' '}{NOT_SURE_LABEL}
+                </label>
               )}
 
               {/* A named list rather than yes or no, for the two that have
@@ -95,6 +115,7 @@ export default function SalesChecklistFields({
                   onChange={e => set(item.key, e.target.value)}>
                   <option value="">Not answered</option>
                   {item.options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+                  <option value={NOT_SURE}>{NOT_SURE_LABEL}</option>
                 </select>
               )}
 
@@ -103,6 +124,7 @@ export default function SalesChecklistFields({
                   onChange={e => set(item.key, e.target.value)}>
                   <option value="">Not answered</option>
                   {CHOICES[item.kind].map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+                  {supportsNotSure(item) && <option value={NOT_SURE}>{NOT_SURE_LABEL}</option>}
                 </select>
               )}
 
@@ -152,4 +174,13 @@ export default function SalesChecklistFields({
       {jobFieldsNote && <p className="inv-ledger-note">{jobFieldsNote}</p>}
     </section>
   )
+}
+
+// The line under the heading. A Not sure yet is never counted as answered,
+// and is named in its own clause when it is standing in for one.
+function countSentence({ total, answered, missing, notSure }) {
+  const unsure = notSure > 0 ? `, ${notSure} not sure yet` : ''
+  if (missing === 0 && notSure === 0) return `All ${total} answered.`
+  if (missing === 0) return `Nothing left to ask. ${answered} of ${total} answered${unsure}.`
+  return `${answered} of ${total} answered${unsure}. ${missing} still to ask, shown in amber.`
 }

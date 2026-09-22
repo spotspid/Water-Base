@@ -2,6 +2,7 @@ import { useSettings } from '../lib/settings'
 import { suggestedDeposit } from '../lib/depositState'
 import { formatCurrency } from '../lib/inventory'
 import JobPartsPreview from './JobPartsPreview'
+import { NO_RO, faucetChoices } from '../lib/roPicks'
 
 // What is being sold and what it costs, plus the live parts preview for the
 // chosen template. Split out of NewJob so that page stays about the form's
@@ -91,15 +92,24 @@ export default function JobSystemFields({
         </div>
         <div className="field">
           <label htmlFor="faucet_finish">Faucet finish</label>
+          {/* With No RO there is no faucet, so the only finish is N/A and the
+              box is locked on it. Otherwise N/A is not offered at all. */}
           <select id="faucet_finish" name="faucet_finish" required
             value={form.faucet_finish} onChange={onChange}
-            disabled={disabled || lockedPicks || loadingSettings}>
-            <option value="">
-              {loadingSettings ? 'Loading finishes...' : 'Select finish...'}
-            </option>
-            {finishes.map(f => <option key={f} value={f}>{f}</option>)}
+            disabled={disabled || lockedPicks || loadingSettings || form.ro_type === NO_RO}>
+            {form.ro_type !== NO_RO && (
+              <option value="">
+                {loadingSettings ? 'Loading finishes...' : 'Select finish...'}
+              </option>
+            )}
+            {faucetChoices(finishes, form.ro_type, form.faucet_finish)
+              .map(f => <option key={f} value={f}>{f}</option>)}
           </select>
-          <span className="field-hint">Decides which faucet the template consumes.</span>
+          <span className="field-hint">
+            {form.ro_type === NO_RO
+              ? 'No RO, so no RO faucet.'
+              : 'Decides which faucet the template consumes.'}
+          </span>
         </div>
         <div className="field">
           <label htmlFor="ro_type">RO type</label>
@@ -112,7 +122,9 @@ export default function JobSystemFields({
             {roTypes.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <span className="field-hint">
-            Decides which RO unit the build sheet consumes. Same price either way.
+            {form.ro_type === NO_RO
+              ? 'The RO unit, its faucet and the alkaline filter come off this job’s parts.'
+              : 'Decides which RO unit the build sheet consumes. Same price either way.'}
           </span>
         </div>
         <div className="field">

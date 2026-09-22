@@ -1,3 +1,5 @@
+import { roPickProblem } from './roPicks.js'
+
 // Validation for the New job and New quote form.
 //
 // Moved out of NewJob.jsx so the page stays about state and submission, and so
@@ -37,6 +39,9 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
     if (!form.faucet_finish) return 'Pick a faucet finish.'
     if (!form.ro_type) return 'Pick an RO type.'
   }
+
+  const roProblem = roPickProblem(form)
+  if (roProblem) return roProblem
 
   const price = Number(form.sale_price)
   if (!Number.isFinite(price) || price < 0) return 'Sale price must be zero or greater.'

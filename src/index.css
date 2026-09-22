@@ -1306,7 +1306,7 @@ a {
   margin-left: -13px;
 }
 
-.field-unanswered input,
+.field-unanswered input:not([type="checkbox"]),
 .field-unanswered select {
   border-color: var(--amber);
   background: var(--amber-soft);
@@ -1323,6 +1323,69 @@ a {
   color: var(--amber-ink);
   background: var(--amber-soft);
   vertical-align: middle;
+}
+
+/* Not sure yet on a quote. Asked, and nobody in the house knew: not a gap, so
+   not amber, and not an answer, so not left plain either. A dashed slate rule
+   where the amber one would be, and a slate tag, so it reads at a glance as
+   the third thing it is. Once the job is sold the same field turns amber,
+   through .field-unanswered, because by then somebody has to find out. */
+.field-notsure {
+  border-left: 3px dashed var(--muted);
+  padding-left: 10px;
+  margin-left: -13px;
+}
+
+.field-notsure input:not([type="checkbox"]),
+.field-notsure select {
+  border-style: dashed;
+  background: var(--line-soft);
+  color: var(--muted);
+}
+
+.notsure-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--body-text);
+  background: var(--line);
+  vertical-align: middle;
+}
+
+/* The checkbox under a number or text box. Small, because it is the answer
+   people reach for least, and it should not compete with the box above it. */
+.notsure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* A plain checkbox. The field's own input rules are written for text boxes,
+   and applied to this one they drew it as a wide rounded pill in amber, and
+   once ticked the dashed not sure style painted over the tick, so a checked
+   box looked empty. */
+.notsure-toggle input[type="checkbox"] {
+  appearance: auto;
+  width: 15px;
+  height: 15px;
+  min-height: 0;
+  margin: 0 6px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  box-shadow: none;
+  accent-color: var(--body-text);
+  cursor: pointer;
 }
 
 /* The sentence under a checklist box holding a value the save would refuse.

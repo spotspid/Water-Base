@@ -11,6 +11,8 @@ const APP_CODES = new Set([
   'WB016', 'WB017', 'WB018', 'WB019',
   'WB020', 'WB021', 'WB022', 'WB023', 'WB024',
   'WB025', 'WB026', 'WB027',
+  // No RO: faucet N/A out of place, a sheet left empty, the words renamed
+  'WB028', 'WB029', 'WB030',
 ])
 
 const MIGRATION_HINT =

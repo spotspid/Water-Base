@@ -6,6 +6,7 @@ import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
 import { validateNewJob } from '../lib/newJobForm'
+import { applyRoPick } from '../lib/roPicks'
 import {
   SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm, isEmptyChecklist,
   validateChecklist,
@@ -111,7 +112,8 @@ export default function NewJob() {
       return
     }
     if (name === 'deposit_amount') setDepositTouched(true)
-    setForm(f => ({ ...f, [name]: value }))
+    // Picking No RO sets the faucet to N/A in the same step; see roPicks.js.
+    setForm(f => applyRoPick(f, name, value))
   }
 
   // Enter in a field submits the form, and that is Save quote. A keystroke
