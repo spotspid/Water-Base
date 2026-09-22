@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import {
   CHECKLIST_ITEMS, CHECKLIST_TOTAL, LINE_MATERIALS, LINE_SIZES, SITE_KEYS, SIZING_KEYS,
   YES, NO, UNKNOWN, NOT_SURE, NOT_SURE_LABEL, isNotSure, notSureItems, supportsNotSure,
@@ -339,15 +340,39 @@ check('a not sure upcharge is not carried: only a yes has one',
   !('old_equipment_upcharge' in checklistFromForm({ ...blank, removing_old_equipment: NOT_SURE,
     old_equipment_upcharge: '100' })))
 
+// A job with any Not sure yet cannot be given a date, a crew or an install
+// (jobs_guard_unsure), so it never reaches a work order, and the work order has
+// no wording for it. If one ever arrived it prints nothing, never the raw word.
 const nsLines = workOrderSiteLines(nsStored)
-check('the work order never prints the stored word', !nsLines.join(' ').includes('not_sure'),
-  nsLines.join(' | '))
-check('and they read, in order, as sentences an installer can act on', nsLines.join(' | ') === [
-  'Main water shutoff: not confirmed, find it on arrival',
-  'Old equipment: not decided, confirm with the customer before starting',
-  'Drain run: not measured',
-  'Main water line: material not confirmed',
-].join(' | '), nsLines.join(' | '))
+check('the work order prints nothing for Not sure yet', nsLines.length === 0, nsLines.join(' | '))
+check('and never the stored word',
+  !workOrderSiteConditions('Dog in yard', nsStored).includes('not_sure')
+  && workOrderSiteConditions('Dog in yard', nsStored) === 'Dog in yard')
+check('real answers beside it still print',
+  workOrderSiteLines({ ...nsStored, shutoff_location: 'Garage' }).join() === 'Main water shutoff: Garage')
+
+// --- the database names the open questions the way the screen does -------------
+//
+// jobs_guard_unsure refuses a date, a crew or an install and lists what is
+// still Not sure yet. It lists them with its own copy of the labels, because
+// the database cannot import this file. Every question that offers Not sure
+// yet must appear there, under the label the checklist shows, in the same
+// order, or the refusal would send David looking for a question by a name the
+// screen does not use.
+const guard = readFileSync(new URL('../supabase/migrations/20260922010000_not_sure_blocks_scheduling.sql',
+  import.meta.url), 'utf8')
+const sqlPairs = [...guard.matchAll(/\(\s*(\d+),\s*'([a-z0-9_]+)',\s*'([^']+)'\)/g)]
+  .map(m => ({ ord: Number(m[1]), key: m[2], label: m[3] }))
+const offered = CHECKLIST_ITEMS.filter(supportsNotSure)
+check('the database lists every question that offers Not sure yet',
+  offered.every(i => sqlPairs.some(q => q.key === i.key)),
+  offered.filter(i => !sqlPairs.some(q => q.key === i.key)).map(i => i.key).join())
+check('and nothing else', sqlPairs.length === offered.length, `${sqlPairs.length} vs ${offered.length}`)
+check('under the label the checklist shows',
+  offered.every(i => sqlPairs.find(q => q.key === i.key)?.label === i.label),
+  offered.filter(i => sqlPairs.find(q => q.key === i.key)?.label !== i.label).map(i => i.key).join())
+check('in the order the checklist asks them',
+  [...sqlPairs].sort((a, b) => a.ord - b.ord).map(q => q.key).join() === offered.map(i => i.key).join())
 
 
 console.log(failed === 0

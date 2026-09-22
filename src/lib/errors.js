@@ -13,6 +13,9 @@ const APP_CODES = new Set([
   'WB025', 'WB026', 'WB027',
   // No RO: faucet N/A out of place, a sheet left empty, the words renamed
   'WB028', 'WB029', 'WB030',
+  // a date, a crew or an install refused while a checklist answer is Not sure yet;
+  // the sentence names the open questions, so it passes through as written
+  'WB031',
 ])
 
 const MIGRATION_HINT =

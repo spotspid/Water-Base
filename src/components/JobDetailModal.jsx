@@ -177,10 +177,13 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 
-      {/* Quoted jobs only, from the Sept 17 call: the questions asked in the
-          house before the quote goes out. Two of the answers print on the
-          work order under site conditions. */}
-      {job.status === QUOTED_STATUS && (
+      {/* Quoted and sold jobs: the questions asked in the house before the
+          quote goes out, and still open on a sold job until it is booked. A
+          job with any answer still Not sure yet cannot be given a date, a crew
+          or an install (jobs_guard_unsure), so a sold job is where David
+          answers them, and on a sold job they show amber. Once a job is
+          booked every answer is settled, so the panel is not needed after. */}
+      {(job.status === QUOTED_STATUS || job.status === 'sold') && (
         <JobSalesChecklist
           job={job}
           onChanged={onChanged}

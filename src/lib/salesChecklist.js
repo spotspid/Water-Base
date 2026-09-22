@@ -356,16 +356,14 @@ export function workOrderSiteLines(stored) {
   const s = stored && typeof stored === 'object' ? stored : {}
   const lines = []
 
-  // Not sure yet prints as a sentence the installer can act on, never as the
-  // stored word. It is on the work order at all because by then it is a thing
-  // to check at the door.
+  // Not sure yet has no wording here. A job with any answer still Not sure yet
+  // cannot be given a date, a crew or an install (the jobs_guard_unsure
+  // trigger), so it never reaches a work order. If one ever did, it prints
+  // nothing rather than the stored word.
   const shutoff = typeof s.shutoff_location === 'string' ? s.shutoff_location.trim() : ''
-  if (shutoff === NOT_SURE) lines.push('Main water shutoff: not confirmed, find it on arrival')
-  else if (shutoff) lines.push(`Main water shutoff: ${shutoff}`)
+  if (shutoff && shutoff !== NOT_SURE) lines.push(`Main water shutoff: ${shutoff}`)
 
-  if (s.removing_old_equipment === NOT_SURE) {
-    lines.push('Old equipment: not decided, confirm with the customer before starting')
-  } else if (s.removing_old_equipment === YES) {
+  if (s.removing_old_equipment === YES) {
     const up = Number(s.old_equipment_upcharge)
     lines.push(Number.isFinite(up) && s.old_equipment_upcharge !== undefined && s.old_equipment_upcharge !== null
       ? `Remove old equipment (upcharge ${money(up)})`
@@ -377,19 +375,13 @@ export function workOrderSiteLines(stored) {
   // Zero feet is an answer and prints. Absent, or anything that is not a whole
   // number of feet, prints nothing rather than a guess at what was meant.
   const drain = Number(s.drain_distance_ft)
-  if (s.drain_distance_ft === NOT_SURE) {
-    lines.push('Drain run: not measured')
-  } else if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
+  if (s.drain_distance_ft !== undefined && s.drain_distance_ft !== null
     && s.drain_distance_ft !== '' && Number.isInteger(drain) && drain >= 0) {
     lines.push(`Drain run: ${drain} ft`)
   }
 
-  if (s.main_line_material === NOT_SURE) {
-    lines.push('Main water line: material not confirmed')
-  } else {
-    const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
-    if (material) lines.push(`Main water line: ${material}`)
-  }
+  const material = MATERIAL_LABELS[String(s.main_line_material ?? '')]
+  if (material) lines.push(`Main water line: ${material}`)
 
   return lines
 }

@@ -6,7 +6,10 @@ import {
 } from '../lib/salesChecklist'
 import SalesChecklistFields from './SalesChecklistFields'
 
-// The sales checklist on a quoted job, in its drawer.
+// The sales checklist on a quoted or sold job, in its drawer.
+//
+// On a sold job it is where a Not sure yet gets answered: the database will
+// not let the job be booked, crewed or installed while one is open.
 //
 // Loads jobs.sales_checklist itself rather than through job_margin, the same
 // way the work order reads it, so the view does not carry a column only this
