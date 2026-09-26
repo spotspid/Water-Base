@@ -10,6 +10,7 @@ the words you actually see on screen.
 ## Guides
 
 - [Quotes](quotes.md): prices sent to customers that nobody has signed yet.
+- [Jobs](jobs.md): sales, from written up to installed.
 
 More pages will be added here as they are walked.
 
