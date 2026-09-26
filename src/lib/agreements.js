@@ -169,3 +169,44 @@ export async function fetchAgreementHistory(jobId) {
     'The earlier documents on this job could not be loaded.',
   )
 }
+
+/**
+ * One page of the DocuSeal account listing, through the function's read only
+ * list mode.
+ *
+ * The API key is an edge function secret, so the browser cannot read DocuSeal
+ * directly and should not: this goes through the same function the sends do,
+ * in the mode that only ever performs a GET. Nothing here writes to DocuSeal
+ * or to Water Base.
+ */
+export async function listSubmissions({ archived = false, after = '' } = {}) {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-agreement', {
+      body: { list: true, archived, ...(after ? { after } : {}) },
+    })
+
+    if (!error) {
+      return {
+        rows: data?.submissions?.data || [],
+        next: data?.submissions?.pagination?.next ?? null,
+        error: null,
+      }
+    }
+
+    let message = error.message || 'DocuSeal could not be read.'
+    try {
+      const body = await error.context?.json?.()
+      if (body?.error) message = body.error
+    } catch {
+      // no JSON body, so the generic message stands
+    }
+
+    return { rows: [], next: null, error: message }
+  } catch (caught) {
+    return {
+      rows: [],
+      next: null,
+      error: caught?.message || 'DocuSeal could not be reached. Check your connection.',
+    }
+  }
+}

@@ -10,6 +10,7 @@ import {
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DocumentRow from '../components/DocumentRow'
+import DocumentsGaps from '../components/DocumentsGaps'
 import './Documents.css'
 
 // Every customer agreement and work order in the business, in one place.
@@ -236,6 +237,11 @@ export default function Documents() {
             )}
           </>
         )}
+
+        {/* Last, because it answers a different question from the rest of the
+            page: not "where is each document" but "what has DocuSeal got that
+            we have not". Read only, and only when asked. */}
+        {hasData && <DocumentsGaps />}
       </div>
     </AppShell>
   )

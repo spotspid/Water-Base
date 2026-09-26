@@ -294,3 +294,18 @@
 
   .doc-install { display: none; }
 }
+
+/* The DocuSeal gap scan, last on the page. Its head holds a button, which the
+   other panel heads do not, so the row has to allow for one. */
+.doc-gaps .dash-panel-head {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-gaps .dash-panel-note {
+  flex: 1 1 260px;
+}
+
+.doc-gaps .doc-group-head {
+  margin-top: 18px;
+}
