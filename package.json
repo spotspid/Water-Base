@@ -24,6 +24,7 @@
     "check:templates": "node scripts/check-templates.js",
     "check:warranty": "node scripts/check-warranty.js",
     "check:embeds": "node scripts/check-embeds.js",
+    "docs:pdf": "python scripts/build-guides-pdf.py",
     "check:cost": "node scripts/check-cost.js",
     "check:profit": "node scripts/check-profit.js",
     "check:search": "node scripts/check-search.js",
