@@ -1,5 +1,6 @@
 import {
-  documentTitle, isTestDocument, nameKey, scanGaps, scheduledFromTitle, signerOf, titleName,
+  documentTitle, isContractorDocument, isTestDocument, nameKey, scanGaps, scheduledFromTitle,
+  signerOf, titleName,
 } from '../src/lib/docusealScan.js'
 
 // Holds the DocuSeal gap scan to the shapes the API actually returns, taken
@@ -62,6 +63,14 @@ check('a contest of names is not a test', !isTestDocument({ template: { name: 'J
 
 check('first and last name only', nameKey('April Y. Stone') === 'april stone')
 
+// Crew paperwork is signed and will never belong to a job, so it is not a gap.
+check('a W9 is crew paperwork', isContractorDocument({ template: { name: 'Contractor W9' } }))
+check('a subcontractor agreement is crew paperwork',
+  isContractorDocument({ template: { name: 'Michigan-Water-Pros-Subcontractor-Agreement' } }))
+check('a customer job order is not', !isContractorDocument({ template: { name: 'Job Order - Donna Burgess - 10/2/26' } }))
+check('a customer agreement is not',
+  !isContractorDocument({ template: { name: 'Michigan Water Pros Installation Agreement - 9/22/2026 - Bruce Weislik' } }))
+
 const jobs = [
   { id: 'j1', customer_name: 'John Ewers', customer_email: 'john@example.com', status: 'sold' },
   { id: 'j2', customer_name: 'April Y. Stone', customer_email: null, status: 'scheduled' },
@@ -82,6 +91,8 @@ const listing = [
   submission({ id: 4, status: 'pending', completed_at: null, template: { name: 'Job Order - Nobody - 9/9/26' } }),
   submission({ id: 5, template: { name: 'Job Order TEMPLATE' } }),
   submission({ id: 6, template: { name: 'Job Order - Already Linked - 9/9/26' } }),
+  submission({ id: 7, template: { name: 'Contractor W9' }, submitters: [{ email: 'jay.awoodward@gmail.com' }] }),
+  submission({ id: 8, template: { name: 'Michigan-Water-Pros-Subcontractor-Agreement' } }),
 ]
 
 const gaps = scanGaps({ submissions: listing, jobs, linkedIds: ['6'] })
@@ -95,6 +106,8 @@ check('and on the name in the title when there is no email',
 check('an unsigned document is not a gap', !gaps.missingJobs.concat(gaps.unlinked).some(r => r.id === '4'))
 check('a template is not a gap', !gaps.missingJobs.concat(gaps.unlinked).some(r => r.id === '5'))
 check('an already linked document is not a gap', !gaps.missingJobs.concat(gaps.unlinked).some(r => r.id === '6'))
+check('a W9 is not a gap', !gaps.missingJobs.concat(gaps.unlinked).some(r => r.id === '7'))
+check('a subcontractor agreement is not a gap', !gaps.missingJobs.concat(gaps.unlinked).some(r => r.id === '8'))
 check('the scheduled day rides along', gaps.missingJobs[0]?.scheduledDate === '2026-09-28', gaps.missingJobs[0]?.scheduledDate)
 check('nothing in, nothing out', scanGaps().missingJobs.length === 0 && scanGaps({}).unlinked.length === 0)
 

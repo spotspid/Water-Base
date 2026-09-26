@@ -186,7 +186,8 @@ export default function DocumentsGaps() {
           </p>
           <p className="inv-ledger-note">
             Nobody wrote these up, so they hold no parts, appear on no schedule and count in no
-            forecast. Contractor paperwork, such as a W9, shows here too and belongs to nobody.
+            forecast. Customer paperwork only: a W9 or a subcontractor agreement belongs to the
+            crew, not to a job, so it is left out.
           </p>
           <GapTable rows={result.missingJobs} showJob={false} />
         </>

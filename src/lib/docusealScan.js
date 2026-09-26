@@ -22,6 +22,11 @@ const COMPANY_EMAIL = /@michiganwaterpros\.com$/i
 // Test sends and the templates themselves, which are not customer paperwork.
 const TEST_TITLE = /\b(zz[\s-]*test|test)\b|^(job order template|master - job template)$/i
 
+// Paperwork about the crew rather than a customer: a W9, a subcontractor
+// agreement. These are signed, real and permanent, and they will never have a
+// job, so listing them as a gap is a row nobody can ever clear.
+const CONTRACTOR_TITLE = /\bw-?9\b|subcontractor[\s-]*agreement|contractor[\s-]*agreement/i
+
 // A date at the end of a document title, as the job orders carry it:
 // "Job Order - Glen Hooker - 9/28/26".
 const TITLE_DATE = /(\d{1,2})[/](\d{1,2})[/](\d{2,4})\s*$/
@@ -51,6 +56,10 @@ export function documentTitle(submission) {
 
 export function isTestDocument(submission) {
   return TEST_TITLE.test(documentTitle(submission))
+}
+
+export function isContractorDocument(submission) {
+  return CONTRACTOR_TITLE.test(documentTitle(submission))
 }
 
 /**
@@ -119,6 +128,9 @@ export function scheduledFromTitle(title) {
  *
  * Signed documents only. An unsigned one is a quote nobody has accepted, and
  * listing those here would bury the seven that matter under forty that do not.
+ *
+ * Customer documents only, too. A W9 or a subcontractor agreement is signed
+ * and will never belong to a job, so it would sit in the list for good.
  */
 export function scanGaps({ submissions = [], jobs = [], linkedIds = [] } = {}) {
   const linked = new Set(linkedIds.map(String).filter(Boolean))
@@ -142,7 +154,7 @@ export function scanGaps({ submissions = [], jobs = [], linkedIds = [] } = {}) {
     if (!id || linked.has(id) || seen.has(id)) continue
     seen.add(id)
     if (clean(submission?.status) !== 'completed') continue
-    if (isTestDocument(submission)) continue
+    if (isTestDocument(submission) || isContractorDocument(submission)) continue
 
     const title = documentTitle(submission)
     const signer = signerOf(submission)
