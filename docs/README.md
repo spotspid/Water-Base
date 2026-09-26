@@ -13,6 +13,7 @@ the words you actually see on screen.
 - [Jobs](jobs.md): sales, from written up to installed.
 - [Inventory](inventory.md): what is on the shelf, promised and on order.
 - [Documents](documents.md): agreements and work orders, sent, blocked or signed.
+- [Schedule](schedule.md): the week, the crew, and whether the parts are free.
 
 More pages will be added here as they are walked.
 
