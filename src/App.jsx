@@ -25,6 +25,7 @@ const Expenses = lazy(() => import('./pages/Expenses'))
 const PnL = lazy(() => import('./pages/PnL'))
 const Outstanding = lazy(() => import('./pages/Outstanding'))
 const Settings = lazy(() => import('./pages/Settings'))
+const Help = lazy(() => import('./pages/Help'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 
 function RouteFallback() {
@@ -62,6 +63,9 @@ export default function App() {
             <Route path="/pnl" element={<ProtectedRoute><PnL /></ProtectedRoute>} />
             <Route path="/outstanding" element={<ProtectedRoute><Outstanding /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            {/* The guides in docs/, one page each, with the index as contents. */}
+            <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+            <Route path="/help/:slug" element={<ProtectedRoute><Help /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

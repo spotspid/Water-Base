@@ -1,7 +1,7 @@
 import { GROUPS } from '../lib/navigation'
 import {
   IconBuildSheets, IconDashboard, IconExpenses, IconInventory,
-  IconDocuments, IconJobs, IconMoney, IconOrders, IconOutstanding, IconQuotes,
+  IconDocuments, IconHelp, IconJobs, IconMoney, IconOrders, IconOutstanding, IconQuotes,
   IconSchedule, IconSettings,
   IconWarranty,
 } from './NavIcons'
@@ -31,6 +31,7 @@ const ICONS = {
   '/pnl': IconMoney,
   '/outstanding': IconOutstanding,
   '/settings': IconSettings,
+  '/help': IconHelp,
 }
 
 export const NAV_GROUPS = GROUPS.map(group => ({

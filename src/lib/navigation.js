@@ -53,6 +53,7 @@ export const GROUPS = [
     label: 'Setup',
     items: [
       { to: '/settings', text: 'Settings', hint: 'Lists, crew, agreements' },
+      { to: '/help', text: 'Help', hint: 'How each page works, page by page' },
     ],
   },
 ]
@@ -80,6 +81,7 @@ const TITLES = {
   '/pnl': ['Profit and loss', 'Revenue, parts, pay, expenses'],
   '/outstanding': ['Outstanding', 'Owed now, deposits due, owed back'],
   '/settings': ['Settings', 'Lists, crew, agreements'],
+  '/help': ['Help', 'How each page works'],
 }
 
 /**

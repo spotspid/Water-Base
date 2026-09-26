@@ -40,6 +40,7 @@ const ROUTES = [
   ['/pnl', 'src/pages/PnL.jsx'],
   ['/outstanding', 'src/pages/Outstanding.jsx'],
   ['/settings', 'src/pages/Settings.jsx'],
+  ['/help', 'src/pages/Help.jsx'],
 ]
 
 // Every protected route renders inside the shell, so whatever the shell uses

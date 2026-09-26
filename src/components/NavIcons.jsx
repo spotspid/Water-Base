@@ -143,6 +143,17 @@ export function IconQuotes() {
   )
 }
 
+// An open book, for the guides. Not a question mark in a circle: this is a
+// manual to read, not a support desk to ask.
+export function IconHelp() {
+  return (
+    <svg {...base}>
+      <path d="M12 6.5C10.5 5.2 8.6 4.7 4.5 4.8v12c4.1-.1 6 .4 7.5 1.7 1.5-1.3 3.4-1.8 7.5-1.7v-12c-4.1-.1-6 .4-7.5 1.7Z" />
+      <path d="M12 6.5v12" />
+    </svg>
+  )
+}
+
 export function IconFallback() {
   return (
     <svg {...base}>
