@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { pauseNag, resumeNag } from '../lib/agreements'
 import {
-  NAG_WINDOW_DAYS, SNOOZE_CHOICES, isBeingChased, isNagPaused, unsignedDocuments,
+  NAG_WINDOW_DAYS, SNOOZE_CHOICES, isBeingChased, isNagPaused, joinReasons, nagReasons,
 } from '../lib/nag'
 import { formatLongDate } from '../lib/schedule'
 import './Agreement.css'
 
 // Pausing the morning reminder on one job.
 //
-// The rule itself has one stopping condition, a signature, and that is
+// The rule stops on its own terms, a signature and a payout, and that is
 // deliberate: a reminder you can argue with is a reminder nobody trusts. But a
 // customer on holiday for a fortnight should not cost the channel a message
 // every morning, so one job can be quietened for a set number of days without
@@ -23,7 +23,10 @@ export default function JobNagPause({ job, onChanged }) {
 
   const paused = isNagPaused(job)
   const chased = isBeingChased(job)
-  const outstanding = unsignedDocuments(job)
+  // Paperwork and pay, because the sweep chases both and one pause quietens
+  // both. Listing only the documents would have this panel disappear from a
+  // job Slack was still posting about every morning.
+  const outstanding = nagReasons(job)
 
   // Nothing outstanding and nothing scheduled means the sweep is not looking
   // at this job, so there is nothing here to switch off.
@@ -61,7 +64,7 @@ export default function JobNagPause({ job, onChanged }) {
           <p className="agr-sub">
             {paused
               ? <>Paused until <strong>{formatLongDate(String(job.nag_snoozed_until).slice(0, 10))}</strong>. This job is not in the 8am message.</>
-              : <>This job is in the 8am message every day until {outstanding.join(' and ')} {outstanding.length === 1 ? 'is' : 'are'} signed.</>}
+              : <>This job is in the 8am message every day until {joinReasons(outstanding)}.</>}
           </p>
         </div>
       </div>
@@ -95,8 +98,8 @@ export default function JobNagPause({ job, onChanged }) {
       </div>
 
       <p className="agr-sub">
-        Pausing hides this one job. Every other job carries on, and a signature
-        ends the reminders for good.
+        Pausing hides this one job. Every other job carries on, and filling in
+        what is missing above ends the reminders for good.
       </p>
     </section>
   )

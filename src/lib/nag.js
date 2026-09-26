@@ -58,3 +58,39 @@ export function unsignedDocuments(job) {
   if ((job?.work_order_status || 'none') !== 'completed') out.push('the work order')
   return out
 }
+
+/**
+ * Booked work with no pay written on it.
+ *
+ * The same rule as the Needs attention list in attention.js and as the
+ * payout_nag_candidates view: null, or zero or less. A payout of exactly zero
+ * on booked work has always been somebody who never filled it in rather than
+ * a crew working for free, and a third definition of "pay not set" is the
+ * last thing this app needs.
+ */
+export function payoutMissing(job) {
+  const raw = job?.payout_amount
+  if (raw === null || raw === undefined || String(raw).trim() === '') return true
+  const pay = Number(raw)
+  return !Number.isFinite(pay) || pay <= 0
+}
+
+/**
+ * Everything the morning sweep is still waiting on, as finished clauses.
+ *
+ * Empty means the job is not in tomorrow's message, which is the one thing
+ * the pause panel must get right: a panel that said nothing while Slack
+ * posted every morning would be worse than no panel.
+ */
+export function nagReasons(job) {
+  const reasons = unsignedDocuments(job).map(doc => `${doc} is signed`)
+  if (payoutMissing(job)) reasons.push('the installer pay is set')
+  return reasons
+}
+
+// "a", "a and b", "a, b and c"
+export function joinReasons(list) {
+  const items = (list || []).filter(Boolean)
+  if (items.length <= 1) return items.join('')
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}

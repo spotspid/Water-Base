@@ -1,9 +1,10 @@
 import {
-  buildDeclined, buildNag, buildOrderArrived, buildQuoteNag, buildSigned, buildViewed,
-  channelForDocument, documentLabel, jobLink, orderLink,
+  buildDeclined, buildNag, buildOrderArrived, buildPayoutNag, buildQuoteNag, buildSigned,
+  buildViewed, channelForDocument, documentLabel, jobLink, orderLink,
 } from '../supabase/functions/notify/messages.ts'
 import {
-  NAG_WINDOW_DAYS, isBeingChased, isNagPaused, unsignedDocuments,
+  NAG_WINDOW_DAYS, isBeingChased, isNagPaused, joinReasons, nagReasons, payoutMissing,
+  unsignedDocuments,
 } from '../src/lib/nag.js'
 import {
   SPECS, matchFields, partGroup, partLines,
@@ -164,6 +165,51 @@ check('two days out is marked', soon.message.includes(':warning:'))
 check('fourteen days out is not', !later.message.includes(':warning:'))
 check('installs today', buildNag({ ...nagFacts, days_until_install: 0 }, 'd').message.includes('installs today'))
 check('installs tomorrow', buildNag({ ...nagFacts, days_until_install: 1 }, 'd').message.includes('installs tomorrow'))
+
+// --- the pay reminder, same pattern as the document one ---------------------
+
+const payoutFacts = {
+  job_id: JOB.id,
+  customer_name: 'April Y. Stone',
+  system_template: 'Flagship Bundle',
+  sale_price: 2899,
+  days_until_install: 2,
+  payout_amount: null,
+  installer_name: null,
+}
+
+const payoutNag = buildPayoutNag(payoutFacts, '2026-09-26')
+check('a pay reminder goes to scheduling, beside the paperwork it belongs with',
+  payoutNag.channel === 'scheduling')
+check('it keys on the job and the day like the others',
+  payoutNag.dedupe_key === `nag.payout:${JOB.id}:2026-09-26`, payoutNag.dedupe_key)
+check('a second sweep the same day is a duplicate',
+  buildPayoutNag(payoutFacts, '2026-09-26').dedupe_key === payoutNag.dedupe_key)
+check('tomorrow is a fresh key',
+  buildPayoutNag(payoutFacts, '2026-09-27').dedupe_key !== payoutNag.dedupe_key)
+check('it is a different event from the unsigned document nag, so one cannot '
+  + 'dedupe the other out', payoutNag.event_type !== nag.event_type)
+check('it names the job and when it installs',
+  payoutNag.message.includes('*April Y. Stone* installs in 2 days'), payoutNag.message)
+check('a blank payout reads as no pay recorded',
+  payoutNag.message.includes('no installer pay recorded'))
+check('a zero payout says zero rather than looking like a blank',
+  buildPayoutNag({ ...payoutFacts, payout_amount: 0 }, 'd')
+    .message.includes('recorded as $0.00'))
+check('an unassigned job says so', payoutNag.message.includes('No installer assigned yet.'))
+check('an assigned one names the installer',
+  buildPayoutNag({ ...payoutFacts, installer_name: 'Jay Woodward' }, 'd')
+    .message.includes('Jay Woodward is on it.'))
+check('it says what the blank costs',
+  payoutNag.message.includes('no profit figure until the pay is set'))
+check('it links to the job', payoutNag.message.includes(`/jobs?job=${JOB.id}|Open the job to set the pay`))
+check('two days out is marked, on the same threshold as the documents',
+  payoutNag.message.startsWith(':warning:'))
+check('a fortnight out is not',
+  !buildPayoutNag({ ...payoutFacts, days_until_install: 14 }, 'd').message.startsWith(':warning:'))
+check('it interrupts nobody', !payoutNag.message.includes('<!channel>'))
+check('installing today reads as today',
+  buildPayoutNag({ ...payoutFacts, days_until_install: 0 }, 'd').message.includes('installs today'))
 check('a document that was never sent says so, rather than unsigned for null days',
   buildNag({ ...nagFacts, agreement_status: null, agreement_days_unsigned: null }, 'd')
     .message.includes('never sent'))
@@ -333,6 +379,41 @@ check('both signed means nothing outstanding, which is what stops the reminder',
   unsignedDocuments({ agreement_status: 'completed', work_order_status: 'completed' }).length === 0)
 check('sent is not signed',
   unsignedDocuments({ agreement_status: 'sent', work_order_status: 'completed' }).length === 1)
+
+// --- pay missing, which the sweep chases on the same jobs -------------------
+//
+// Three places answer "is the pay set": this, the Needs attention list, and
+// the payout_nag_candidates view. They have to give the same answer, or the
+// job drawer will say the reminders have stopped while Slack posts every
+// morning.
+
+check('no payout at all is missing', payoutMissing({ payout_amount: null }))
+check('an absent column is missing', payoutMissing({}))
+check('an empty string is missing', payoutMissing({ payout_amount: '' }))
+check('zero on booked work counts as missing, as the attention list has it',
+  payoutMissing({ payout_amount: 0 }))
+check('a real payout is not missing', !payoutMissing({ payout_amount: 450 }))
+check('a payout that came back as a string is read',
+  !payoutMissing({ payout_amount: '450.00' }))
+
+const signedAndUnpaid = {
+  agreement_status: 'completed', work_order_status: 'completed', payout_amount: null,
+}
+check('a job with both signatures and no pay is still being chased',
+  nagReasons(signedAndUnpaid).length === 1, nagReasons(signedAndUnpaid).join(' / '))
+check('and the panel says what for',
+  nagReasons(signedAndUnpaid)[0] === 'the installer pay is set')
+check('everything done is nothing to chase',
+  nagReasons({ ...signedAndUnpaid, payout_amount: 450 }).length === 0)
+check('a job missing all three lists them all',
+  nagReasons({ payout_amount: null }).length === 3)
+check('and they read as a sentence',
+  joinReasons(nagReasons({ payout_amount: null }))
+    === 'the customer agreement is signed, the work order is signed and the installer pay is set',
+  joinReasons(nagReasons({ payout_amount: null })))
+check('one reason needs no joining', joinReasons(['the installer pay is set'])
+  === 'the installer pay is set')
+check('nothing outstanding joins to nothing', joinReasons([]) === '')
 
 // --- a supplier order landing ------------------------------------------------
 

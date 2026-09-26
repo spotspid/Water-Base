@@ -302,6 +302,68 @@ export function buildQuoteNag(facts: QuoteNagFacts, day: string, appUrl?: string
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Booked jobs with no installer pay, to the scheduling channel
+--------------------------------------------------------------------------- */
+
+export type PayoutNagFacts = {
+  job_id: string
+  customer_name?: string | null
+  system_template?: string | null
+  sale_price?: number | string | null
+  days_until_install: number
+  payout_amount?: number | string | null
+  installer_name?: string | null
+}
+
+/**
+ * The other thing that has to be true before a crew turns up.
+ *
+ * The document nag chases a signature; this chases a number. A job with no
+ * payout shows no profit at all now rather than a profit that assumes the
+ * crew worked for free, so the job sits in the calendar contributing nothing
+ * to any figure until somebody types it.
+ *
+ * Zero is reported as zero rather than as a blank, because the two look the
+ * same in the list and reading "recorded as $0.00" is what tells somebody
+ * which of the two they are looking at.
+ */
+export function buildPayoutNag(facts: PayoutNagFacts, day: string, appUrl?: string): Built {
+  const until = facts.days_until_install
+  const when = until <= 0
+    ? 'installs today'
+    : until === 1 ? 'installs tomorrow' : `installs in ${until} days`
+
+  // Same threshold as the unsigned document nag: two days out is where a
+  // missing figure stops being a chore and starts being a problem.
+  const lead = until <= 2 ? ':warning: ' : ''
+
+  const recorded = Number(facts.payout_amount)
+  const pay = Number.isFinite(recorded) && facts.payout_amount !== null
+    ? 'installer pay recorded as $0.00'
+    : 'no installer pay recorded'
+
+  const who = String(facts.installer_name || '').trim()
+
+  return {
+    channel: 'scheduling',
+    event_type: 'nag.payout',
+    dedupe_key: `nag.payout:${facts.job_id}:${day}`,
+    job_id: facts.job_id,
+    payload: {
+      days_until_install: until,
+      payout_amount: facts.payout_amount ?? null,
+      installer_name: who || null,
+    },
+    message: [
+      `${lead}*${name(facts)}* ${when} with ${pay}.`,
+      who ? `${who} is on it.` : 'No installer assigned yet.',
+      'The job shows no profit figure until the pay is set.',
+      `<${jobLink(facts.job_id, appUrl)}|Open the job to set the pay>`,
+    ].join('\n'),
+  }
+}
+
 // "Customer agreement unsigned for 9 days" / "never sent"
 function describeDocument(
   label: string, status: string | null | undefined, daysUnsigned: number | null,

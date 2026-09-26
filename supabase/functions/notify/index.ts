@@ -2,7 +2,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
   type Built, type Channel, type JobFacts, type OrderFacts,
-  buildDeclined, buildNag, buildOrderArrived, buildQuoteNag, buildSigned, buildViewed,
+  buildDeclined, buildNag, buildOrderArrived, buildPayoutNag, buildQuoteNag, buildSigned,
+  buildViewed,
 } from './messages.ts'
 import { configuredChannels, postToSlack } from './slack.ts'
 
@@ -348,6 +349,10 @@ async function handleOrder(
 /**
  * The daily sweep.
  *
+ * Three lists, each read on its own so a problem with one never silences the
+ * others: booked jobs with unsigned paperwork, quotes sent and unsigned at 2,
+ * 5 and 10 days, and booked jobs with no installer pay on them.
+ *
  * pg_cron fires this at both 12:00 and 13:00 UTC, because 8am Eastern is one
  * or the other depending on daylight saving and pg_cron schedules in UTC. The
  * hour check makes exactly one of those two runs do the work, and the dedupe
@@ -418,8 +423,43 @@ async function handleNag(
     }
   }
 
-  console.log('daily nag finished', { day, ...results, quotes: quoteResults })
-  return json({ ok: true, day, ...results, quotes: quoteResults, problems: problems.slice(0, 5) })
+  // Booked jobs with no installer pay, on the same fourteen day window as the
+  // documents above. Read separately for the same reason the quotes are: one
+  // list failing must not silence the others.
+  const payoutResults = { considered: 0, sent: 0, duplicates: 0, failed: 0 }
+  const { data: payoutRows, error: payoutError } = await supabase
+    .from('payout_nag_candidates')
+    .select('*')
+    .order('days_until_install', { ascending: true })
+
+  if (payoutError) {
+    problems.push(`Jobs due a pay reminder could not be read. ${payoutError.message}`)
+  } else {
+    for (const row of payoutRows || []) {
+      payoutResults.considered += 1
+      const outcome = await deliver(
+        supabase, buildPayoutNag(row as Parameters<typeof buildPayoutNag>[0], day, appUrl),
+      )
+      if (outcome.sent) payoutResults.sent += 1
+      else if (outcome.duplicate) payoutResults.duplicates += 1
+      else {
+        payoutResults.failed += 1
+        if (outcome.error) problems.push(outcome.error)
+      }
+    }
+  }
+
+  console.log('daily nag finished', {
+    day, ...results, quotes: quoteResults, payouts: payoutResults,
+  })
+  return json({
+    ok: true,
+    day,
+    ...results,
+    quotes: quoteResults,
+    payouts: payoutResults,
+    problems: problems.slice(0, 5),
+  })
 }
 
 /**
