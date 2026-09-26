@@ -193,7 +193,10 @@ def main() -> None:
     reader = PdfReader(str(OUT_PDF))
     size_kb = OUT_PDF.stat().st_size / 1024
     print(f"{OUT_PDF.relative_to(ROOT)}  {len(reader.pages)} pages  {size_kb:.0f} KB")
-    print("contents: " + ", ".join(f"{k} p{v}" for k, v in pages.items() if k.count("-") == 1))
+    starts = {anchor: settled[anchor] for anchor, _ in titles}
+    print("contents: " + ", ".join(
+        f"{title} p{starts[anchor]}" for anchor, title in titles
+    ))
 
 
 # The anchor ids, in contents order, straight from the builder so the two
@@ -202,7 +205,7 @@ ANCHOR_SCRIPT = """
 import { readFileSync } from 'node:fs'
 import { parseMarkdown, titleOf } from './src/lib/markdown.js'
 
-const SECTIONS = ['README', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
+const SECTIONS = ['README', 'new-job', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const out = []
 
@@ -228,7 +231,7 @@ TITLE_SCRIPT = """
 import { readFileSync } from 'node:fs'
 import { parseMarkdown, titleOf } from './src/lib/markdown.js'
 
-const SECTIONS = ['README', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
+const SECTIONS = ['README', 'new-job', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 const out = SECTIONS.map(name => {

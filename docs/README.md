@@ -9,6 +9,7 @@ the words you actually see on screen.
 
 ## Guides
 
+- [New job](new-job.md): the form every quote and every job starts life on.
 - [Quotes](quotes.md): prices sent to customers that nobody has signed yet.
 - [Jobs](jobs.md): sales, from written up to installed.
 - [Inventory](inventory.md): what is on the shelf, promised and on order.

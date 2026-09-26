@@ -22,7 +22,7 @@ const root = resolve(here, '..')
 
 // The order they are read in, which is the order the index lists them. The
 // index comes first because it says what the rest are for.
-const SECTIONS = ['README', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
+const SECTIONS = ['README', 'new-job', 'quotes', 'jobs', 'inventory', 'documents', 'schedule']
 
 const outPath = process.argv[2]
 const pagesPath = process.argv[3]
