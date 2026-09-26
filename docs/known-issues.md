@@ -1,7 +1,8 @@
 # Known issues
 
 Everything the page guides found, in one list, ordered by what it costs rather
-than by how annoying it is. Nothing here has been fixed.
+than by how annoying it is. Item 1 is fixed. Nothing else on this list is, and
+the numbering is left alone so a fault keeps the number it was reported under.
 
 The order is roughly: money that comes out wrong, then work that gets lost,
 then work that gets blocked or misdirected, then noise.
@@ -15,21 +16,36 @@ it appears rather than only in the one where it was noticed.
 These are one fault each, seen from several places. Fixing the cause fixes all
 the symptoms; fixing one page leaves the others lying.
 
-### 1. Unknown is counted as zero, so profit reads high
+### 1. Unknown is counted as zero, so profit reads high. Fixed 2026-09-26
 
-**Where:** Jobs (gross profit, and the figures at the top), Inventory (unit
-cost and value), and through job margins into Profit and loss.
+**Where it was:** Jobs (gross profit, and the figures at the top), Inventory
+(unit cost and value), and through job margins into Profit and loss.
 
-A job with no installer payout is costed as though the crew worked for
-nothing. A part added without a unit cost is priced at zero, so every job using
-it shows a profit that is too high, and nothing warns about either. A $300 tank
-entered without a cost is $300 of invented profit per job.
+A job with no installer payout was costed as though the crew worked for
+nothing. A part added without a unit cost was priced at zero, so every job
+using it showed a profit that was too high, and nothing warned about either. A
+$300 tank entered without a cost was $300 of invented profit per job.
 
-Two valves are legitimately zero cost, which makes a genuine mistake harder to
-spot.
+**What it does now.** A part can be saved with no cost at all, which is not the
+same as a cost of zero. The two control valves are genuinely free, because the
+valve is already inside the landed cost of the system it arrives in, and they
+still cost zero. Everything built on either blank now says so rather than
+counting it as nothing:
 
-**Harm:** every number a decision rests on, on three pages, can be silently too
-good.
+- A job with no payout shows "Not set" where the pay goes and "Pay not set"
+  where the profit would be. Four booked jobs were showing an expected profit
+  that assumed a free crew, $8,584 of it, and now show none.
+- A job using a part nobody has priced reads "at least this much" for parts and
+  shows no profit figure.
+- Value on hand leaves unpriced parts out and says how many, rather than
+  valuing them at nothing.
+- The installer pay totals on Jobs and on Profit and loss leave out the jobs
+  with no payout and name the count.
+- The warranty bill does the same for a replacement deducted before anybody
+  priced the part.
+
+Nothing that was already right moved: the five installed jobs and both months
+of the profit and loss read exactly as before.
 
 ### 2. The same question answered two different ways
 

@@ -5,6 +5,7 @@ import { isWorkOrderOut } from '../lib/agreements'
 import { describeStatusShift } from '../lib/jobActions'
 import { useSettings, withCurrent } from '../lib/settings'
 import { installerLabel } from '../lib/useInstallers'
+import { isKnownAmount } from '../lib/profit'
 import { gapsSentence } from '../lib/workOrder'
 import './Agreement.css'
 
@@ -32,13 +33,13 @@ const COLLECTED_BY = [
 ]
 
 function baselineOf(job) {
-  const pay = Number(job.installer_pay)
   return {
     installer_id: job.installer_id || '',
     helper_id: job.helper_id || '',
-    // job_margin reports an unpriced job as 0, and a work order treats 0 as no
-    // payout, so both read as an empty box rather than a confident zero.
-    payout_amount: Number.isFinite(pay) && pay > 0 ? String(job.installer_pay) : '',
+    // An empty box means no payout is recorded, and that is what job_margin
+    // now reports rather than a zero. A stored zero is shown as a zero,
+    // because somebody chose it.
+    payout_amount: isKnownAmount(job.installer_pay) ? String(job.installer_pay) : '',
     invoice_number: job.invoice_number || '',
     collected_by: job.collected_by === 'subcontractor' ? 'subcontractor' : 'company',
     // which control valve the build sheet takes; blank on an RO only job
@@ -235,6 +236,10 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
           <label htmlFor="crew_payout">Installer pay ($)</label>
           <input id="crew_payout" name="payout_amount" type="number" min="0" step="0.01"
             value={draft.payout_amount} onChange={change} disabled={busy} />
+          <span className="field-hint">
+            Left blank it reads as not set, and this job shows no profit figure until it
+            is filled in. It is not read as a payout of nothing.
+          </span>
         </div>
 
         <div className="field">

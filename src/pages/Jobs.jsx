@@ -275,9 +275,9 @@ export default function Jobs() {
             {GROSS} is price less parts less installer pay. A job that has installed takes
             its parts from the inventory ledger at the cost stamped on each row, and that
             figure never moves again. A job that has not takes them from its resolved parts
-            list at today’s item costs, marked expected. A job whose list cannot name
-            every part is not costed at all rather than costed optimistically. Click a job
-            to install it or review what it consumed.
+            list at today’s item costs, marked expected. A job is not costed at all when
+            its list cannot name every part, when no pay is recorded, or when a part on it
+            has no cost: a blank is never read as nothing. Click a job to install it.
             {cancelledCount > 0 && (
               <> {cancelledCount} cancelled {cancelledCount === 1 ? 'job is' : 'jobs are'} shown
               but left out of the totals above.</>

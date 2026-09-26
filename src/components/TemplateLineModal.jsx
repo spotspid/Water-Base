@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { PICK_SOURCES } from '../lib/constants'
 import { useSettings, withCurrent } from '../lib/settings'
 import { attempt, attemptRows } from '../lib/errors'
-import { formatCurrency } from '../lib/inventory'
+import { formatCurrency, hasCost } from '../lib/inventory'
 import { pickCandidates, pickSourceMeta } from '../lib/templates'
 import Modal from './Modal'
 
@@ -239,7 +239,9 @@ export default function TemplateLineModal({
             <span className="txn-effect-verb">Deducts</span>
             <span className="txn-effect-qty">{quantity}</span>
             <span className="txn-effect-detail">
-              {selectedItem.sku} per install, {formatCurrency(quantity * Number(selectedItem.unit_cost || 0))} of parts cost
+              {selectedItem.sku} per install, {hasCost(selectedItem.unit_cost)
+                ? `${formatCurrency(quantity * Number(selectedItem.unit_cost))} of parts cost`
+                : 'and no cost recorded against it yet'}
             </span>
           </div>
         )}
@@ -260,7 +262,9 @@ export default function TemplateLineModal({
                     <span className="tpl-resolve-variant">{c.variant}</span>
                     <span className="tpl-resolve-sku">{c.sku}</span>
                     <span className="tpl-resolve-cost">
-                      {formatCurrency(quantity > 0 ? quantity * Number(c.unit_cost || 0) : 0)}
+                      {hasCost(c.unit_cost)
+                        ? formatCurrency(quantity > 0 ? quantity * Number(c.unit_cost) : 0)
+                        : 'No cost'}
                     </span>
                   </li>
                 ))}

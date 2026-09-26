@@ -1,6 +1,7 @@
 import {
-  ACTUAL, EXPECTED, PARTIAL, NONE, GROSS, NET, NOT_COSTED,
-  basisTag, canShowProfit, profitTotals, totalsNote,
+  ACTUAL, EXPECTED, PARTIAL, NONE, UNPRICED, NO_PAY, GROSS, NET, NOT_COSTED, PAY_UNSET,
+  basisTag, canShowProfit, isKnownAmount, notCostedLabel, partsUnpricedNote, payNote,
+  profitTotals, totalsNote,
 } from '../src/lib/profit.js'
 
 // Checks the profit vocabulary and the totals behind it.
@@ -35,6 +36,8 @@ check('so may one whose parts list resolves in full', canShowProfit(EXPECTED))
 check('a job with unresolvable lines may not', !canShowProfit(PARTIAL))
 check('nor may one with no parts list at all', !canShowProfit(NONE))
 check('nor may anything unrecognised', !canShowProfit('something else') && !canShowProfit(undefined))
+check('a job with no payout recorded may not', !canShowProfit(NO_PAY))
+check('nor may one using a part nobody has priced', !canShowProfit(UNPRICED))
 
 // --- the qualifier beside a figure -----------------------------------------
 
@@ -43,6 +46,23 @@ check('a settled figure carries no qualifier, because actual is the default',
 check('an estimate says so', basisTag(EXPECTED) === 'expected')
 check('an incomplete one says so differently', basisTag(PARTIAL) === 'incomplete')
 check('and an uncosted job says that', basisTag(NONE) === 'not costed')
+check('an unpriced part is named as the reason', basisTag(UNPRICED) === 'part has no cost')
+check('and so is a missing payout', basisTag(NO_PAY) === 'pay not set')
+
+// --- unknown is not zero ---------------------------------------------------
+//
+// The two blanks this file exists to keep out of the arithmetic. A payout of
+// nothing is a decision somebody made; no payout at all is a blank.
+
+check('a payout of zero is a known amount', isKnownAmount(0))
+check('no payout is not', !isKnownAmount(null) && !isKnownAmount(undefined) && !isKnownAmount(''))
+check('and neither is rubbish', !isKnownAmount('later'))
+
+check('a missing payout says which blank it is waiting on',
+  notCostedLabel(NO_PAY) === 'Pay not set', notCostedLabel(NO_PAY))
+check('every other reason keeps the general phrase',
+  notCostedLabel(EXPECTED) === NOT_COSTED && notCostedLabel(UNPRICED) === NOT_COSTED)
+check('there is a word for a payout nobody has entered', PAY_UNSET.length > 0)
 
 // --- totals ----------------------------------------------------------------
 
@@ -105,6 +125,50 @@ check('a null row does not throw', junk.uncosted >= 1)
 check('a row with no basis is treated as not costed', junk.combined === 0, String(junk.combined))
 
 check('there is a phrase for a figure that cannot be shown', NOT_COSTED.length > 0)
+
+// --- the two blanks in a total ---------------------------------------------
+//
+// The live shape after the unknown pay fix: four booked jobs whose parts list
+// resolves in full and whose payout nobody has entered. Before it, each one
+// contributed its whole price less parts as expected profit.
+
+const blanks = profitTotals([
+  { sale_price: 2899, installer_pay: null, parts_cost_effective: 748.86, parts_cost_basis: EXPECTED, profit_basis: NO_PAY, margin: null },
+  { sale_price: 3799, installer_pay: null, parts_cost_effective: 1712.16, parts_cost_basis: EXPECTED, profit_basis: NO_PAY, margin: null },
+  { sale_price: 1099, installer_pay: 250, parts_cost_effective: 21.55, parts_cost_basis: EXPECTED, profit_basis: EXPECTED, margin: 827.45 },
+  { sale_price: 2649, installer_pay: 400, parts_cost_effective: 500, parts_cost_basis: UNPRICED, profit_basis: UNPRICED, margin: null, uncosted_parts_lines: 1 },
+])
+
+check('a job with no payout contributes no profit', Math.abs(blanks.combined - 827.45) < 0.005,
+  String(blanks.combined))
+check('and is counted as missing', blanks.uncosted === 3, String(blanks.uncosted))
+check('its pay is left out of the wage bill rather than added as zero',
+  blanks.pay === 650, String(blanks.pay))
+check('and the jobs behind that are counted', blanks.payUnknown === 2, String(blanks.payUnknown))
+check('a job using an unpriced part is counted too',
+  blanks.partsUnpriced === 1, String(blanks.partsUnpriced))
+
+check('the pay note names how many jobs are left out',
+  payNote(blanks).includes('2 jobs have no payout recorded'), payNote(blanks))
+check('and says nothing alarming when every job has one',
+  payNote({ payUnknown: 0 }) === 'Recorded on every job here')
+check('the parts note names the unpriced ones',
+  partsUnpricedNote(blanks).includes('1 job has a part'), partsUnpricedNote(blanks))
+check('and is empty when there are none', partsUnpricedNote({ partsUnpriced: 0 }) === '')
+
+// A payout of zero is somebody's decision and still counts, both in the wage
+// bill and as a job whose profit can be shown.
+const deliberateZero = profitTotals([
+  { sale_price: 1200, installer_pay: 0, parts_cost_effective: 617.51, parts_cost_basis: ACTUAL, profit_basis: ACTUAL, margin: 582.49 },
+])
+check('a payout of zero is a figure, not a blank',
+  deliberateZero.payUnknown === 0 && deliberateZero.combined === 582.49)
+
+// Rows from before profit_basis existed read the same as they always did.
+const legacy = profitTotals([
+  { sale_price: 1099, installer_pay: 250, parts_cost_effective: 21.55, parts_cost_basis: EXPECTED, margin: 827.45 },
+])
+check('a row with only a parts basis still reads', legacy.combined === 827.45, String(legacy.combined))
 
 console.log(failed === 0
   ? '\nAll profit checks passed.'

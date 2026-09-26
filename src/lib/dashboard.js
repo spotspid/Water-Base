@@ -236,7 +236,11 @@ export function inventoryUnits(stockRows) {
 // which is right for job costing and backwards for a stock value delta: it
 // showed a positive quantity beside a negative amount on every receipt.
 export function costEffect(txn) {
-  return Number(txn.quantity || 0) * Number(txn.unit_cost_at_txn || 0)
+  // null, not zero, when the row carries no stamped cost. A part deducted
+  // before anybody priced it moved an unknown amount of money, and printing
+  // $0.00 beside it says the opposite.
+  if (txn?.unit_cost_at_txn == null) return null
+  return Number(txn.quantity || 0) * Number(txn.unit_cost_at_txn)
 }
 
 /**
@@ -292,7 +296,10 @@ export function groupActivity(rows, limit = Infinity) {
       lineCount: group.rows.length,
       units,
       quantity: group.rows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0),
-      value: group.rows.reduce((sum, r) => sum + costEffect(r), 0),
+      // Summed over the rows that carry a cost. uncosted says how many did
+      // not, so a group's figure is never quietly short.
+      value: group.rows.reduce((sum, r) => sum + (costEffect(r) ?? 0), 0),
+      uncosted: group.rows.filter(r => r?.unit_cost_at_txn == null).length,
       // one badge only when every row agrees, so a mixed group cannot claim
       // to be a single kind of movement
       txnType: types.size === 1 ? head.txn_type : null,

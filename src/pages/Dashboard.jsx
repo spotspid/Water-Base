@@ -7,6 +7,7 @@ import {
   monthLabel, monthStart, pipelineSummary, realJobs, soldNotBooked, splitMonthRevenue,
   stockShortages,
 } from '../lib/dashboard'
+import { unpricedRows } from '../lib/inventory'
 import { needsAttention } from '../lib/attention'
 import { QUOTED_STATUS } from '../lib/constants'
 import { quoteSummary } from '../lib/quotes'
@@ -246,6 +247,7 @@ export default function Dashboard() {
               inventoryValue={inventoryValue(stock)}
               inventoryUnits={inventoryUnits(stock)}
               itemCount={stock.length}
+              unpricedItems={unpricedRows(stock).length}
             />
 
             {/* What used to be a panel with two bars in it. The counts were

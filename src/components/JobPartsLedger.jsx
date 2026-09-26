@@ -36,8 +36,20 @@ export default function JobPartsLedger({ jobId, refreshKey }) {
 
   useEffect(() => { load() }, [load, refreshKey])
 
+  // Rows with no cost stamped on them are counted rather than added in as
+  // nothing, because a part deducted before anybody priced it is not free.
   const total = useMemo(
-    () => txns.reduce((sum, t) => sum + -Number(t.quantity || 0) * Number(t.unit_cost_at_txn || 0), 0),
+    () => txns.reduce(
+      (sum, t) => sum + (t.unit_cost_at_txn == null
+        ? 0
+        : -Number(t.quantity || 0) * Number(t.unit_cost_at_txn)),
+      0,
+    ),
+    [txns],
+  )
+
+  const unstamped = useMemo(
+    () => txns.filter(t => t.unit_cost_at_txn == null).length,
     [txns],
   )
 
@@ -90,10 +102,14 @@ export default function JobPartsLedger({ jobId, refreshKey }) {
                     {formatSignedQty(t.quantity)}
                   </td>
                   <td className="col-num">
-                    {t.unit_cost_at_txn == null ? '' : formatCurrency(t.unit_cost_at_txn)}
+                    {t.unit_cost_at_txn == null
+                      ? <span className="cell-unset">No cost</span>
+                      : formatCurrency(t.unit_cost_at_txn)}
                   </td>
                   <td className="col-num col-value">
-                    {formatCurrency(-Number(t.quantity || 0) * Number(t.unit_cost_at_txn || 0))}
+                    {t.unit_cost_at_txn == null
+                      ? <span className="cell-unset">Unknown</span>
+                      : formatCurrency(-Number(t.quantity || 0) * Number(t.unit_cost_at_txn))}
                   </td>
                   <td className="col-nowrap">
                     {t.source === 'manual' ? 'Manual' : `Template batch ${t.deduct_batch}`}
@@ -103,7 +119,11 @@ export default function JobPartsLedger({ jobId, refreshKey }) {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan="5" className="col-total-label">Parts cost from ledger</td>
+                <td colSpan="5" className="col-total-label">
+                  {unstamped > 0
+                    ? `At least this, from the ledger. ${unstamped} ${unstamped === 1 ? 'row was' : 'rows were'} deducted with no cost stamped`
+                    : 'Parts cost from ledger'}
+                </td>
                 <td className="col-num col-value">{formatCurrency(total)}</td>
                 <td />
               </tr>

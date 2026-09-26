@@ -36,10 +36,24 @@ export async function markInstalled(job, installDate) {
   if (error) return { error }
 
   const lines = data?.lines_deducted ?? 0
+  const uncosted = Number(data?.uncosted_lines) || 0
+
+  if (lines === 0) {
+    return {
+      message: 'Marked installed. This template has no parts, so nothing was deducted from inventory.',
+    }
+  }
+
+  // A row deducted for a part nobody has priced is stamped with no cost, so
+  // the figure here is a floor. Saying "$1,712.16 of parts" when one of them
+  // was uncosted is the overstatement this notice used to make.
+  const caveat = uncosted > 0
+    ? ` ${uncosted} of them ${uncosted === 1 ? 'has' : 'have'} no cost recorded, so the real figure is higher.`
+    : ''
+
   return {
-    message: lines === 0
-      ? 'Marked installed. This template has no parts, so nothing was deducted from inventory.'
-      : `Marked installed. ${lines} ${lines === 1 ? 'item' : 'items'} deducted, ${formatCurrency(data?.parts_cost || 0)} of parts.`,
+    message: `Marked installed. ${lines} ${lines === 1 ? 'item' : 'items'} deducted, `
+      + `${formatCurrency(data?.parts_cost || 0)} of parts.${caveat}`,
   }
 }
 

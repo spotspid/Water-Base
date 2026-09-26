@@ -36,10 +36,14 @@ export default function ItemCostField({ item, onChanged }) {
   const onHand = Number(item.on_hand) || 0
 
   async function save() {
-    const value = Number(draft)
+    // Blank is a real answer: nobody knows what this costs. It is not the
+    // same as free, and the shelf value, the job costings and the profit
+    // figures all stand down rather than counting it as nothing.
+    const blank = draft.trim() === ''
+    const value = blank ? null : Number(draft)
 
-    if (draft.trim() === '' || !Number.isFinite(value) || value < 0) {
-      setError('Unit cost must be zero or greater.')
+    if (!blank && (!Number.isFinite(value) || value < 0)) {
+      setError('Unit cost must be zero or greater, or left blank if you do not know it.')
       return
     }
 
@@ -59,12 +63,18 @@ export default function ItemCostField({ item, onChanged }) {
       return
     }
 
-    const next = String(value)
+    const next = value == null ? '' : String(value)
     setDraft(next)
     setSaved(next)
-    setNotice(onHand > 0
-      ? `Saved. ${onHand} on hand now values at ${formatCurrency(value * onHand)}.`
-      : 'Saved. Nothing is on hand, so this takes effect when some arrives.')
+
+    if (value == null) {
+      setNotice('Saved as no cost recorded. This part is left out of the value on hand, '
+        + 'and any job using it shows no profit figure until it is priced.')
+    } else {
+      setNotice(onHand > 0
+        ? `Saved. ${onHand} on hand now values at ${formatCurrency(value * onHand)}.`
+        : 'Saved. Nothing is on hand, so this takes effect when some arrives.')
+    }
     onChanged()
   }
 
@@ -98,7 +108,9 @@ export default function ItemCostField({ item, onChanged }) {
 
         <span className="inv-cost-note">
           Receiving a supplier order sets this to the landed cost. Type over it if that
-          is wrong. Past jobs keep the cost stamped on their own ledger rows.
+          is wrong, or clear it if you do not know it: blank reads as no cost recorded,
+          zero means genuinely free. Past jobs keep the cost stamped on their own ledger
+          rows.
         </span>
       </div>
 

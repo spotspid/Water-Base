@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { useSettings } from '../lib/settings'
-import { effectiveDirection, signedQuantity, txnTypeMeta } from '../lib/inventory'
+import { effectiveDirection, hasCost, signedQuantity, txnTypeMeta } from '../lib/inventory'
 import { isWarranty } from '../lib/warranty'
 import Modal from './Modal'
 import WarrantyJobField from './WarrantyJobField'
@@ -76,7 +76,9 @@ export default function LogTransactionModal({ items, presetItemId, onClose, onSa
       item_id: form.item_id,
       quantity: signed,
       txn_type: form.txn_type,
-      unit_cost_at_txn: selected ? Number(selected.unit_cost) : null,
+      // Number(null) is 0, which stamped a part nobody has priced onto the
+      // ledger as free, for good. The stamp is the cost or nothing.
+      unit_cost_at_txn: hasCost(selected?.unit_cost) ? Number(selected.unit_cost) : null,
       location: defaultLocation || null,
       reference: form.reference.trim() || null,
       note: form.note.trim() || null,

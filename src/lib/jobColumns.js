@@ -19,4 +19,8 @@ export const JOB_MARGIN_COLUMNS =
   + 'deposits_taken, deposit_count, last_deposit_on, balance_due, template_line_count, '
   + 'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts, '
   + 'expected_parts_cost, parts_cost_effective, parts_cost_basis, unresolved_lines, '
-  + 'deposit_amount, deposit_outstanding, is_test, sold_at, quote_sent_at, quote_sent_count'
+  + 'deposit_amount, deposit_outstanding, is_test, sold_at, quote_sent_at, quote_sent_count, '
+  // Why a profit figure is or is not shown, and which of the two blanks is
+  // behind it. installer_pay is null when no payout is recorded, so the pay
+  // cell needs pay_known to tell that apart from a payout of nothing.
+  + 'pay_known, uncosted_parts_lines, profit_basis'

@@ -49,7 +49,11 @@ export function WarrantyBySku({ rows }) {
                     ? <span className="cell-unset" title="No installs recorded for this part">no base</span>
                     : rateLabel(r.failure_rate_pct)}
                 </td>
-                <td className="col-num col-value">{formatCurrency(r.cost)}</td>
+                <td className="col-num col-value">
+                  {r.cost == null
+                    ? <span className="cell-unset">No cost</span>
+                    : formatCurrency(r.cost)}
+                </td>
                 <td className="col-nowrap">{formatDay(r.first_failed_on)}</td>
                 <td className="col-nowrap">{formatDay(r.last_failed_on)}</td>
                 <td>{r.suppliers}</td>
@@ -93,7 +97,11 @@ export function WarrantyBySupplier({ rows }) {
                     ? <span className="cell-unset" title="Nothing received from this supplier on a tracked order">no base</span>
                     : rateLabel(r.failure_rate_pct)}
                 </td>
-                <td className="col-num col-value">{formatCurrency(r.cost)}</td>
+                <td className="col-num col-value">
+                  {r.cost == null
+                    ? <span className="cell-unset">No cost</span>
+                    : formatCurrency(r.cost)}
+                </td>
                 <td className="col-nowrap">{formatDay(r.first_failed_on)}</td>
                 <td className="col-nowrap">{formatDay(r.last_failed_on)}</td>
                 <td>{r.skus_list}</td>
@@ -133,7 +141,11 @@ export function WarrantyEvents({ rows }) {
                   <span className="cell-sub">{r.item_name}{r.variant ? ` (${r.variant})` : ''}</span>
                 </td>
                 <td className="col-num">{r.units}</td>
-                <td className="col-num col-value">{formatCurrency(r.cost)}</td>
+                <td className="col-num col-value">
+                  {r.cost == null
+                    ? <span className="cell-unset">No cost</span>
+                    : formatCurrency(r.cost)}
+                </td>
                 <td className="td-customer">
                   {r.warranty_job_id
                     ? <Link to={`/jobs?job=${r.warranty_job_id}`} className="tpl-link">{r.customer_name}</Link>

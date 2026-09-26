@@ -51,7 +51,10 @@ export default function JobPartsPreview({
   useEffect(() => { load() }, [load])
 
   const unresolved = rows.filter(r => !r.resolved)
+  // Lines whose part has no cost are counted apart rather than added in as
+  // nothing, so the total can say it is a floor instead of a figure.
   const total = rows.reduce((sum, r) => sum + (Number(r.line_cost) || 0), 0)
+  const unpriced = rows.filter(r => r.resolved && r.line_cost == null).length
 
   if (!templateId) {
     return (
@@ -119,14 +122,26 @@ export default function JobPartsPreview({
                       : 'Build sheet'}
                   </td>
                   <td className="col-num">{r.quantity}</td>
-                  <td className="col-num">{r.resolved ? formatCurrency(r.unit_cost) : ''}</td>
-                  <td className="col-num col-value">{r.resolved ? formatCurrency(r.line_cost) : ''}</td>
+                  <td className="col-num">
+                    {r.resolved && (r.unit_cost == null
+                      ? <span className="cell-unset">No cost</span>
+                      : formatCurrency(r.unit_cost))}
+                  </td>
+                  <td className="col-num col-value">
+                    {r.resolved && (r.line_cost == null
+                      ? <span className="cell-unset">Unknown</span>
+                      : formatCurrency(r.line_cost))}
+                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan="4" className="col-total-label">Parts cost at current item costs</td>
+                <td colSpan="4" className="col-total-label">
+                  {unpriced > 0
+                    ? `At least this, at current item costs. ${unpriced} ${unpriced === 1 ? 'part has' : 'parts have'} no cost recorded`
+                    : 'Parts cost at current item costs'}
+                </td>
                 <td className="col-num col-value">{formatCurrency(total)}</td>
               </tr>
             </tfoot>

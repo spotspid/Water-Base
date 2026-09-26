@@ -22,11 +22,12 @@ const EVENT_COLUMNS =
 
 const SKU_COLUMNS =
   'item_id, sku, item_name, variant, category, events, failures, cost, first_failed_on, '
-  + 'last_failed_on, units_installed, units_purchased, failure_rate_pct, suppliers'
+  + 'last_failed_on, units_installed, units_purchased, failure_rate_pct, suppliers, '
+  + 'uncosted_events'
 
 const SUPPLIER_COLUMNS =
   'supplier, events, failures, cost, skus, first_failed_on, last_failed_on, '
-  + 'units_received, failure_rate_pct, skus_list'
+  + 'units_received, failure_rate_pct, skus_list, uncosted_events'
 
 export default function Warranty() {
   const [events, setEvents] = useState([])
@@ -134,6 +135,12 @@ export default function Warranty() {
               <div className="inv-stat">
                 <span className="inv-stat-label">Cost to us</span>
                 <span className="inv-stat-value">{formatCurrency(totals.cost)}</span>
+                {totals.uncosted > 0 && (
+                  <span className="inv-stat-note">
+                    {totals.uncosted} {totals.uncosted === 1 ? 'replacement has' : 'replacements have'}
+                    {' '}no cost recorded and {totals.uncosted === 1 ? 'is' : 'are'} left out
+                  </span>
+                )}
               </div>
             </div>
 
@@ -145,7 +152,8 @@ export default function Warranty() {
               A replacement leaves the shelf at the catalogue cost on the day and is traced to
               the install it went in on, not charged to it: the margin recorded for that job stays
               what it was. The supplier is read off the order that brought the part in, so a part
-              with no tracked order reads as Unknown.
+              with no tracked order reads as Unknown. A part that had no unit cost when it
+              was deducted has no cost here either, rather than a cost of nothing.
             </p>
           </>
         )}

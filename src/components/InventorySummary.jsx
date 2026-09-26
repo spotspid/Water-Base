@@ -7,13 +7,22 @@ import StatGrid from './StatGrid'
 // sized slot, and a dropdown beside five numbers read as a sixth statistic.
 // It lives on its own line above the table it filters.
 export default function InventorySummary({
-  totalValue, itemCount, committedUnits, lowCount, shortCount, onOrderUnits,
+  totalValue, unpricedCount = 0, itemCount, committedUnits, lowCount, shortCount, onOrderUnits,
 }) {
   return (
     <StatGrid count={6}>
+      {/* The parts nobody has priced are left out of this and counted
+          underneath it. Multiplying a count by an unknown cost is not zero
+          dollars of stock. */}
       <div className="inv-stat inv-stat-lead">
         <span className="inv-stat-label">Value on hand</span>
         <span className="inv-stat-value">{formatCurrency(totalValue)}</span>
+        {unpricedCount > 0 && (
+          <span className="inv-stat-note">
+            {unpricedCount} {unpricedCount === 1 ? 'part has' : 'parts have'} no cost and
+            {unpricedCount === 1 ? ' is' : ' are'} left out
+          </span>
+        )}
       </div>
       <div className="inv-stat">
         <span className="inv-stat-label">Items</span>

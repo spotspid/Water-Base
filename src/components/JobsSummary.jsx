@@ -1,5 +1,5 @@
 import { formatCurrency } from '../lib/inventory'
-import { GROSS, totalsNote } from '../lib/profit'
+import { GROSS, partsUnpricedNote, payNote, totalsNote } from '../lib/profit'
 import StatGrid from './StatGrid'
 
 // The four figures over the jobs table.
@@ -31,11 +31,18 @@ export default function JobsSummary({ totals }) {
       <div className="inv-stat">
         <span className="inv-stat-label">Parts</span>
         <span className="inv-stat-value">{formatCurrency(totals.parts)}</span>
-        <span className="inv-stat-note">Deducted where installed, expected where not</span>
+        <span className="inv-stat-note">
+          {partsUnpricedNote(totals) || 'Deducted where installed, expected where not'}
+        </span>
       </div>
+      {/* The pay total leaves out the jobs with no payout rather than adding
+          them as nothing, and the note says how many. A wage bill that
+          silently omits four jobs is the same fault as a profit figure that
+          silently counts them as free. */}
       <div className="inv-stat">
         <span className="inv-stat-label">Installer pay</span>
         <span className="inv-stat-value">{formatCurrency(totals.pay)}</span>
+        <span className="inv-stat-note">{payNote(totals)}</span>
       </div>
     </StatGrid>
   )

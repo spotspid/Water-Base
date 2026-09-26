@@ -26,7 +26,8 @@ const TILES = 7
 // range makes it mean something.
 export default function DashboardMetrics({
   sold, installed, both = 0, monthName, notBooked, attention = 0, bookedSoon, bookingDays,
-  inventoryValue, inventoryUnits, itemCount, quotes = { count: 0, value: 0, oldestDays: null },
+  inventoryValue, inventoryUnits, itemCount, unpricedItems = 0,
+  quotes = { count: 0, value: 0, oldestDays: null },
 }) {
   return (
     <StatGrid count={TILES} minWidth={180} gap={18} className="dash-metrics">
@@ -120,6 +121,8 @@ export default function DashboardMetrics({
           {itemCount === 0
             ? 'No catalog items yet'
             : `${inventoryUnits} ${inventoryUnits === 1 ? 'unit' : 'units'} across ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
+          {unpricedItems > 0
+            && `, ${unpricedItems} with no cost and left out of the value`}
         </span>
       </article>
     </StatGrid>

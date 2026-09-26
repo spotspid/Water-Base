@@ -63,10 +63,18 @@ export function warrantyTotals(events) {
   let units = 0
   let cost = 0
 
+  let uncosted = 0
+
   for (const row of rows) {
     if (!row) continue
     units += Number(row.units) || 0
-    cost += Number(row.cost) || 0
+    // A replacement deducted before anybody priced the part has no cost, which
+    // is not a replacement that cost nothing. It is counted, not added.
+    if (row.cost == null || !Number.isFinite(Number(row.cost))) {
+      uncosted += 1
+    } else {
+      cost += Number(row.cost)
+    }
     if (row.sku) skus.add(row.sku)
     if (row.supplier && row.supplier !== 'Unknown') suppliers.add(row.supplier)
   }
@@ -75,6 +83,7 @@ export function warrantyTotals(events) {
     events: rows.filter(Boolean).length,
     units,
     cost: Math.round(cost * 100) / 100,
+    uncosted,
     skus: skus.size,
     suppliers: suppliers.size,
   }

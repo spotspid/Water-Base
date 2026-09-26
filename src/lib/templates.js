@@ -1,4 +1,5 @@
 import { PICK_SOURCES, PICK_SOURCE_LABELS } from './constants.js'
+import { hasCost } from './inventory.js'
 
 export function pickSourceMeta(value) {
   return PICK_SOURCES.find(s => s.value === value) || null
@@ -50,12 +51,19 @@ export function templateCost(lines, items) {
   let pickMin = 0
   let pickMax = 0
   let unpriced = 0
+  let uncosted = 0
 
   for (const line of lines) {
     const qty = Number(line.quantity) || 0
 
     if (line.line_type === 'fixed') {
-      fixed += qty * (Number(line.unit_cost) || 0)
+      // A part nobody has priced adds nothing here and is counted instead, so
+      // the figure below reads as a floor rather than as the whole cost.
+      if (!hasCost(line.unit_cost)) {
+        uncosted += 1
+        continue
+      }
+      fixed += qty * Number(line.unit_cost)
       continue
     }
 
@@ -64,7 +72,12 @@ export function templateCost(lines, items) {
       unpriced += 1
       continue
     }
-    const costs = options.map(o => qty * (Number(o.unit_cost) || 0))
+
+    const priced = options.filter(o => hasCost(o.unit_cost))
+    if (priced.length < options.length) uncosted += 1
+    if (priced.length === 0) continue
+
+    const costs = priced.map(o => qty * Number(o.unit_cost))
     pickMin += Math.min(...costs)
     pickMax += Math.max(...costs)
   }
@@ -74,6 +87,7 @@ export function templateCost(lines, items) {
     high: fixed + pickMax,
     isRange: pickMin !== pickMax,
     unpricedPickLines: unpriced,
+    uncostedLines: uncosted,
   }
 }
 

@@ -1,7 +1,9 @@
 import { formatCurrency } from '../lib/inventory'
 import { STATUS_LABELS } from '../lib/constants'
 import { agreementLabel, agreementTone } from '../lib/agreements'
-import { NOT_COSTED, basisTag, canShowProfit } from '../lib/profit'
+import {
+  PAY_UNSET, basisTag, canShowProfit, isKnownAmount, notCostedLabel,
+} from '../lib/profit'
 import { jobListDate } from '../lib/jobDates'
 import { JOB_SORTS, ariaSortOf } from '../lib/jobSort'
 
@@ -78,9 +80,16 @@ export default function JobsTable({ jobs, onOpen, reasonFor, sort, onSort }) {
                       <span className="inv-low" title="Installed without a template deduction">Manual</span>
                     )}
                   </td>
-                  <td className="col-num">{formatCurrency(job.installer_pay)}</td>
+                  <td className="col-num">
+                    {/* A payout of nothing is a decision. No payout at all is
+                        a blank, and printing $0.00 for it made a job look
+                        costed when nobody had costed it. */}
+                    {isKnownAmount(job.installer_pay)
+                      ? formatCurrency(job.installer_pay)
+                      : <span className="cell-unset">{PAY_UNSET}</span>}
+                  </td>
                   <td className={Number(job.margin) < 0 ? 'col-num col-value job-margin-bad' : 'col-num col-value'}>
-                    {canShowProfit(job.parts_cost_basis) && job.margin != null ? (
+                    {canShowProfit(job.profit_basis) && job.margin != null ? (
                       <>
                         {formatCurrency(job.margin)}
                         {job.margin_pct != null && (
@@ -92,8 +101,9 @@ export default function JobsTable({ jobs, onOpen, reasonFor, sort, onSort }) {
                       </>
                     ) : (
                       /* A blank that says so, rather than the whole sale price
-                         dressed up as profit. */
-                      <span className="cell-unset">{NOT_COSTED}</span>
+                         dressed up as profit, and which of the two blanks it
+                         is waiting on. */
+                      <span className="cell-unset">{notCostedLabel(job.profit_basis)}</span>
                     )}
                   </td>
                   <td>

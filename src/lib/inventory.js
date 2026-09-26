@@ -29,6 +29,34 @@ export function formatCurrency(value) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
+// What to print where a unit cost or a value built on one would go when
+// nobody has recorded it. Zero is a real answer here: the two control valves
+// cost nothing because the system they arrive in was already paid for. A part
+// nobody has priced is a different thing entirely, and used to print as the
+// same $0.00.
+export const COST_UNSET = 'No cost'
+
+export function hasCost(value) {
+  return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))
+}
+
+// A unit cost, a line cost or a stock value, printed as money when it is known
+// and as a word when it is not.
+export function formatCost(value, word = COST_UNSET) {
+  return hasCost(value) ? formatCurrency(value) : word
+}
+
+/**
+ * Stock rows whose cost nobody has recorded.
+ *
+ * The value on hand figure has to leave these out, because multiplying a
+ * count by an unknown is not zero dollars of stock, it is an unknown number of
+ * them. The count of what was left out travels with the total.
+ */
+export function unpricedRows(rows) {
+  return (rows || []).filter(r => !hasCost(r?.unit_cost))
+}
+
 export function formatSignedQty(qty) {
   const n = Number(qty) || 0
   return n > 0 ? `+${n}` : String(n)

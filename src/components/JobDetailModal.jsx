@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { CANCELLED_STATUS, QUOTED_STATUS } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
-import { GROSS, NOT_COSTED, basisTag, canShowProfit, partsNote, profitNote } from '../lib/profit'
+import {
+  GROSS, PAY_UNSET, basisTag, canShowProfit, isKnownAmount, notCostedLabel,
+  partsNote, profitNote,
+} from '../lib/profit'
 import { useInstallers } from '../lib/useInstallers'
 import { crewLabel, formatLongDate } from '../lib/schedule'
 import { metaLine } from '../lib/text'
@@ -126,12 +129,16 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
         </div>
         <div className="job-margin-cell job-margin-minus">
           <span className="inv-stat-label">Installer pay</span>
-          <span className="inv-stat-value">{formatCurrency(job.installer_pay)}</span>
+          <span className="inv-stat-value">
+            {isKnownAmount(job.installer_pay)
+              ? formatCurrency(job.installer_pay)
+              : <span className="cell-unset">{PAY_UNSET}</span>}
+          </span>
         </div>
         <div className={Number(job.margin) < 0 ? 'job-margin-cell job-margin-total job-margin-bad' : 'job-margin-cell job-margin-total'}>
           <span className="inv-stat-label">{GROSS}</span>
           <span className="inv-stat-value">
-            {canShowProfit(job.parts_cost_basis) && job.margin != null ? (
+            {canShowProfit(job.profit_basis) && job.margin != null ? (
               <>
                 {formatCurrency(job.margin)}
                 {job.margin_pct != null && (
@@ -139,14 +146,18 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
                 )}
               </>
             ) : (
-              <span className="cell-unset">{NOT_COSTED}</span>
+              <span className="cell-unset">{notCostedLabel(job.profit_basis)}</span>
             )}
           </span>
         </div>
       </div>
 
+      {/* The parts sentence answers for the parts figure, the profit one for
+          the profit figure, and they can now be waiting on different things:
+          a fully costed parts list and a missing payout is an ordinary state
+          for a job nobody has paid out on yet. */}
       <p className="inv-ledger-note">
-        {partsNote(job.parts_cost_basis)} {profitNote(job.parts_cost_basis)}
+        {partsNote(job.parts_cost_basis)} {profitNote(job.profit_basis)}
       </p>
 
       <div className="form-actions job-edit-row">

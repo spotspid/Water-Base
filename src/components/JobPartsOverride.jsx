@@ -209,7 +209,11 @@ export default function JobPartsOverride({ job, onChanged }) {
                         aria-label={`Quantity for ${item?.sku || 'this part'}`}
                       />
                     </td>
-                    <td className="col-num">{item ? formatCurrency(item.unit_cost) : ''}</td>
+                    <td className="col-num">
+                      {item && (item.unit_cost == null
+                        ? <span className="cell-unset">No cost</span>
+                        : formatCurrency(item.unit_cost))}
+                    </td>
                     <td><span className="tpl-line-note">{row.note || ''}</span></td>
                     <td className="col-num">
                       <button

@@ -83,6 +83,15 @@ export default function TemplateCard({
         </p>
       )}
 
+      {cost.uncostedLines > 0 && (
+        <p className="form-warning" role="status">
+          {cost.uncostedLines} {cost.uncostedLines === 1 ? 'line names a part' : 'lines name parts'}
+          {' '}with no unit cost recorded, so the cost shown is a floor rather than the
+          cost of the system. Price {cost.uncostedLines === 1 ? 'it' : 'them'} on the
+          inventory page.
+        </p>
+      )}
+
       {lines.length === 0 && (
         <p className="tpl-empty">
           No parts yet. A job on this template will install without deducting anything.
@@ -119,12 +128,16 @@ export default function TemplateCard({
                   <td className="col-num">
                     {line.line_type === 'customer_pick'
                       ? <span className="tpl-varies">varies</span>
-                      : formatCurrency(line.unit_cost)}
+                      : line.unit_cost == null
+                        ? <span className="cell-unset">No cost</span>
+                        : formatCurrency(line.unit_cost)}
                   </td>
                   <td className="col-num col-value">
                     {line.line_type === 'customer_pick'
                       ? <span className="tpl-varies">varies</span>
-                      : formatCurrency(line.line_cost)}
+                      : line.line_cost == null
+                        ? <span className="cell-unset">Unknown</span>
+                        : formatCurrency(line.line_cost)}
                   </td>
                   <td className="col-actions">
                     {confirmingId === line.id ? (

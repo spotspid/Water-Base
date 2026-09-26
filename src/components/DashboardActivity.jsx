@@ -83,6 +83,8 @@ function MovementRow({ entry, typeLabel }) {
   const direction = directionOf(entry)
   const quantity = single ? Number(row.quantity) || 0 : Number(entry.quantity) || 0
   const value = single ? costEffect(row) : entry.value
+  // A single row with no stamped cost, or a group where some rows had none.
+  const uncosted = single ? value == null : (entry.uncosted || 0) > 0
 
   const title = single
     ? (row.inventory_items?.name || 'Unknown item')
@@ -108,7 +110,11 @@ function MovementRow({ entry, typeLabel }) {
 
       <span className="mv-r">
         <span className={`mv-q mv-q-${direction}`}>{formatSignedQty(quantity)}</span>
-        <span className="mv-v">{formatCurrency(Math.abs(value))}</span>
+        <span className="mv-v">
+          {value == null
+            ? 'No cost'
+            : `${uncosted ? 'at least ' : ''}${formatCurrency(Math.abs(value))}`}
+        </span>
       </span>
 
       <span className="mv-w" title={formatDateTime(row.created_at)}>

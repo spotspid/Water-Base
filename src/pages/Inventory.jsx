@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import {
-  committedOf, formatCurrency, isLowStock, isShort, sortStockRows,
+  committedOf, formatCost, isLowStock, isShort, sortStockRows, unpricedRows,
 } from '../lib/inventory'
 import { atReorderPoint } from '../lib/dashboard'
 import AppShell from '../components/AppShell'
@@ -62,10 +62,15 @@ export default function Inventory() {
     [rows, category],
   )
 
+  // Only the parts we know the cost of. A part with no cost used to be worth
+  // nothing here, which made the value on hand look complete when it was
+  // missing however many units of whatever nobody had priced.
   const totalValue = useMemo(
     () => visible.reduce((sum, r) => sum + (Number(r.stock_value) || 0), 0),
     [visible],
   )
+
+  const unpricedCount = useMemo(() => unpricedRows(visible).length, [visible])
 
   const lowCount = useMemo(() => visible.filter(isLowStock).length, [visible])
 
@@ -111,6 +116,7 @@ export default function Inventory() {
         {hasData && (
           <InventorySummary
             totalValue={totalValue}
+            unpricedCount={unpricedCount}
             itemCount={visible.length}
             committedUnits={committedUnits}
             lowCount={lowCount}
@@ -229,8 +235,18 @@ export default function Inventory() {
                           </span>}
                     </td>
                     <td className="col-num"><InventoryOnOrderCell row={row} /></td>
-                    <td className="col-num">{formatCurrency(row.unit_cost)}</td>
-                    <td className="col-num col-value">{formatCurrency(row.stock_value)}</td>
+                    {/* No cost recorded is not a cost of nothing. The two
+                        control valves are a real zero and print as $0.00. */}
+                    <td className="col-num">
+                      {row.unit_cost == null
+                        ? <span className="cell-unset">No cost</span>
+                        : formatCost(row.unit_cost)}
+                    </td>
+                    <td className="col-num col-value">
+                      {row.unit_cost == null
+                        ? <span className="cell-unset">Unknown</span>
+                        : formatCost(row.stock_value)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -244,7 +260,9 @@ export default function Inventory() {
             Promised is what booked jobs have set aside but not yet consumed, and available
             is on hand minus promised. On order is what is bought and not here yet, with
             the earliest date it is expected. Booking a job never moves stock. Only marking it
-            installed writes to the ledger. Click a row to see its history.
+            installed writes to the ledger. A part with no unit cost is left out of the
+            value on hand rather than counted as free, and every job using it says so.
+            Click a row to see its history.
           </p>
         )}
       </div>

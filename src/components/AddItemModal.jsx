@@ -8,7 +8,9 @@ const EMPTY_FORM = {
   name: '',
   category: '',
   variant: '',
-  unit_cost: '0',
+  // Blank, not zero. Nobody has told us what it costs yet, and a form that
+  // fills that in for them is how a $300 tank became free.
+  unit_cost: '',
   reorder_threshold: '0',
   active: true,
   notes: '',
@@ -29,8 +31,12 @@ export default function AddItemModal({ onClose, onSaved }) {
     if (!form.sku.trim()) return 'SKU is required.'
     if (!form.name.trim()) return 'Name is required.'
     if (!form.category) return 'Category is required.'
-    const cost = Number(form.unit_cost)
-    if (!Number.isFinite(cost) || cost < 0) return 'Unit cost must be zero or greater.'
+    if (form.unit_cost !== '') {
+      const cost = Number(form.unit_cost)
+      if (!Number.isFinite(cost) || cost < 0) {
+        return 'Unit cost must be zero or greater, or left blank if you do not know it yet.'
+      }
+    }
     const threshold = Number(form.reorder_threshold)
     if (!Number.isInteger(threshold) || threshold < 0) return 'Reorder threshold must be a whole number, zero or greater.'
     return ''
@@ -52,7 +58,9 @@ export default function AddItemModal({ onClose, onSaved }) {
       name: form.name.trim(),
       category: form.category,
       variant: form.variant.trim() || null,
-      unit_cost: Number(form.unit_cost),
+      // Blank saves as not recorded. Every figure built on it then reads as
+      // unknown rather than counting the part as free.
+      unit_cost: form.unit_cost === '' ? null : Number(form.unit_cost),
       reorder_threshold: Number(form.reorder_threshold),
       active: form.active,
       notes: form.notes.trim() || null,
@@ -102,9 +110,13 @@ export default function AddItemModal({ onClose, onSaved }) {
               onChange={handleChange} disabled={saving} />
           </div>
           <div className="field">
-            <label htmlFor="unit_cost">Unit cost ($)</label>
+            <label htmlFor="unit_cost">Unit cost ($) <span className="optional">(optional)</span></label>
             <input id="unit_cost" name="unit_cost" type="number" min="0" step="0.01"
               value={form.unit_cost} onChange={handleChange} disabled={saving} />
+            <span className="field-hint">
+              Leave it blank if you do not know it. Blank reads as no cost recorded, and
+              zero means the part is genuinely free.
+            </span>
           </div>
           <div className="field">
             <label htmlFor="reorder_threshold">Reorder threshold</label>

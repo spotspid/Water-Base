@@ -20,7 +20,7 @@ faucets only.
 
 | Figure | What it is |
 |---|---|
-| Value on hand | On hand multiplied by unit cost, added up. |
+| Value on hand | On hand multiplied by unit cost, added up. Parts with no cost recorded are left out and counted underneath, because a count times an unknown is not zero dollars. |
 | Items | How many parts are in the list. |
 | Promised to booked jobs | Units set aside for scheduled jobs that have not installed. Still on the shelf, not free to sell. |
 | Needs reordering | Parts at or below their reorder point. |
@@ -42,8 +42,8 @@ One row per part, sorted by category then name. Click any row for its history.
 | On hand | The ledger total, with a "Reorder" tag when it is at or below the reorder point. |
 | Promised | Units held for booked jobs. |
 | On order | Units on a supplier order, with the earliest expected date. |
-| Unit cost | What one costs today. |
-| Value | On hand at that cost. |
+| Unit cost | What one costs today, or "No cost" where nobody has recorded it. Zero means genuinely free. |
+| Value | On hand at that cost, or "Unknown" where there is no cost. |
 
 ## Adding a part
 
@@ -52,7 +52,10 @@ threshold, active, and notes.
 
 - **SKU, name and category are required.** Leave one out and you get "SKU is
   required.", "Name is required." or "Category is required."
-- **Unit cost** must be zero or more: "Unit cost must be zero or greater."
+- **Unit cost is optional.** Leave it blank if you do not know it yet, and the
+  part reads as having no cost recorded rather than as free. A figure must be
+  zero or more: "Unit cost must be zero or greater, or left blank if you do not
+  know it yet."
 - **Reorder threshold** must be a whole number: "Reorder threshold must be a
   whole number, zero or greater."
 - **A SKU already in use** is refused by name: `SKU "SALT-40" already exists.
@@ -98,6 +101,12 @@ to say so.
 Open a part and edit its cost there. Saving says what it did: "Saved. 4 on hand
 now values at $30.72.", or if nothing is on hand, "Saved. Nothing is on hand, so
 this takes effect when some arrives."
+
+Clearing the box is allowed and means nobody knows the cost. The part then
+leaves the value on hand, and any job using it shows no profit figure until it
+is priced. A cost of zero is different and is treated as real: the two control
+valves are zero because the valve is already inside the landed cost of the
+system it arrives in.
 
 Changing the cost does **not** rewrite history. Every movement keeps the cost it
 was logged at, which is why an installed job's parts cost never moves again.
@@ -181,10 +190,11 @@ Found while walking the page. These are faults or decisions, not instructions.
    active parts actually promised to a job, so Inventory can say "Short 3" while
    the dashboard says parts are clear.
 
-3. **A new part defaults to a unit cost of zero, and a zero cost counts as
-   known.** A $300 tank added without a cost prices every job that uses it $300
-   too high in gross profit, with no warning anywhere. The two control valves
-   are deliberately zero, which makes a real mistake harder to spot.
+3. **Fixed on 2026-09-26: a new part defaulted to a unit cost of zero, and a
+   zero cost counted as known.** The cost box starts blank now, blank means
+   nobody has recorded it, and every figure built on it reads as unknown rather
+   than as free. Zero still means free, which is what the two control valves
+   are.
 
 4. **A part can go below zero on hand with only a warning.** Useful for honesty,
    dangerous by accident: nothing afterwards flags a negative count on this page

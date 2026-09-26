@@ -48,7 +48,7 @@ export default function PnL() {
         () => supabase.from('pnl_monthly')
           .select('month, revenue, parts_cost, installer_pay, expense_total, job_count, '
             + 'expense_count, gross_profit, net_profit, net, deposits_in, deposit_count, '
-            + 'balance_on_install, cash_in')
+            + 'balance_on_install, cash_in, pay_unknown_jobs, parts_unknown_jobs')
           .gte('month', start).lte('month', end)
           .order('month', { ascending: false }),
         'The profit and loss could not be loaded.',
@@ -89,9 +89,15 @@ export default function PnL() {
     job_count: acc.job_count + Number(m.job_count),
     cash_in: acc.cash_in + Number(m.cash_in),
     still_owed: acc.still_owed + Number(m.balance_on_install),
+    // Installed jobs in the range whose pay or whose parts nobody has costed.
+    // Their revenue is in these figures and part of their cost is not, so the
+    // profit below is the best case until somebody fills them in.
+    pay_unknown: acc.pay_unknown + Number(m.pay_unknown_jobs || 0),
+    parts_unknown: acc.parts_unknown + Number(m.parts_unknown_jobs || 0),
   }), {
     revenue: 0, parts_cost: 0, installer_pay: 0, expense_total: 0,
     gross_profit: 0, net_profit: 0, job_count: 0, cash_in: 0, still_owed: 0,
+    pay_unknown: 0, parts_unknown: 0,
   }), [months])
 
   const monthKeys = useMemo(
@@ -150,10 +156,22 @@ export default function PnL() {
             <div className="inv-stat">
               <span className="inv-stat-label">Parts</span>
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.parts_cost)}</span>
+              {totals.parts_unknown > 0 && (
+                <span className="inv-stat-note">
+                  {totals.parts_unknown} installed {totals.parts_unknown === 1 ? 'job has a part' : 'jobs have parts'}
+                  {' '}deducted with no cost
+                </span>
+              )}
             </div>
             <div className="inv-stat">
               <span className="inv-stat-label">Installer pay</span>
               <span className="inv-stat-value pnl-cost">{formatCurrency(totals.installer_pay)}</span>
+              {totals.pay_unknown > 0 && (
+                <span className="inv-stat-note">
+                  {totals.pay_unknown} installed {totals.pay_unknown === 1 ? 'job has' : 'jobs have'}
+                  {' '}no payout recorded
+                </span>
+              )}
             </div>
             {/* The same arithmetic the jobs page does, on installed work only,
                 so a person can reconcile the two pages instead of taking it on
@@ -161,7 +179,11 @@ export default function PnL() {
             <div className="inv-stat">
               <span className="inv-stat-label">{GROSS}</span>
               <span className="inv-stat-value">{formatCurrency(totals.gross_profit)}</span>
-              <span className="inv-stat-note">Before overheads</span>
+              <span className="inv-stat-note">
+                {totals.pay_unknown + totals.parts_unknown > 0
+                  ? 'Before overheads, and before the costs nobody has recorded'
+                  : 'Before overheads'}
+              </span>
             </div>
             <div className="inv-stat">
               <span className="inv-stat-label">Expenses</span>

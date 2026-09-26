@@ -34,7 +34,7 @@ saying the job is missing.
 | Gross profit | Price less parts less installer pay, added up for the jobs on screen. Jobs that cannot be costed are left out rather than counted as pure profit, and the note underneath says how many are settled and how many are still expected. |
 | Contracted value | The sum of the prices, installed or not. **This is not revenue.** Profit and loss counts only installed work. |
 | Parts | The ledger figure where a job has installed, the expected figure where it has not. |
-| Installer pay | What the crew is owed or was paid on those jobs. |
+| Installer pay | What the crew is owed or was paid on those jobs. Jobs with no payout recorded are left out, and the note underneath says how many. |
 
 The figures follow the filters. Cancelled jobs stay in the list but never in
 these totals, and a line under the table says how many were left out.
@@ -61,8 +61,8 @@ that column, click again to reverse.
 | Build sheet | The system sold. |
 | Price | The sale price. |
 | Parts | The deducted cost once installed, otherwise the expected cost, tagged so the two are never confused. A job whose parts list cannot name every item reads "Not costed yet" rather than a number. |
-| Pay | The installer payout. |
-| Gross profit | Price less parts less pay, or blank when the job is not costed. |
+| Pay | The installer payout, or "Not set" where nobody has entered one. A payout of $0.00 is a decision; a blank is not read as one. |
+| Gross profit | Price less parts less pay, or blank when the job is not costed. A job with no payout recorded reads "Pay not set" rather than showing a profit that assumes the crew worked for nothing. |
 | Status | Sold, Scheduled, Installed, Cancelled. |
 | Agreement | Where the customer agreement stands. |
 | Key date | Installed on, Scheduled for, or Written up, whichever applies. |
@@ -219,11 +219,14 @@ Found while walking the page. These are faults or decisions, not instructions.
    recorded with $0 pay and an overstated profit, and the only way back is to
    reverse the install.
 
-5. **Missing pay counts as zero rather than unknown.** A job with no payout
-   shows profit as though the crew worked for nothing.
+5. **Fixed on 2026-09-26: missing pay counted as zero.** A job with no payout
+   showed profit as though the crew worked for nothing. Pay now reads "Not
+   set", and the job shows no profit figure until a payout is entered.
 
-6. **A part added without a cost counts as $0.** New stock items start at zero
-   cost, and a job using one shows a profit that is too high with no warning.
+6. **Fixed on 2026-09-26: a part added without a cost counted as $0.** A part
+   can now be saved with no cost at all, which is different from a cost of
+   zero, and a job using one says its parts figure is a floor rather than
+   showing a profit that is too high.
 
 7. **Reverse install and Back to sold both run on one click.** They move stock
    and release parts. Cancel, right beside them, does ask first.
