@@ -17,6 +17,11 @@ the words you actually see on screen.
 
 More pages will be added here as they are walked.
 
+## The list of faults
+
+- [Known issues](known-issues.md): every rough edge from the guides above in
+  one list, deduplicated, worst first. Nothing on it is fixed.
+
 ## How to read these
 
 - **"Blocked"** means the app will not let you do something. Every block in
