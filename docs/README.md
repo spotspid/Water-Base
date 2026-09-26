@@ -9,7 +9,7 @@ the words you actually see on screen.
 
 ## Guides
 
-- [Quotes](quotes.md) — prices sent to customers that nobody has signed yet.
+- [Quotes](quotes.md): prices sent to customers that nobody has signed yet.
 
 More pages will be added here as they are walked.
 

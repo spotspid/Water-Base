@@ -17,8 +17,8 @@ quote open.
 
 Two addresses matter:
 
-- `/quotes` — every quote.
-- `/quotes?view=out` — only quotes that have been **sent** and are not signed.
+- `/quotes` shows every quote.
+- `/quotes?view=out` shows only quotes that have been **sent** and are not signed.
   This is what the dashboard tile counts, so the tile's number and this list
   are always the same jobs. When this filter is on, the page says so and offers
   "Show every quote".
@@ -130,11 +130,11 @@ agreement has already been signed.
 If something goes wrong after you press send, the message says what:
 
 - **"A quote needs the customer email. Add it to the job first."**
-- **"This job is not a quote any more, so there is no quote to send. Send the agreement instead."** — somebody marked it sold, or it was signed, while you had the drawer open.
+- **"This job is not a quote any more, so there is no quote to send. Send the agreement instead."** Somebody marked it sold, or it was signed, while you had the drawer open.
 - **"This job has no customer email, so there is nowhere to send the agreement. Add one to the job first."**
 - **"Customer Install Agreement is turned off. Turn it on in Settings first."**
 - **"Customer Install Agreement has no DocuSeal template id. Paste one on the Settings page first."**
-- **"DocuSeal rejected the API key. Check DOCUSEAL_API_KEY."** — not something you can fix; send it to whoever maintains the app.
+- **"DocuSeal rejected the API key. Check DOCUSEAL_API_KEY."** Not something you can fix; send it to whoever maintains the app.
 
 If the email went but the app could not record it, the message says so and
 tells you **not** to resend, because the customer already has it.
