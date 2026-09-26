@@ -22,8 +22,10 @@ function check(name, condition, detail = '') {
   if (!condition) failed++
 }
 
-const LONG = 'Whole home water softening system plus under sink tanked reverse osmosis '
-  + 'system and separate faucet for drinking water'
+// The real sentence a Flagship Bundle job with a tanked RO composes to,
+// since 20260926060000 put David's wording on the four named sheets.
+const LONG = 'Whole home single tank mixed bed system for filtration and softening '
+  + 'plus under sink tanked reverse osmosis system for drinking water'
 
 function systemsOf(specKey, job) {
   const spec = SPECS[specKey]
@@ -103,12 +105,23 @@ check('the long name is read from the job, beside the checklist',
 
 // --- the clauses, as the database composes them -------------------------------
 
-const sql = readFileSync(new URL('../supabase/migrations/20260922020000_long_system_names.sql', import.meta.url), 'utf8')
+const sql = readFileSync(new URL('../supabase/migrations/20260926060000_long_names_from_david.sql', import.meta.url), 'utf8')
 check('tanked has the wording from the brief',
-  sql.includes("when 'Tank Style' then ' plus under sink tanked reverse osmosis system and separate faucet for drinking water'"))
+  sql.includes("when 'Tank Style' then ' plus under sink tanked reverse osmosis system for drinking water'"))
 check('tankless has its own, matching wording',
-  sql.includes("when 'Tankless'   then ' plus under sink tankless reverse osmosis system and separate faucet for drinking water'"))
+  sql.includes("when 'Tankless'   then ' plus under sink tankless reverse osmosis system for drinking water'"))
 check('and No RO adds nothing', /else ''/.test(sql))
+
+// RO Only is an RO. Composing the clause onto it said it twice, so a label
+// that already names one is returned as it stands.
+check('a sheet that already names an RO takes no clause',
+  /~\*\s*'reverse osmosis'\s*then btrim\(p_long_label\)/.test(sql),
+  (sql.match(/.*reverse osmosis'\s*then.*/) || [''])[0].trim())
+check('the four sheets are named, and Custom is not',
+  ['Well Water Bundle', 'Flagship Bundle', 'Softener Only', 'RO Only'].every(l => sql.includes(`when '${l}'`))
+  && !/when 'Custom'/.test(sql))
+check('and the jobs already written are recomposed rather than left behind',
+  /update public\.jobs[\s\S]*set system_long_name = public\.compose_system_long_name/.test(sql))
 // An assignment to the column, not a mention of it: public.system_templates
 // contains the words "system_template", which the first version of this
 // check read as the job's short name being rewritten.
