@@ -59,7 +59,11 @@ export default function MarkdownDoc({ blocks, skipTitle = false }) {
 
         if (block.kind === 'list') {
           const items = block.items.map((item, n) => <li key={n}><Inline text={item} /></li>)
-          return block.ordered ? <ol key={i}>{items}</ol> : <ul key={i}>{items}</ul>
+          // start carries the number the list was written from, so a list
+          // that picks up at 3 says 3 rather than starting over.
+          return block.ordered
+            ? <ol key={i} start={block.start || 1}>{items}</ol>
+            : <ul key={i}>{items}</ul>
         }
 
         if (block.kind === 'table') {

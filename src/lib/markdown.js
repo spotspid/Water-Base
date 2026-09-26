@@ -125,19 +125,48 @@ export function parseMarkdown(source) {
     if (bullet || numbered) {
       flush()
       const ordered = Boolean(numbered)
+      const start = ordered ? Number(numbered[1]) : 1
       const items = []
       let current = (bullet ? bullet[1] : numbered[2]).trim()
+
+      // How far ahead the next item of this list is, counting over blank
+      // lines, or 0 when what follows is not part of it.
+      //
+      // Every numbered list in the guides puts a blank line between its
+      // items, which is ordinary Markdown for a list whose items are
+      // paragraphs. Ending the list at the first blank line turned each item
+      // into a list of its own, and a list of one item numbers itself 1, so
+      // ten rough edges all read "1." on screen and in print.
+      const nextItemAt = () => {
+        let ahead = i + 1
+        while (ahead < lines.length && lines[ahead].trim() === '') ahead++
+        if (ahead >= lines.length) return 0
+
+        const aheadBullet = BULLET.exec(lines[ahead])
+        const aheadNumber = NUMBER.exec(lines[ahead])
+        const sameKind = ordered ? Boolean(aheadNumber) : Boolean(aheadBullet && !aheadNumber)
+
+        return sameKind ? ahead : 0
+      }
 
       while (i + 1 < lines.length) {
         const next = lines[i + 1]
         const nextBullet = BULLET.exec(next)
         const nextNumber = NUMBER.exec(next)
 
-        // a new item of the same kind
-        if ((ordered && nextNumber) || (!ordered && nextBullet && !nextNumber)) {
+        // a new item of the same kind, here or after the blank line between
+        // this item and the next
+        const at = next.trim() === '' ? nextItemAt() : 0
+
+        if (at > 0 || (ordered && nextNumber) || (!ordered && nextBullet && !nextNumber)) {
+          const at2 = at > 0 ? at : i + 1
+          const line2 = lines[at2]
+          const asNumber = NUMBER.exec(line2)
+          const asBullet = BULLET.exec(line2)
+
           items.push(current)
-          current = (ordered ? nextNumber[2] : nextBullet[1]).trim()
-          i++
+          current = (ordered ? asNumber[2] : asBullet[1]).trim()
+          i = at2
           continue
         }
 
@@ -152,7 +181,9 @@ export function parseMarkdown(source) {
       }
 
       items.push(current)
-      blocks.push({ kind: 'list', ordered, items })
+      // start is what the first item was numbered, so a list that picks up at
+      // 3 renders 3 rather than starting again.
+      blocks.push({ kind: 'list', ordered, start, items })
       continue
     }
 

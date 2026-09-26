@@ -120,9 +120,12 @@ function renderSection(name, source) {
     }
 
     if (block.kind === 'list') {
-      const tag = block.ordered ? 'ol' : 'ul'
       const items = block.items.map(item => `<li>${renderInline(item)}</li>`).join('')
-      html.push(`<${tag}>${items}</${tag}>`)
+      // start is the number the list was written from, so a list picking up
+      // at 3 prints 3.
+      html.push(block.ordered
+        ? `<ol start="${block.start || 1}">${items}</ol>`
+        : `<ul>${items}</ul>`)
       continue
     }
 
