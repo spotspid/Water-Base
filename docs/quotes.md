@@ -4,7 +4,8 @@ A quote is a price a customer has not agreed to yet. It is not a sale, so it
 holds no parts, sits on no calendar, and counts toward no revenue or profit.
 The Quotes page is the list of them.
 
-Walked through on 2026-09-26 against the live app.
+Walked through on 2026-09-26 against the live app, and checked again the same
+day after the ZZ Test rows were deleted.
 
 ## Getting there
 
@@ -39,7 +40,8 @@ Under the table: a reminder that none of this counts as revenue or gross
 profit.
 
 **Show test quotes.** If any quote is flagged as a test, a checkbox appears
-with the count. Test quotes are hidden until you tick it.
+with the count. Test quotes are hidden until you tick it. No quote carries the
+flag at the moment, so the checkbox is not on screen at all.
 
 **Nothing to show.** With no quotes at all the page says "No quotes yet". With
 the sent filter on and nothing out, it says "No quotes are out", and explains
@@ -188,7 +190,7 @@ anywhere, until the job is installed.
 
 Found while walking the page. These are faults or decisions, not instructions.
 
-1. **"Show test quotes" and the Needs attention list disagree about what a test is.** This page hides a quote only when it carries the test flag. The dashboard's Needs attention rule also treats any name containing "test" or "ZZ" as a test. Today there is a quote called "ZZ Test - Sept 17 quote" that is **not** flagged, so it shows here as a real quote, with its $3,799 in the tile. Either flag it, or make both places use the same rule.
+1. **"Show test quotes" and the Needs attention list disagree about what a test is.** This page hides a quote only when it carries the test flag. The dashboard's Needs attention rule also treats any name containing "test" or "ZZ" as a test. The quote that showed this, "ZZ Test - Sept 17 quote", was deleted on 2026-09-26, so nothing demonstrates it today, but the two rules still differ and the next test quote typed in without the flag will show here as a real sale. Worth making both places use the same rule.
 
 2. **A quote shows a "Crew, pay and invoice number" section.** Nothing on a quote needs a crew, and saving one does nothing useful until it is sold. It is also the one place a quote can be given a payout, which then counts against the margin of a sale that has not happened.
 
@@ -200,4 +202,4 @@ Found while walking the page. These are faults or decisions, not instructions.
 
 6. **A quote can be given a deposit payment.** The Payments panel accepts money against a price nobody has agreed to. Probably harmless, possibly wrong, and worth a decision rather than an accident.
 
-7. **Both quotes on the system today have never been sent**, so the page has never been seen in its normal working state: a list of quotes out with ages against them. Worth sending one real quote before relying on this page.
+7. **The one quote on the system has never been sent.** After the test rows went, a single quote is left, named "Steve", for $2,999 on the Flagship Bundle, never sent. So the page has still never been seen in its normal working state: a list of quotes out with ages against them, and the sent filter showing something. Worth sending one real quote before relying on this page. "Steve" also looks like somebody's own test, and neither the flag nor the name rule catches it.
