@@ -54,10 +54,7 @@ export default function CrewPayFields({
           disabled={busy}
           onUse={next => onDraft(d => ({ ...d, payout_amount: next }))}
         />
-        <span className="field-hint">
-          Left blank it reads as not set, and this job shows no profit figure until it
-          is filled in. It is not read as a payout of nothing.
-        </span>
+        <span className="field-hint">Blank means not set, which is not the same as zero.</span>
       </div>
 
       <div className="field">
@@ -70,7 +67,7 @@ export default function CrewPayFields({
           The work order will not send without it.
           {' '}
           <button type="button" className="tpl-link" onClick={onEditInvoice} disabled={busy}>
-            Edit it in job details
+            Edit
           </button>
         </span>
       </div>

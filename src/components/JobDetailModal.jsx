@@ -19,6 +19,7 @@ import JobDeposits from './JobDeposits'
 import JobNagPause from './JobNagPause'
 import JobSiteConditions from './JobSiteConditions'
 import JobCrewPay from './JobCrewPay'
+import JobSystemSummary from './JobSystemSummary'
 import JobStatusActions from './JobStatusActions'
 import JobParts from './JobParts'
 import JobEditModal from './JobEditModal'
@@ -111,6 +112,28 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
 
   return (
     <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide>
+      {/* Read top to bottom: who and what, then the money, then who is doing
+          it, then the paperwork, then the parts. Each group answers one
+          question, so working a job is a scroll rather than a hunt. */}
+
+      <JobSystemSummary job={job} onEdit={() => { setEditFocus(''); setEditing(true) }} />
+
+      {/* Quoted and sold jobs: the questions asked in the house before the
+          quote goes out, and still open on a sold job until it is booked. A
+          job with any answer still Not sure yet cannot be given a date, a crew
+          or an install (jobs_guard_unsure), so a sold job is where David
+          answers them, and on a sold job they show amber. Once a job is
+          booked every answer is settled, so the panel is not needed after. */}
+      {(job.status === QUOTED_STATUS || job.status === 'sold') && (
+        <JobSalesChecklist
+          job={job}
+          onChanged={onChanged}
+          onFixJobField={field => { setEditFocus(field); setEditing(true) }}
+        />
+      )}
+
+      {!cancelled && <JobSiteConditions job={job} onChanged={onChanged} />}
+
       <div className="job-margin-grid">
         <div className="job-margin-cell">
           <span className="inv-stat-label">Sale Price</span>
@@ -160,11 +183,7 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
         {partsNote(job.parts_cost_basis)} {profitNote(job.profit_basis)}
       </p>
 
-      <div className="form-actions job-edit-row">
-        <button type="button" className="btn-cancel" onClick={() => { setEditFocus(''); setEditing(true) }}>
-          Edit job details
-        </button>
-      </div>
+      {!cancelled && <JobDeposits job={job} onChanged={onChanged} />}
 
       {/* An installed job is dated by the day it happened, not by the day it
           was booked for. Walter Radu was written up after the fact with an
@@ -184,29 +203,8 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
         <a href="/schedule" className="tpl-link">Change the date on the schedule</a>
       </p>
 
-      {!cancelled && <JobDeposits job={job} onChanged={onChanged} />}
-
-      {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
-
-      {/* Quoted and sold jobs: the questions asked in the house before the
-          quote goes out, and still open on a sold job until it is booked. A
-          job with any answer still Not sure yet cannot be given a date, a crew
-          or an install (jobs_guard_unsure), so a sold job is where David
-          answers them, and on a sold job they show amber. Once a job is
-          booked every answer is settled, so the panel is not needed after. */}
-      {(job.status === QUOTED_STATUS || job.status === 'sold') && (
-        <JobSalesChecklist
-          job={job}
-          onChanged={onChanged}
-          onFixJobField={field => { setEditFocus(field); setEditing(true) }}
-        />
-      )}
-
-      {!cancelled && <JobSiteConditions job={job} onChanged={onChanged} />}
-
-      {/* Beside the work order because it is three of the things the work
-          order refuses to go without. Open jobs only: an installed job's crew
-          and pay are a record, and schedule_job refuses to touch one. */}
+      {/* Open jobs only: an installed job's crew and pay are a record of
+          what happened, and schedule_job refuses to touch one. */}
       {open && (
         <JobCrewPay
           onEditInvoice={() => { setEditFocus('invoice_number'); setEditing(true) }}
@@ -217,6 +215,8 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
           onDirtyChange={setCrewDirty}
         />
       )}
+
+      {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 
       {!cancelled && <JobWorkOrder job={job} onChanged={onChanged} />}
 

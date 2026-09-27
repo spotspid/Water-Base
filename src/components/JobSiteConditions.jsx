@@ -70,9 +70,8 @@ export default function JobSiteConditions({ job, onChanged }) {
         <div>
           <h3>Site conditions</h3>
           <p className="agr-sub">
-            What the installer needs to know about the house before he gets there.
-            Blank is fine, and prints as a blank box rather than a note saying there
-            is nothing to say.
+            What the installer needs to know before he gets there. Printed on the work
+            order.
           </p>
         </div>
       </div>

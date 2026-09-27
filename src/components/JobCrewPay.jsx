@@ -186,11 +186,8 @@ export default function JobCrewPay({
     <section className="agr-panel">
       <div className="agr-head">
         <div>
-          <h3>Crew, pay and invoice number</h3>
-          <p className="agr-sub">
-            What the work order is built from. Saved here, it counts everywhere: the
-            schedule, the dashboard and the send button all read the same values.
-          </p>
+          <h3>Crew and pay</h3>
+          <p className="agr-sub">Who is doing it, and what they are paid.</p>
         </div>
       </div>
 

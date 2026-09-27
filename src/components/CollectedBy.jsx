@@ -68,8 +68,7 @@ export default function CollectedBy({ job, onChanged }) {
         {COLLECTED_BY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
       </select>
       <span className="field-hint">
-        Ticks one of the two collected by boxes on the work order. Change it before the
-        work order goes out, or resend it afterwards.
+        Printed on the work order, so change it before that goes out.
       </span>
       {error && <p className="form-error" role="alert">{error}</p>}
       {notice && <p className="set-notice" role="status">{notice}</p>}
