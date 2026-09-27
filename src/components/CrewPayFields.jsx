@@ -14,8 +14,8 @@ import PayRateHint from './PayRateHint'
 // every other job field is edited. Two live boxes for the same value in two
 // panels is how one of them ends up stale.
 export default function CrewPayFields({
-  draft, onChange, onDraft, busy, installers, loadingCrew,
-  suggestion, invoiceNumber, onEditInvoice,
+  draft, onChange, onUsePay, busy, installers, loadingCrew,
+  suggestion, payPending, invoiceNumber, onEditInvoice,
 }) {
   return (
     <div className="form-grid">
@@ -52,7 +52,8 @@ export default function CrewPayFields({
           suggestion={suggestion}
           value={draft.payout_amount}
           disabled={busy}
-          onUse={next => onDraft(d => ({ ...d, payout_amount: next }))}
+          pending={payPending}
+          onUse={onUsePay}
         />
         <span className="field-hint">Blank means not set, which is not the same as zero.</span>
       </div>

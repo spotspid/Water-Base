@@ -84,8 +84,11 @@ export function payoutStanding(payout, suggestion) {
  * whether the figure is this installer's own rate or the card's. This adds
  * what the typed figure does to it, which is the half the form knows.
  */
-export function payoutNote(payout, suggestion) {
+export function payoutNote(payout, suggestion, { pending = false } = {}) {
   const standing = payoutStanding(payout, suggestion)
+  // The box holds the rate and the job does not hold it yet. Four words,
+  // because a figure that looks settled and is not is worse than a blank.
+  const tail = pending ? ' Not on the job yet.' : ''
 
   if (standing === 'no_rate') {
     return String(suggestion?.reason || 'There is no rate line for this job, so the pay is typed.')
@@ -95,8 +98,8 @@ export function payoutNote(payout, suggestion) {
 
   // The box holds the rate, which is the ordinary state now that it starts
   // there. Say whose rate it is and that it can be typed over.
-  if (standing === 'unset') return reason
-  if (standing === 'matches') return `${reason} Type over it to pay something else.`
+  if (standing === 'unset') return `${reason}${tail}`
+  if (standing === 'matches') return `${reason} Type over it to pay something else.${tail}`
 
   const typed = rateAmount({ amount: Number(payout) })
   const word = standing === 'over' ? 'above' : 'below'

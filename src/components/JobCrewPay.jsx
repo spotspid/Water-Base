@@ -89,7 +89,10 @@ export default function JobCrewPay({
   }, [suggestion, payTouched])
 
   const crewDirty = draft.installer_id !== saved.installer_id || draft.helper_id !== saved.helper_id
-  const detailsDirty = draft.payout_amount !== saved.payout_amount
+  // The rate sitting in an untouched box is an offer, not an edit. Counting it
+  // as unsaved work would put every job with no payout into a state somebody
+  // has to clear before they can mark it installed, having changed nothing.
+  const detailsDirty = payTouched && draft.payout_amount !== saved.payout_amount
   const dirty = crewDirty || detailsDirty
 
   // The status section holds "Mark installed", which must not run over
@@ -103,6 +106,15 @@ export default function JobCrewPay({
     // and becomes something to compare against instead.
     if (name === 'payout_amount') setPayTouched(true)
     setDraft(d => ({ ...d, [name]: value }))
+    setNotice('')
+    setError('')
+  }
+
+  // Pressing the button is somebody choosing the rate, so from then on it is
+  // their figure and it saves like any other.
+  function usePay(next) {
+    setPayTouched(true)
+    setDraft(d => ({ ...d, payout_amount: next }))
     setNotice('')
     setError('')
   }
@@ -220,11 +232,12 @@ export default function JobCrewPay({
       <CrewPayFields
         draft={draft}
         onChange={change}
-        onDraft={setDraft}
+        onUsePay={usePay}
         busy={busy}
         installers={installers}
         loadingCrew={loadingCrew}
         suggestion={suggestion}
+        payPending={!payTouched && draft.payout_amount !== ''}
         invoiceNumber={job.invoice_number}
         onEditInvoice={onEditInvoice}
       />

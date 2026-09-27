@@ -9,10 +9,10 @@ import { payoutNote, rateButtonLabel, rateValue, hasSuggestion } from '../lib/in
 // The box starts on the rate, so most of the time this is a provenance line
 // rather than an offer. The button appears only when the two have parted
 // company, and then it means back to the rate rather than use it.
-export default function PayRateHint({ suggestion, value, onUse, disabled }) {
+export default function PayRateHint({ suggestion, value, onUse, disabled, pending = false }) {
   if (!suggestion) return null
 
-  const note = payoutNote(value, suggestion)
+  const note = payoutNote(value, suggestion, { pending })
   const label = rateButtonLabel(suggestion)
   const offer = hasSuggestion(suggestion)
     && String(value ?? '').trim() !== rateValue(suggestion)

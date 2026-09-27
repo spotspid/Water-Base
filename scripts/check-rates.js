@@ -82,6 +82,13 @@ check('the installer is named when it is their own rate',
   payoutNote('', OWN).includes('Jay Woodward is paid'))
 check('and the card is named when it is not',
   payoutNote('', CARD).includes('has no rate of their own yet'))
+check('an untouched rate says it is not on the job yet',
+  payoutNote('500', OWN, { pending: true }).endsWith('Not on the job yet.'),
+  payoutNote('500', OWN, { pending: true }))
+check('and a blank box waiting on one says the same',
+  payoutNote('', OWN, { pending: true }).endsWith('Not on the job yet.'))
+check('a saved figure says nothing of the sort',
+  !payoutNote('500', OWN).includes('Not on the job yet'))
 check('a box holding the rate says it can be typed over',
   payoutNote('500', OWN).endsWith('Type over it to pay something else.'),
   payoutNote('500', OWN))
@@ -132,6 +139,10 @@ check('and it offers nothing when the box already holds the rate',
 const crew = readFileSync(new URL('../src/components/JobCrewPay.jsx', import.meta.url), 'utf8')
 check('the drawer marks the figure as theirs the moment it is typed',
   /if \(name === 'payout_amount'\) setPayTouched\(true\)/.test(crew))
+check('and when the rate is chosen from the button',
+  /function usePay\(next\) \{\s*setPayTouched\(true\)/.test(crew))
+check('an untouched prefill is not unsaved work',
+  /const detailsDirty = payTouched && draft\.payout_amount !== saved\.payout_amount/.test(crew))
 check('a job that already has a payout starts touched, so reopening it changes nothing',
   /useState\(isKnownAmount\(job\.installer_pay\)\)/.test(crew))
 check('the drawer saves what is in the box, never the suggestion behind it',
