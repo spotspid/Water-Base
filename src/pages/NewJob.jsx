@@ -32,7 +32,12 @@ const EMPTY_FORM = {
   deposit_amount: '',
   payment_type: '',
   faucet_finish: '',
-  ro_type: '',
+  // Tank Style rather than blank. Every job on a sheet with an RO line is
+  // fitting one, and the tanked unit is the ordinary choice: five jobs loaded
+  // from signed agreements reached the schedule with the line naming no part
+  // because nobody picked. It is still a pick, changed in one keystroke, and
+  // No RO is still on the list for a job that genuinely has none.
+  ro_type: 'Tank Style',
   valve_type: '',
   // Quoted by default. Sold stays in the list for a sale closed on the phone.
   status: 'quoted',
