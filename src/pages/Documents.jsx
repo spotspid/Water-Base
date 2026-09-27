@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { sendAgreement } from '../lib/agreements'
 import { realJobs } from '../lib/dashboard'
+import { formatCurrency } from '../lib/inventory'
 import {
   BLOCKED, OUT, SECTIONS, SIGNED,
   documentCounts, documentRows, groupByReason, inSection,
@@ -93,6 +94,15 @@ export default function Documents() {
       setNotice(`${row.document} sent to ${data?.sent_to || row.customer_name}.`)
     }
 
+    await load()
+  }, [load])
+
+  // A pay set from a row clears that row's blocker, so the list is read again
+  // rather than patched: the document may now be sendable, and the group it
+  // was sitting under may be empty.
+  const handleFixed = useCallback(async amount => {
+    setSendError('')
+    setNotice(`Pay set to ${formatCurrency(amount)}. The work order can go once the rest of the job is ready.`)
     await load()
   }, [load])
 
@@ -216,7 +226,7 @@ export default function Documents() {
                         <ul className="doc-list">
                           {group.rows.map(row => (
                             <DocumentRow key={row.key} row={row} busy={busy}
-                              onSend={handleSend} showReason={false} />
+                              onSend={handleSend} onFixed={handleFixed} showReason={false} />
                           ))}
                         </ul>
                       </div>
@@ -224,7 +234,8 @@ export default function Documents() {
                   ) : (
                     <ul className="doc-list">
                       {sectionRows.map(row => (
-                        <DocumentRow key={row.key} row={row} busy={busy} onSend={handleSend} />
+                        <DocumentRow key={row.key} row={row} busy={busy}
+                          onSend={handleSend} onFixed={handleFixed} />
                       ))}
                     </ul>
                   )}

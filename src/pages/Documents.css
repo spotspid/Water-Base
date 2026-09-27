@@ -309,3 +309,41 @@
 .doc-gaps .doc-group-head {
   margin-top: 18px;
 }
+
+/* Clearing a blocker from the row it is on.
+   
+   Only the payout has one of these. It is a number somebody already knows,
+   and sending them into the job to type it is what left eight rows sitting in
+   a column waiting on it. The controls sit under the name rather than in the
+   action column, which holds one button per row and has no width to spare. */
+.doc-fix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.doc-fix-input {
+  width: 92px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+}
+
+.doc-fix-input:focus {
+  outline: 2px solid var(--teal-soft);
+  border-color: var(--teal);
+}
+
+/* Whose rate the button is offering. Takes the whole row under the controls,
+   because it is a sentence and they are not. */
+.doc-fix-note {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--muted);
+}

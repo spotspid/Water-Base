@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { installLabel, sentLabel } from '../lib/documents'
+import DocumentPayFix from './DocumentPayFix'
 
 // One document, as a row.
 //
@@ -18,7 +19,7 @@ import { installLabel, sentLabel } from '../lib/documents'
 // The customer name is a link to the job. A page that says "waiting on a
 // crew" and then leaves you to find which job that was is the fault this whole
 // pass is about.
-export default function DocumentRow({ row, busy, onSend, showReason = true }) {
+export default function DocumentRow({ row, busy, onSend, onFixed, showReason = true }) {
   const blocked = row.gaps.length > 0 || row.job_status === 'cancelled'
   const sending = busy === row.key
 
@@ -40,6 +41,13 @@ export default function DocumentRow({ row, busy, onSend, showReason = true }) {
             under their shared reason passes showReason false. */}
         {blocked && row.reason && showReason && (
           <span className="doc-reason">{row.reason}</span>
+        )}
+
+        {/* The one blocker that can be cleared from here. A payout is a number
+            somebody already knows, and sending people into the job to type it
+            is what left eight of these sitting in a column. */}
+        {blocked && row.reasonKey === 'payout' && onFixed && (
+          <DocumentPayFix jobId={row.job_id} onFixed={onFixed} />
         )}
       </span>
 
