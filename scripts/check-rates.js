@@ -138,15 +138,28 @@ check('and it offers nothing when the box already holds the rate',
 
 const crew = readFileSync(new URL('../src/components/JobCrewPay.jsx', import.meta.url), 'utf8')
 check('the drawer marks the figure as theirs the moment it is typed',
-  /if \(name === 'payout_amount'\) setPayTouched\(true\)/.test(crew))
+  /if \(name === 'payout_amount'\) \{\s+\/\/[\s\S]{0,200}?setPayTouched\(true\)/.test(crew))
 check('and when the rate is chosen from the button',
   /function usePay\(next\) \{\s*setPayTouched\(true\)/.test(crew))
-check('an untouched prefill is not unsaved work',
-  /const detailsDirty = payTouched && draft\.payout_amount !== saved\.payout_amount/.test(crew))
+check('the panel has no save button to forget to press',
+  !/Save crew and pay/.test(crew))
+check('a crew change writes itself',
+  /setDraft\(next\)\s+saveCrew\(next\)/.test(crew))
+check('the pay writes when the typing stops, not per keystroke',
+  /function commitPay\(\)/.test(crew)
+  && /if \(!payTouched \|\| draft\.payout_amount === saved\.payout_amount\) return/.test(crew))
+check('a refused crew save puts the boxes back',
+  /setDraft\(saved\)\s+setError\(`\$\{err\} The crew is unchanged\.`\)/.test(crew))
+check('a refused pay save puts the figure back',
+  /setError\(`\$\{err\} The pay is unchanged\.`\)/.test(crew))
+check('and the confirmation clears itself rather than sitting there',
+  /setTimeout\(\(\) => setNotice\(''\), 6000\)/.test(crew))
 check('a job that already has a payout starts touched, so reopening it changes nothing',
   /useState\(isKnownAmount\(job\.installer_pay\)\)/.test(crew))
-check('the drawer saves what is in the box, never the suggestion behind it',
-  /payout_amount: draft\.payout_amount === '' \? null : Number\(draft\.payout_amount\)/.test(crew))
+check('the drawer saves the figure it was given, never the suggestion behind it',
+  /async function savePay\(value\)/.test(crew)
+  && /const amount = Number\(value\)/.test(crew)
+  && /payout_amount: blank \? null : amount/.test(crew))
 check('and no longer saves the fields that moved out of it',
   !/collected_by:/.test(crew) && !/valve_type:/.test(crew))
 

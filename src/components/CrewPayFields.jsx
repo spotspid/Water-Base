@@ -14,7 +14,7 @@ import PayRateHint from './PayRateHint'
 // every other job field is edited. Two live boxes for the same value in two
 // panels is how one of them ends up stale.
 export default function CrewPayFields({
-  draft, onChange, onUsePay, busy, installers, loadingCrew,
+  draft, onChange, onCommitPay, onUsePay, busy, installers, loadingCrew,
   suggestion, payPending, invoiceNumber, onEditInvoice,
 }) {
   return (
@@ -43,8 +43,12 @@ export default function CrewPayFields({
 
       <div className="field">
         <label htmlFor="crew_payout">Installer pay ($)</label>
+        {/* Saved on the way out of the box, or on Enter. Per keystroke would
+            write four rows on the way to 4000. */}
         <input id="crew_payout" name="payout_amount" type="number" min="0" step="0.01"
-          value={draft.payout_amount} onChange={onChange} disabled={busy} />
+          value={draft.payout_amount} onChange={onChange} disabled={busy}
+          onBlur={onCommitPay}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onCommitPay() } }} />
         {/* The rate for this sheet and this installer, offered rather than
             written in. It follows the crew box above, so changing who is on
             the job changes the figure before anything is saved. */}

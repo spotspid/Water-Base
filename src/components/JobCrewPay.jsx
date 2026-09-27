@@ -10,7 +10,15 @@ import CrewPayFields from './CrewPayFields'
 import { gapsSentence } from '../lib/workOrder'
 import './Agreement.css'
 
-// Crew, pay and job number, saved from the job itself.
+// Crew and pay, saved as they are changed.
+//
+// There is no save button. Picking an installer writes it, and the pay writes
+// itself when the typing stops, because a panel with a button people did not
+// press is a panel full of changes that never happened: the work order sat
+// refusing to send while the box above it showed the crew it needed.
+//
+// Every write says what it did, the message clears itself after a few seconds,
+// and a refusal puts the box back to what the job actually holds.
 //
 // These are three of the things a work order refuses to go without, and until
 // this existed none of them could be committed from the job. Installer and pay
@@ -88,112 +96,146 @@ export default function JobCrewPay({
     })
   }, [suggestion, payTouched])
 
-  const crewDirty = draft.installer_id !== saved.installer_id || draft.helper_id !== saved.helper_id
-  // The rate sitting in an untouched box is an offer, not an edit. Counting it
-  // as unsaved work would put every job with no payout into a state somebody
-  // has to clear before they can mark it installed, having changed nothing.
-  const detailsDirty = payTouched && draft.payout_amount !== saved.payout_amount
-  const dirty = crewDirty || detailsDirty
-
-  // The status section holds "Mark installed", which must not run over
-  // unsaved crew or pay, so it needs to know.
-  useEffect(() => { onDirtyChange?.(dirty) }, [dirty, onDirtyChange])
+  // Mark installed waits only while a save is actually in flight now. There
+  // is no other unsaved state to wait for: every change writes itself.
+  useEffect(() => { onDirtyChange?.(busy) }, [busy, onDirtyChange])
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
 
+  // The confirmation clears itself. A panel that saves on its own has to say
+  // so, and a message that stays forever stops being read.
+  useEffect(() => {
+    if (!notice) return undefined
+    const timer = setTimeout(() => setNotice(''), 6000)
+    return () => clearTimeout(timer)
+  }, [notice])
+
+  // A crew box is a choice between names, so it saves the moment it changes.
+  // The pay box is typed, so it saves when the typing stops: on the way out of
+  // the box or on Enter. Saving per keystroke would write four rows on the way
+  // to 4000.
   function change(e) {
     const { name, value } = e.target
-    // Typing in the pay box makes the figure theirs. The rate stops following
-    // and becomes something to compare against instead.
-    if (name === 'payout_amount') setPayTouched(true)
-    setDraft(d => ({ ...d, [name]: value }))
-    setNotice('')
+
     setError('')
+
+    if (name === 'payout_amount') {
+      // Typing in the pay box makes the figure theirs. The rate stops
+      // following and becomes something to compare against instead.
+      setPayTouched(true)
+      setDraft(d => ({ ...d, payout_amount: value }))
+      return
+    }
+
+    const next = { ...draft, [name]: value }
+    setDraft(next)
+    saveCrew(next)
   }
 
-  // Pressing the button is somebody choosing the rate, so from then on it is
-  // their figure and it saves like any other.
+  // Leaving the box, or Enter. Nothing is written when the figure has not
+  // moved, so tabbing through the panel saves nothing.
+  function commitPay() {
+    if (!payTouched || draft.payout_amount === saved.payout_amount) return
+    savePay(draft.payout_amount)
+  }
+
+  // Pressing the rate button is somebody choosing that figure, so it is theirs
+  // and it saves immediately rather than waiting for a blur that may not come.
   function usePay(next) {
     setPayTouched(true)
     setDraft(d => ({ ...d, payout_amount: next }))
-    setNotice('')
-    setError('')
+    savePay(next)
   }
 
-  function problem() {
-    if (draft.payout_amount !== '') {
-      const pay = Number(draft.payout_amount)
-      if (!Number.isFinite(pay) || pay < 0) return 'Installer pay must be zero or more, or left blank.'
+  /**
+   * The crew, written the moment it is picked.
+   *
+   * schedule_job rather than a plain update, because that is where the roster
+   * rules live: nobody switched off in Settings can be given new work, and the
+   * installer cannot also be the helper. The date and window go back
+   * unchanged, so saving a crew never moves a booking.
+   *
+   * A refusal puts the boxes back to what the job actually holds. The panel
+   * showing a name the database rejected is how somebody ends up believing a
+   * job has a crew it has not.
+   */
+  async function saveCrew(next) {
+    if (next.installer_id && next.installer_id === next.helper_id) {
+      setDraft(saved)
+      setError('The installer and the helper cannot be the same person.')
+      return
     }
-    if (draft.installer_id && draft.installer_id === draft.helper_id) {
-      return 'The installer and the helper cannot be the same person.'
-    }
-    return ''
-  }
-
-  async function save() {
-    const reason = problem()
-    if (reason) { setError(reason); return }
 
     setBusy(true)
     setError('')
     setNotice('')
-    let conflicts = 0
-    // schedule_job decides sold or scheduled from the date. The date is
-    // passed back unchanged, so this only moves when the status and the date
-    // already disagreed, and then it is said rather than hidden.
-    let status = job.status
 
-    if (crewDirty) {
-      const { data, error: err } = await attempt(
-        () => supabase.rpc('schedule_job', {
-          p_job_id: job.id,
-          p_scheduled_date: job.scheduled_date || null,
-          p_time_window: job.time_window || null,
-          p_installer_id: draft.installer_id || null,
-          p_helper_id: draft.helper_id || null,
-          p_set_crew: true,
-        }),
-        'The crew could not be saved.',
-      )
-
-      if (err) {
-        setBusy(false)
-        setError(err)
-        onChanged()
-        return
-      }
-      conflicts = Number(data?.conflict_count) || 0
-      status = data?.status || job.status
-    }
-
-    if (detailsDirty) {
-      const { error: err } = await attemptRows(
-        () => supabase.from('jobs').update({
-          payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
-        }).eq('id', job.id),
-        'The installer pay could not be saved.',
-      )
-
-      if (err) {
-        setBusy(false)
-        // Say exactly what landed. A half save reported as a failure invites
-        // somebody to redo the half that already worked.
-        setError(crewDirty
-          ? `The crew was saved, but the pay was not. ${err}`
-          : err)
-        onChanged()
-        return
-      }
-    }
+    const { data, error: err } = await attempt(
+      () => supabase.rpc('schedule_job', {
+        p_job_id: job.id,
+        p_scheduled_date: job.scheduled_date || null,
+        p_time_window: job.time_window || null,
+        p_installer_id: next.installer_id || null,
+        p_helper_id: next.helper_id || null,
+        p_set_crew: true,
+      }),
+      'The crew could not be saved.',
+    )
 
     setBusy(false)
-    const next = { ...draft }
-    // Saved, so it is the job's figure now rather than the rate's, and a later
-    // crew change leaves it alone.
-    if (next.payout_amount !== '') setPayTouched(true)
+
+    if (err) {
+      setDraft(saved)
+      setError(`${err} The crew is unchanged.`)
+      onChanged()
+      return
+    }
+
+    setSaved(next)
+    setNotice(describe(next, Number(data?.conflict_count) || 0, data?.status || job.status))
+    onChanged()
+  }
+
+  /**
+   * The pay, written when the typing stops.
+   *
+   * A refusal puts the figure back to what the job holds, for the same reason
+   * the crew goes back: a box showing 650 on a job that still says nothing is
+   * a worse state than one that admits the save failed.
+   */
+  async function savePay(value) {
+    const blank = String(value).trim() === ''
+    const amount = Number(value)
+
+    if (!blank && (!Number.isFinite(amount) || amount < 0)) {
+      setDraft(d => ({ ...d, payout_amount: saved.payout_amount }))
+      setError('Installer pay must be zero or more, or left blank. The old figure stands.')
+      return
+    }
+
+    setBusy(true)
+    setError('')
+    setNotice('')
+
+    const { error: err } = await attemptRows(
+      () => supabase.from('jobs').update({
+        payout_amount: blank ? null : amount,
+      }).eq('id', job.id),
+      'The installer pay could not be saved.',
+    )
+
+    setBusy(false)
+
+    if (err) {
+      setDraft(d => ({ ...d, payout_amount: saved.payout_amount }))
+      setError(`${err} The pay is unchanged.`)
+      onChanged()
+      return
+    }
+
+    const next = { ...draft, payout_amount: blank ? '' : String(value) }
     setDraft(next)
     setSaved(next)
-    setNotice(describe(next, conflicts, status))
+    setNotice(describe(next, 0, job.status))
     onChanged()
   }
 
@@ -232,6 +274,7 @@ export default function JobCrewPay({
       <CrewPayFields
         draft={draft}
         onChange={change}
+        onCommitPay={commitPay}
         onUsePay={usePay}
         busy={busy}
         installers={installers}
@@ -242,19 +285,13 @@ export default function JobCrewPay({
         onEditInvoice={onEditInvoice}
       />
 
+      {/* There is no save button, so the panel has to say what it did. Busy
+          while it writes, then what changed, then quiet again. A failure stays
+          until something else happens, because it is the one message somebody
+          has to read. */}
+      {busy && <p className="agr-sub" role="status">Saving...</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
-      {notice && <p className="set-notice" role="status">{notice}</p>}
-
-      <div className="agr-actions">
-        <button type="button" className="btn-primary" disabled={busy || !dirty} onClick={save}>
-          {busy ? 'Saving...' : 'Save crew and pay'}
-        </button>
-        {dirty && !busy && (
-          <button type="button" className="btn-cancel" onClick={() => { setDraft(saved); setError('') }}>
-            Undo
-          </button>
-        )}
-      </div>
+      {!busy && !error && notice && <p className="set-notice" role="status">{notice}</p>}
     </section>
   )
 }
