@@ -587,8 +587,19 @@ a {
   box-shadow: var(--shadow-sm);
 }
 
+/* A disabled button still has to read as a button.
+   
+   Both of these used to be the live style at half opacity, which on a white
+   panel turned the label into pale grey text with an invisible border. Asked
+   which button sends the work order, somebody looked straight at one and
+   reported that there was no button. Muted and flat, but drawn. */
 .btn-primary:disabled {
-  opacity: 0.55;
+  opacity: 1;
+  background: var(--paper);
+  color: var(--body-text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  transform: none;
   cursor: not-allowed;
 }
 
@@ -650,7 +661,12 @@ a {
 }
 
 .btn-cancel:disabled {
-  opacity: 0.5;
+  opacity: 1;
+  background: var(--paper);
+  color: var(--body-text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  transform: none;
   cursor: not-allowed;
 }
 

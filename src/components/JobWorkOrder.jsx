@@ -210,11 +210,11 @@ export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
             </button>
           )}
           {!confirming && outstanding.length > 0 && (
-            <span className="agr-confirm-text">
-              {outstanding.length === 1
-                ? outstanding[0].fix
-                : `${outstanding.length} things to do first, starting with: ${outstanding[0].fix}`}
-            </span>
+            <p className="agr-actions-note">
+              <strong>Next:</strong>{' '}
+              {outstanding[0].fix}
+              {outstanding.length > 1 && <>, then {outstanding.length - 1} more above</>}.
+            </p>
           )}
         </div>
       )}
