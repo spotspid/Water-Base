@@ -200,8 +200,15 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
             : 'Not scheduled yet.'}
         {' '}
         {crewLabel(job) ? `Crew: ${crewLabel(job)}.` : 'No crew assigned.'}
-        {' '}
-        <a href="/schedule" className="tpl-link">Change the date on the schedule</a>
+        {/* This used to be a link to the schedule, written as a plain anchor,
+            so it reloaded the whole app onto the Operations tab and took the
+            drawer with it. It sat directly above the crew boxes, which is
+            where somebody clicks while working on crew, pay and the work
+            order. The date is set in the status section at the bottom of this
+            drawer, so there is nowhere to send anybody. */}
+        {!installed && (
+          <> The date is set at the bottom of this job, under Status.</>
+        )}
       </p>
 
       {/* Open jobs only: an installed job's crew and pay are a record of

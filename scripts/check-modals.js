@@ -57,5 +57,24 @@ check('the rest still close on a click beside them', others.length > 0,
 check('and none of them opted out by accident',
   others.every(f => !/dismissOnBackdrop/.test(readFileSync(resolve(DIR, f), 'utf8'))))
 
+// --- nothing inside a working surface navigates away ------------------------
+//
+// A plain anchor is a full page load, which throws the whole app away along
+// with whatever is open. The job drawer had one, to the schedule, written as
+// an <a href> and sitting directly above the crew boxes: clicking near it left
+// the drawer and landed on the Operations tab, which is exactly how it was
+// reported.
+
+for (const file of HOLDS_WORK) {
+  const source = readFileSync(resolve(DIR, file), 'utf8')
+  check(`${file} has no plain anchor to another page`,
+    !/<a\s[^>]*href="\//.test(source),
+    (source.match(/<a\s[^>]*href="\/[^"]*"/) || [''])[0])
+}
+
+const fields = readFileSync(resolve(DIR, 'JobDetailFields.jsx'), 'utf8')
+check('a link out of a form opens in a new tab rather than taking the form with it',
+  /to="\/settings"[\s\S]{0,160}target="_blank"/.test(fields))
+
 console.log(failed === 0 ? '\nAll modal checks passed.' : `\n${failed} modal check(s) failed.`)
 process.exit(failed === 0 ? 0 : 1)

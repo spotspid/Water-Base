@@ -92,7 +92,12 @@ export default function JobDetailFields({
               ))}
             </select>
             <span className="field-hint">
-              Managed on the <Link to="/settings" className="tpl-link">Settings page</Link>.
+              Managed on the{' '}
+              {/* A new tab on purpose: this link sits inside a form, and
+                  following it in place would take whatever is typed with it. */}
+              <Link to="/settings" className="tpl-link" target="_blank" rel="noopener noreferrer">
+                Settings page
+              </Link>.
             </span>
           </div>
           <div className="field">
