@@ -4,6 +4,7 @@ import { attempt, attemptRows } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
 import { describeStatusShift } from '../lib/jobActions'
 import { isKnownAmount } from '../lib/profit'
+import { payoutForBox } from '../lib/installRates'
 import { useInstallerPay } from '../lib/useInstallerPay'
 import CrewPayFields from './CrewPayFields'
 import { gapsSentence } from '../lib/workOrder'
@@ -50,6 +51,11 @@ export default function JobCrewPay({
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
+  // A job that already carries a payout starts touched: the figure on it was
+  // somebody's decision and reopening the drawer is not a reason to revisit
+  // it. Anything else follows the rate until a person types over it.
+  const [payTouched, setPayTouched] = useState(isKnownAmount(job.installer_pay))
+
   // The job reloads after every action in the modal. Follow the new values,
   // unless something has been typed and not saved, which is never worth
   // throwing away without being asked.
@@ -61,12 +67,26 @@ export default function JobCrewPay({
   }, [incomingKey, saved, draft])
 
   // Asked of the database from the draft rather than the saved row, so the
-  // rate follows the crew box as it changes rather than after a save.
+  // rate follows the crew box as it changes rather than after a save. With no
+  // installer picked it answers with the card rate, which is what whoever ends
+  // up doing the job starts on, so the box is never blank on a job that has a
+  // build sheet.
   const { suggestion } = useInstallerPay({
     templateId: job.template_id,
     roType: job.ro_type,
     installerId: draft.installer_id,
   })
+
+  // The box holds the rate until somebody types their own figure. Changing the
+  // installer moves it; typing in it stops it moving for good.
+  useEffect(() => {
+    setDraft(d => {
+      const next = payoutForBox({
+        current: d.payout_amount, suggestion, touched: payTouched,
+      })
+      return next === d.payout_amount ? d : { ...d, payout_amount: next }
+    })
+  }, [suggestion, payTouched])
 
   const crewDirty = draft.installer_id !== saved.installer_id || draft.helper_id !== saved.helper_id
   const detailsDirty = draft.payout_amount !== saved.payout_amount
@@ -79,6 +99,9 @@ export default function JobCrewPay({
 
   function change(e) {
     const { name, value } = e.target
+    // Typing in the pay box makes the figure theirs. The rate stops following
+    // and becomes something to compare against instead.
+    if (name === 'payout_amount') setPayTouched(true)
     setDraft(d => ({ ...d, [name]: value }))
     setNotice('')
     setError('')
@@ -153,6 +176,9 @@ export default function JobCrewPay({
 
     setBusy(false)
     const next = { ...draft }
+    // Saved, so it is the job's figure now rather than the rate's, and a later
+    // crew change leaves it alone.
+    if (next.payout_amount !== '') setPayTouched(true)
     setDraft(next)
     setSaved(next)
     setNotice(describe(next, conflicts, status))

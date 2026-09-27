@@ -6,11 +6,18 @@
 // What stays here is the wording and the arithmetic, which is the part worth
 // testing: pure, importing nothing, so npm run check can read it under Node.
 //
-// The suggestion is offered and never imposed. A rate card that filled the pay
-// box in and moved on would turn an estimate into a promise nobody made, so
-// the form shows the figure, says where it came from, and leaves the box to
-// the person. What is new is that a typed figure can now be compared against
-// the rate, which is how a $1,600 payout on a $600 job gets noticed.
+// The rate fills the box, and says where it came from.
+//
+// It was offered behind a button at first, on the reasoning that a card which
+// filled the box in would turn an estimate into a promise. In practice that
+// left the box blank on every new job and the figure got typed from memory
+// anyway, which is the thing this exists to stop. So the box starts on the
+// rate and the line underneath names whose rate it is.
+//
+// It follows the installer until somebody types their own figure, the same
+// rule the deposit follows the price by in depositState.js: a number a person
+// chose is theirs, and a later change to the job must not quietly overwrite
+// it. Once typed, the rate becomes a comparison rather than a value.
 
 /**
  * A rate as money, in whole dollars.
@@ -86,8 +93,10 @@ export function payoutNote(payout, suggestion) {
 
   const reason = String(suggestion?.reason || '').trim()
 
+  // The box holds the rate, which is the ordinary state now that it starts
+  // there. Say whose rate it is and that it can be typed over.
   if (standing === 'unset') return reason
-  if (standing === 'matches') return `${reason} This job is on the rate.`
+  if (standing === 'matches') return `${reason} Type over it to pay something else.`
 
   const typed = rateAmount({ amount: Number(payout) })
   const word = standing === 'over' ? 'above' : 'below'
@@ -96,11 +105,29 @@ export function payoutNote(payout, suggestion) {
   return `${reason} ${typed} is ${gap} ${word} it, which is allowed and stays as typed.`
 }
 
-// What the "use the rate" button says, or an empty string when there is
+// What the "back to the rate" button says, or an empty string when there is
 // nothing to offer. Not named useSomething: it is a sentence, not a hook, and
 // the linter is right to insist on the difference.
 export function rateButtonLabel(suggestion) {
-  return hasSuggestion(suggestion) ? `Use ${rateAmount(suggestion)}` : ''
+  return hasSuggestion(suggestion) ? `Back to ${rateAmount(suggestion)}` : ''
+}
+
+/**
+ * What the pay box should hold.
+ *
+ * Untouched, it holds the rate and follows it: change the installer and the
+ * figure becomes that installer's rate, because nobody has said otherwise.
+ * Touched, it holds whatever was typed and nothing moves it again, which is
+ * what makes a deliberate $800 on a $600 job survive a crew change.
+ *
+ * A job that already carries a payout counts as touched from the start. The
+ * figure on it was somebody's decision, made once, and reopening the drawer is
+ * not a reason to revisit it.
+ */
+export function payoutForBox({ current, suggestion, touched }) {
+  if (touched) return current
+  if (!hasSuggestion(suggestion)) return current
+  return rateValue(suggestion)
 }
 
 // The value that button writes into the box. A string, because the box is a

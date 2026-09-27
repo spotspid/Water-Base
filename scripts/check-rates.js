@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import {
-  hasSuggestion, payoutNote, payoutStanding, rateAmount, rateButtonLabel, rateLine, rateValue,
+  hasSuggestion, payoutForBox, payoutNote, payoutStanding, rateAmount, rateButtonLabel,
+  rateLine, rateValue,
 } from '../src/lib/installRates.js'
 
 // The rate card, now that it sets something.
@@ -81,7 +82,9 @@ check('the installer is named when it is their own rate',
   payoutNote('', OWN).includes('Jay Woodward is paid'))
 check('and the card is named when it is not',
   payoutNote('', CARD).includes('has no rate of their own yet'))
-check('a matching figure says so', payoutNote('500', OWN).endsWith('This job is on the rate.'))
+check('a box holding the rate says it can be typed over',
+  payoutNote('500', OWN).endsWith('Type over it to pay something else.'),
+  payoutNote('500', OWN))
 check('a figure over the rate says by how much',
   payoutNote('800', OWN).includes('$800 is $300 above it'), payoutNote('800', OWN))
 check('and that it stands anyway',
@@ -93,17 +96,32 @@ check('no rate line explains itself rather than going quiet',
 
 // --- the button --------------------------------------------------------------
 
-check('the button says what it will put in', rateButtonLabel(OWN) === 'Use $500')
+check('the button offers the way back to the rate', rateButtonLabel(OWN) === 'Back to $500')
 check('and says nothing when there is nothing to offer', rateButtonLabel(NONE) === '')
 check('it writes a plain number', rateValue(OWN) === '500')
 check('cents survive when there are any', rateValue({ ...OWN, amount: 412.5 }) === '412.50')
 check('and nothing is written when there is no rate', rateValue(NONE) === '')
 
-// --- the offer is never taken on its own -------------------------------------
+// --- what the box holds ------------------------------------------------------
 //
-// The whole point. A form that filled the box in would turn a rate card into a
-// payroll decision nobody made, so no component may call rateValue outside the
-// press of the button.
+// The box starts on the rate so it is never blank on a job with a build sheet,
+// and follows the installer while nobody has typed in it. The moment somebody
+// does, the figure is theirs: a deliberate $800 on a $600 job has to survive a
+// crew change, or the rate card becomes a thing that overwrites decisions.
+
+check('an empty box takes the rate', payoutForBox({ current: '', suggestion: OWN, touched: false }) === '500')
+check('and follows a change of installer',
+  payoutForBox({ current: '500', suggestion: { ...CARD, amount: 400 }, touched: false }) === '400')
+check('a typed figure is left alone',
+  payoutForBox({ current: '800', suggestion: OWN, touched: true }) === '800')
+check('and is still left alone when the installer changes',
+  payoutForBox({ current: '800', suggestion: { ...CARD, amount: 400 }, touched: true }) === '800')
+check('a sheet with no rate line leaves the box as it is',
+  payoutForBox({ current: '', suggestion: NONE, touched: false }) === '')
+check('and does not wipe a figure already in it',
+  payoutForBox({ current: '1355', suggestion: NONE, touched: false }) === '1355')
+
+// --- the hint writes only when asked -----------------------------------------
 
 const hint = readFileSync(new URL('../src/components/PayRateHint.jsx', import.meta.url), 'utf8')
 check('the hint writes only from the button press',
@@ -112,7 +130,11 @@ check('and it offers nothing when the box already holds the rate',
   /String\(value \?\? ''\)\.trim\(\) !== rateValue\(suggestion\)/.test(hint))
 
 const crew = readFileSync(new URL('../src/components/JobCrewPay.jsx', import.meta.url), 'utf8')
-check('the drawer saves the typed payout, never the suggestion',
+check('the drawer marks the figure as theirs the moment it is typed',
+  /if \(name === 'payout_amount'\) setPayTouched\(true\)/.test(crew))
+check('a job that already has a payout starts touched, so reopening it changes nothing',
+  /useState\(isKnownAmount\(job\.installer_pay\)\)/.test(crew))
+check('the drawer saves what is in the box, never the suggestion behind it',
   /payout_amount: draft\.payout_amount === '' \? null : Number\(draft\.payout_amount\)/.test(crew))
 check('and no longer saves the fields that moved out of it',
   !/collected_by:/.test(crew) && !/valve_type:/.test(crew))
