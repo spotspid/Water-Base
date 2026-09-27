@@ -126,7 +126,8 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
   }
 
   return (
-    <Modal title={`Edit ${job.customer_name}`} onClose={handleClose} wide>
+    <Modal title={`Edit ${job.customer_name}`} onClose={handleClose} wide
+      dismissOnBackdrop={false}>
       {installed && (
         <p className="form-warning" role="status">{LOCKED_REASON}</p>
       )}

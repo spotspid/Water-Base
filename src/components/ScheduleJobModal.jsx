@@ -130,7 +130,8 @@ export default function ScheduleJobModal({ job, onClose, onSaved }) {
   ])
 
   return (
-    <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide>
+    <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide
+      dismissOnBackdrop={false}>
       <p className="sch-modal-address">
         {job.address}
         {job.phone && <span className="sch-modal-phone">{job.phone}</span>}

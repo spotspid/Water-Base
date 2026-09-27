@@ -1,7 +1,18 @@
 import { useEffect } from 'react'
 import './Modal.css'
 
-export default function Modal({ title, subtitle, onClose, wide = false, children }) {
+/**
+ * dismissOnBackdrop false for anything holding work.
+ *
+ * The job drawer saves as you go, and the way to finish typing in a box is to
+ * click somewhere else. Somewhere else was usually the backdrop, which closed
+ * the drawer and left the reader on the jobs list, one page away from the
+ * documents page they had opened the job from. A working surface should be
+ * left by pressing something that means leave.
+ */
+export default function Modal({
+  title, subtitle, onClose, wide = false, dismissOnBackdrop = true, children,
+}) {
   useEffect(() => {
     function handleKey(e) {
       if (e.key === 'Escape') onClose()
@@ -11,7 +22,7 @@ export default function Modal({ title, subtitle, onClose, wide = false, children
   }, [onClose])
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={dismissOnBackdrop ? onClose : undefined}>
       <div
         className={wide ? 'modal modal-wide' : 'modal'}
         role="dialog"

@@ -111,7 +111,8 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
   ])
 
   return (
-    <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide>
+    <Modal title={job.customer_name} subtitle={subtitle} onClose={onClose} wide
+      dismissOnBackdrop={false}>
       {/* Read top to bottom: who and what, then the money, then who is doing
           it, then the paperwork, then the parts. Each group answers one
           question, so working a job is a scroll rather than a hunt. */}

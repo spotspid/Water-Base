@@ -84,8 +84,13 @@ job window on top of the day window).
 
 Windows stack, and both listen for Escape, so one press closes both. On Jobs
 the confirm even asks "Close without saving?" and answering Cancel does not
-save you, because the outer window has already gone. Clicking outside the job
-drawer discards unsaved crew, pay or site conditions with no question at all.
+save you, because the outer window has already gone.
+
+**Half fixed on 2026-09-27.** Clicking beside the job drawer, the edit form or
+the schedule's job window no longer closes them: a click outside is how you
+finish typing in a box, and it was closing the drawer and landing the reader
+on the jobs list. Escape still closes both windows at once, which is the half
+that remains.
 
 **Harm:** typed work disappears with no error and no way to get it back.
 
