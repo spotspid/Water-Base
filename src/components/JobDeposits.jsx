@@ -3,6 +3,7 @@ import { fetchDeposits, removeDeposit } from '../lib/deposits'
 import { balanceState, depositTerm, isRefund, paidShare } from '../lib/depositState'
 import { formatCurrency } from '../lib/inventory'
 import { formatLongDate } from '../lib/schedule'
+import CollectedBy from './CollectedBy'
 import JobDepositForm from './JobDepositForm'
 import './Deposits.css'
 
@@ -96,6 +97,10 @@ export default function JobDeposits({ job, onChanged }) {
       )}
 
       {error && <p className="form-error" role="alert">{error}</p>}
+
+      {/* Who takes what is left on the day. It is a fact about this money,
+          so it sits with it rather than in the crew panel. */}
+      <CollectedBy job={job} onChanged={onChanged} />
 
       {loading && <p className="inv-state">Loading payments...</p>}
 

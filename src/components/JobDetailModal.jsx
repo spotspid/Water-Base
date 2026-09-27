@@ -209,6 +209,7 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
           and pay are a record, and schedule_job refuses to touch one. */}
       {open && (
         <JobCrewPay
+          onEditInvoice={() => { setEditFocus('invoice_number'); setEditing(true) }}
           job={job}
           installers={installers}
           loadingCrew={loadingCrew}

@@ -6,18 +6,18 @@ import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
 import { validateNewJob } from '../lib/newJobForm'
+import { useInstallerPay } from '../lib/useInstallerPay'
 import { applyRoPick } from '../lib/roPicks'
 import {
-  SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm, isEmptyChecklist,
-  validateChecklist,
+  checklistFromForm, emptyChecklistForm, isEmptyChecklist, validateChecklist,
 } from '../lib/salesChecklist'
 import AppShell from '../components/AppShell'
 import CustomerFields from '../components/CustomerFields'
 import InstallRateCard from '../components/InstallRateCard'
 import JobDetailFields from '../components/JobDetailFields'
 import JobSystemFields from '../components/JobSystemFields'
+import NewJobChecklist from '../components/NewJobChecklist'
 import NewJobActions from '../components/NewJobActions'
-import SalesChecklistFields from '../components/SalesChecklistFields'
 import './NewJob.css'
 
 const EMPTY_FORM = {
@@ -96,6 +96,14 @@ export default function NewJob() {
     () => templates.find(t => t.label === form.system_template) || null,
     [templates, form.system_template],
   )
+
+  // The rate for this sheet, this RO type and this installer, offered beside
+  // the pay box. Nothing is written until somebody presses the button.
+  const { suggestion } = useInstallerPay({
+    templateId: selectedTemplate?.id || '',
+    roType: form.ro_type,
+    installerId: form.installer_id,
+  })
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -227,7 +235,8 @@ export default function NewJob() {
 
   const canSend = form.status === 'quoted'
 
-  // no default. it varies by installer and by job, so it is typed every time.
+  // The card used to say nothing could be filled in for you. It can now, from
+  // the installer's own rates, and this is the sentence under it either way.
   const payHint = 'Flat amount for this job. Subtracted from margin.'
 
   return (
@@ -238,30 +247,12 @@ export default function NewJob() {
 
           <CustomerFields form={form} onChange={handleChange} disabled={saving} />
 
-          {/* Both halves of the checklist come before the system: sizing decides
-              which system to quote, and site is asked in the same walk round the
-              house, before anyone sits down to pick equipment. */}
           {checklistShown && (
-            <SalesChecklistFields
-              title="Sales checklist: sizing"
-              keys={SIZING_KEYS}
-              showJobFields={false}
-              value={checklist}
+            <NewJobChecklist
+              checklist={checklist}
               onChange={setChecklist}
-              job={form}
+              form={form}
               disabled={saving}
-            />
-          )}
-
-          {checklistShown && (
-            <SalesChecklistFields
-              title="Sales checklist: site"
-              keys={SITE_KEYS}
-              value={checklist}
-              onChange={setChecklist}
-              job={form}
-              disabled={saving}
-              jobFieldsNote="Faucet finish, RO type and payment type are chosen in the System section below."
             />
           )}
 
@@ -281,9 +272,14 @@ export default function NewJob() {
             onChange={handleChange}
             disabled={saving}
             payHint={payHint}
+            paySuggestion={suggestion}
+            onUsePay={next => setForm(f => ({ ...f, payout_amount: next }))}
           />
 
-          <InstallRateCard />
+          <InstallRateCard
+            installerId={form.installer_id}
+            installerName={suggestion?.installer_name}
+          />
 
           {error && <p className="form-error" role="alert">{error}</p>}
 

@@ -1,6 +1,7 @@
 import { useSettings, withCurrent } from '../lib/settings'
 import { useInstallers, installerLabel } from '../lib/useInstallers'
 import { Link } from 'react-router-dom'
+import PayRateHint from './PayRateHint'
 
 // The scheduling half of the job form. Installer and helper are picked from
 // the roster rather than typed, so the calendar can group by person and a
@@ -14,7 +15,9 @@ import { Link } from 'react-router-dom'
 // Hiding changes nothing about saving. The values are still in the form and
 // still sent, so a form that already held a date keeps it rather than having
 // it silently dropped on the way past.
-export default function JobDetailFields({ form, onChange, disabled, payHint }) {
+export default function JobDetailFields({
+  form, onChange, disabled, payHint, paySuggestion = null, onUsePay,
+}) {
   // Everything the schedule and the install own. A quote has none of it.
   const showScheduling = form.status !== 'quoted'
   const { timeWindows, loading: loadingSettings } = useSettings()
@@ -114,6 +117,14 @@ export default function JobDetailFields({ form, onChange, disabled, payHint }) {
             <label htmlFor="payout_amount">Installer pay ($) <span className="optional">(optional)</span></label>
             <input id="payout_amount" name="payout_amount" type="number" min="0" step="0.01"
               value={form.payout_amount} onChange={onChange} disabled={disabled} />
+            {onUsePay && (
+              <PayRateHint
+                suggestion={paySuggestion}
+                value={form.payout_amount}
+                disabled={disabled}
+                onUse={onUsePay}
+              />
+            )}
             {payHint && <span className="field-hint">{payHint}</span>}
           </div>
           </>

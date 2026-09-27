@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase'
 import { attempt, attemptRows } from '../lib/errors'
 import { isWorkOrderOut } from '../lib/agreements'
 import { describeStatusShift } from '../lib/jobActions'
-import { useSettings, withCurrent } from '../lib/settings'
-import { installerLabel } from '../lib/useInstallers'
 import { isKnownAmount } from '../lib/profit'
+import { useInstallerPay } from '../lib/useInstallerPay'
+import CrewPayFields from './CrewPayFields'
 import { gapsSentence } from '../lib/workOrder'
 import './Agreement.css'
 
@@ -22,15 +22,9 @@ import './Agreement.css'
 // new work, and the installer cannot also be the helper. The date and window
 // are passed back unchanged, so saving a crew never moves a booking.
 //
-// Who collects the balance lives here too. The work order has a box for the
-// company and one for the subcontractor, and the X used to be hardcoded to
-// the company, so an installer who took the payment signed a sheet saying he
-// had not. Company is the default because that is what every sheet so far
-// has said.
-const COLLECTED_BY = [
-  { value: 'company', label: 'The company' },
-  { value: 'subcontractor', label: 'The subcontractor' },
-]
+// Who collects the balance moved to the payments panel and the valve type to
+// the System section, where each sits beside what it belongs to rather than
+// beside the first panel that could save.
 
 function baselineOf(job) {
   return {
@@ -40,17 +34,14 @@ function baselineOf(job) {
     // now reports rather than a zero. A stored zero is shown as a zero,
     // because somebody chose it.
     payout_amount: isKnownAmount(job.installer_pay) ? String(job.installer_pay) : '',
-    invoice_number: job.invoice_number || '',
-    collected_by: job.collected_by === 'subcontractor' ? 'subcontractor' : 'company',
-    // which control valve the build sheet takes; blank on an RO only job
-    valve_type: job.valve_type || '',
   }
 }
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
-export default function JobCrewPay({ job, installers, loadingCrew, onChanged, onDirtyChange }) {
-  const { valveTypes, loading: loadingSettings } = useSettings()
+export default function JobCrewPay({
+  job, installers, loadingCrew, onChanged, onDirtyChange, onEditInvoice,
+}) {
   const incoming = baselineOf(job)
   const incomingKey = JSON.stringify(incoming)
   const [saved, setSaved] = useState(incoming)
@@ -69,11 +60,16 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     setSaved(next)
   }, [incomingKey, saved, draft])
 
+  // Asked of the database from the draft rather than the saved row, so the
+  // rate follows the crew box as it changes rather than after a save.
+  const { suggestion } = useInstallerPay({
+    templateId: job.template_id,
+    roType: job.ro_type,
+    installerId: draft.installer_id,
+  })
+
   const crewDirty = draft.installer_id !== saved.installer_id || draft.helper_id !== saved.helper_id
   const detailsDirty = draft.payout_amount !== saved.payout_amount
-    || draft.invoice_number.trim() !== saved.invoice_number.trim()
-    || draft.collected_by !== saved.collected_by
-    || draft.valve_type !== saved.valve_type
   const dirty = crewDirty || detailsDirty
 
   // The status section holds "Mark installed", which must not run over
@@ -95,13 +91,6 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     }
     if (draft.installer_id && draft.installer_id === draft.helper_id) {
       return 'The installer and the helper cannot be the same person.'
-    }
-    // Every job carries one, and the database refuses to clear it.
-    if (!draft.invoice_number.trim()) {
-      return 'A job always has an invoice number. Type the number you want rather than clearing it.'
-    }
-    if (!COLLECTED_BY.some(c => c.value === draft.collected_by)) {
-      return 'Pick who collects the balance.'
     }
     return ''
   }
@@ -146,11 +135,8 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
       const { error: err } = await attemptRows(
         () => supabase.from('jobs').update({
           payout_amount: draft.payout_amount === '' ? null : Number(draft.payout_amount),
-          invoice_number: draft.invoice_number.trim(),
-          collected_by: draft.collected_by,
-          valve_type: draft.valve_type || null,
         }).eq('id', job.id),
-        'The pay and job details could not be saved.',
+        'The installer pay could not be saved.',
       )
 
       if (err) {
@@ -158,7 +144,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         // Say exactly what landed. A half save reported as a failure invites
         // somebody to redo the half that already worked.
         setError(crewDirty
-          ? `The crew was saved, but the pay and job details were not. ${err}`
+          ? `The crew was saved, but the pay was not. ${err}`
           : err)
         onChanged()
         return
@@ -166,7 +152,7 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
     }
 
     setBusy(false)
-    const next = { ...draft, invoice_number: draft.invoice_number.trim() }
+    const next = { ...draft }
     setDraft(next)
     setSaved(next)
     setNotice(describe(next, conflicts, status))
@@ -182,7 +168,6 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
       installer_id: next.installer_id || null,
       installer_email: crew?.email || null,
       installer_pay: next.payout_amount === '' ? null : Number(next.payout_amount),
-      invoice_number: next.invoice_number || null,
     }
     const short = conflicts > 0
       ? ` ${conflicts} ${conflicts === 1 ? 'part is' : 'parts are'} short for this date.`
@@ -209,74 +194,17 @@ export default function JobCrewPay({ job, installers, loadingCrew, onChanged, on
         </div>
       </div>
 
-      <div className="form-grid">
-        <div className="field">
-          <label htmlFor="crew_installer">Installer</label>
-          <select id="crew_installer" name="installer_id" value={draft.installer_id}
-            onChange={change} disabled={busy || loadingCrew}>
-            <option value="">{loadingCrew ? 'Loading crew...' : 'Unassigned'}</option>
-            {installers.map(i => (
-              <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label htmlFor="crew_helper">Helper <span className="optional">(optional)</span></label>
-          <select id="crew_helper" name="helper_id" value={draft.helper_id}
-            onChange={change} disabled={busy || loadingCrew}>
-            <option value="">None</option>
-            {installers.filter(i => i.id !== draft.installer_id).map(i => (
-              <option key={i.id} value={i.id} disabled={!i.active}>{installerLabel(i)}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label htmlFor="crew_payout">Installer pay ($)</label>
-          <input id="crew_payout" name="payout_amount" type="number" min="0" step="0.01"
-            value={draft.payout_amount} onChange={change} disabled={busy} />
-          <span className="field-hint">
-            Left blank it reads as not set, and this job shows no profit figure until it
-            is filled in. It is not read as a payout of nothing.
-          </span>
-        </div>
-
-        <div className="field">
-          <label htmlFor="crew_invoice">Invoice number</label>
-          <input id="crew_invoice" name="invoice_number" type="text"
-            value={draft.invoice_number} onChange={change} disabled={busy}
-            placeholder="MWP-0001" />
-          <span className="field-hint">The work order will not send without it.</span>
-        </div>
-
-        <div className="field">
-          <label htmlFor="crew_collected_by">Balance collected by</label>
-          <select id="crew_collected_by" name="collected_by" value={draft.collected_by}
-            onChange={change} disabled={busy}>
-            {COLLECTED_BY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          <span className="field-hint">
-            Who takes what is still owed on the day. Ticks one of the two collected by
-            boxes on the work order.
-          </span>
-        </div>
-
-        <div className="field">
-          <label htmlFor="crew_valve_type">Valve type</label>
-          <select id="crew_valve_type" name="valve_type" value={draft.valve_type}
-            onChange={change} disabled={busy || loadingSettings}>
-            <option value="">{loadingSettings ? 'Loading valve types...' : 'Not chosen'}</option>
-            {withCurrent(valveTypes, draft.valve_type).map(v => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <span className="field-hint">
-            Which control valve goes on the truck. Printed on the work order and taken
-            off the shelf when the job installs. RO only needs none.
-          </span>
-        </div>
-      </div>
+      <CrewPayFields
+        draft={draft}
+        onChange={change}
+        onDraft={setDraft}
+        busy={busy}
+        installers={installers}
+        loadingCrew={loadingCrew}
+        suggestion={suggestion}
+        invoiceNumber={job.invoice_number}
+        onEditInvoice={onEditInvoice}
+      />
 
       {error && <p className="form-error" role="alert">{error}</p>}
       {notice && <p className="set-notice" role="status">{notice}</p>}
