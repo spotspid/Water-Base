@@ -25,6 +25,7 @@ import JobParts from './JobParts'
 import JobEditModal from './JobEditModal'
 import JobSalesChecklist from './JobSalesChecklist'
 import Modal from './Modal'
+import './JobDetail.css'
 
 export default function JobDetailModal({ job, fixField = '', onClose, onChanged }) {
   const { installers, loading: loadingCrew } = useInstallers({

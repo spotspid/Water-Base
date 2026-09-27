@@ -25,6 +25,7 @@ const DIR = resolve(import.meta.dirname, '..', 'src', 'components')
 // accident, not an instruction.
 const HOLDS_WORK = [
   'JobDetailModal.jsx',
+  'JobDrawer.jsx',
   'JobEditModal.jsx',
   'ScheduleJobModal.jsx',
 ]

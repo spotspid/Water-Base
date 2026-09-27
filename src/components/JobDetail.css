@@ -1,0 +1,100 @@
+/* The job drawer's own styling.
+ *
+ * It lived in Jobs.css, which is the stylesheet of one route, so the drawer
+ * rendered unstyled anywhere else. That was fine while a job could only be
+ * opened from the jobs list; it stopped being fine when Documents started
+ * opening one over itself. Imported by the drawer, so it travels with it.
+ */
+/* The percentage and the Manual badge go under their figure rather than
+   beside it. Inline they made Parts and Margin the two widest columns on the
+   page, and the width they took was the width the Date column lost. */
+.jobs-list .job-margin-pct {
+  display: block;
+  margin-left: 0;
+}
+
+/* ---- job margin and install controls ---- */
+.job-margin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.job-margin-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 15px 16px;
+  background: var(--white);
+  border-right: 1px solid var(--line-soft);
+}
+
+.job-margin-cell:last-child {
+  border-right: none;
+}
+
+.job-margin-minus .inv-stat-label::before {
+  content: 'less ';
+}
+
+.job-margin-total .inv-stat-value {
+  color: var(--green);
+}
+
+.job-margin-bad .inv-stat-value,
+td.job-margin-bad {
+  color: var(--maroon);
+}
+
+.job-margin-pct {
+  display: inline-block;
+  margin-left: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.job-action {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.job-action h3,
+.job-action-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+
+.job-action-stamp {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.job-install-grid {
+  margin-bottom: 6px;
+}
+
+.job-revert-field {
+  max-width: 280px;
+  margin-bottom: 6px;
+}
+
+.job-action-buttons {
+  margin-top: 16px;
+}
+
+.job-schedule-line {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0;
+}

@@ -19,19 +19,29 @@ import DocumentPayFix from './DocumentPayFix'
 // The customer name is a link to the job. A page that says "waiting on a
 // crew" and then leaves you to find which job that was is the fault this whole
 // pass is about.
-export default function DocumentRow({ row, busy, onSend, onFixed, showReason = true }) {
+export default function DocumentRow({ row, busy, onSend, onFixed, onOpen, showReason = true }) {
   const blocked = row.gaps.length > 0 || row.job_status === 'cancelled'
   const sending = busy === row.key
 
   return (
     <li className="doc-row">
       <span className="doc-main">
-        <Link
-          to={`/jobs?job=${encodeURIComponent(row.job_id)}`}
-          className="doc-who row-link"
-        >
-          {row.customer_name}
-        </Link>
+        {/* Opens the job over this page. It used to link to /jobs, which
+            meant leaving Documents to look at a row of it, and closing the
+            drawer afterwards left you on the jobs list rather than back
+            here. */}
+        {onOpen ? (
+          <button type="button" className="doc-who row-link" onClick={() => onOpen(row.job_id)}>
+            {row.customer_name}
+          </button>
+        ) : (
+          <Link
+            to={`/jobs?job=${encodeURIComponent(row.job_id)}`}
+            className="doc-who row-link"
+          >
+            {row.customer_name}
+          </Link>
+        )}
         <span className="doc-meta">
           {row.document}
           {row.installer_name && <> &middot; {row.installer_name}</>}

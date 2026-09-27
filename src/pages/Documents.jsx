@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { attempt } from '../lib/errors'
 import { sendAgreement } from '../lib/agreements'
@@ -11,6 +12,7 @@ import {
 import AppShell from '../components/AppShell'
 import EmptyState from '../components/EmptyState'
 import DocumentRow from '../components/DocumentRow'
+import JobDrawer from '../components/JobDrawer'
 import DocumentsGaps from '../components/DocumentsGaps'
 import './Documents.css'
 
@@ -37,6 +39,10 @@ const TABS = [
 ]
 
 export default function Documents() {
+  // The open job lives in the address, so a link can be pasted and the browser
+  // back button closes the drawer rather than leaving the page.
+  const [params, setParams] = useSearchParams()
+  const openJobId = params.get('job') || ''
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -70,6 +76,15 @@ export default function Documents() {
   const rows = useMemo(() => documentRows(jobs), [jobs])
   const counts = useMemo(() => documentCounts(rows), [rows])
   const groups = useMemo(() => groupByReason(rows), [rows])
+
+  const openJob = useCallback(id => {
+    setParams(current => {
+      const next = new URLSearchParams(current)
+      if (id) next.set('job', id)
+      else next.delete('job')
+      return next
+    }, { replace: true })
+  }, [setParams])
 
   const handleSend = useCallback(async row => {
     setBusy(row.key)
@@ -226,7 +241,8 @@ export default function Documents() {
                         <ul className="doc-list">
                           {group.rows.map(row => (
                             <DocumentRow key={row.key} row={row} busy={busy}
-                              onSend={handleSend} onFixed={handleFixed} showReason={false} />
+                              onSend={handleSend} onFixed={handleFixed} onOpen={openJob}
+                              showReason={false} />
                           ))}
                         </ul>
                       </div>
@@ -235,7 +251,7 @@ export default function Documents() {
                     <ul className="doc-list">
                       {sectionRows.map(row => (
                         <DocumentRow key={row.key} row={row} busy={busy}
-                          onSend={handleSend} onFixed={handleFixed} />
+                          onSend={handleSend} onFixed={handleFixed} onOpen={openJob} />
                       ))}
                     </ul>
                   )}
@@ -247,6 +263,10 @@ export default function Documents() {
               <p className="inv-state">Nothing in this group.</p>
             )}
           </>
+        )}
+
+        {openJobId && (
+          <JobDrawer jobId={openJobId} onClose={() => openJob('')} onChanged={load} />
         )}
 
         {/* Last, because it answers a different question from the rest of the

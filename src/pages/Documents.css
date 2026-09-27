@@ -226,8 +226,16 @@
 
 .doc-main { min-width: 0; }
 
+/* A button now rather than a link, because the job opens over this page
+   instead of on the jobs list. Stripped back to text so the row reads the way
+   it always did. */
 .doc-who {
   display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: inherit;
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
