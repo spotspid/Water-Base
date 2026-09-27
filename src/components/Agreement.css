@@ -206,3 +206,57 @@
   margin-top: 0.5rem;
   padding-top: 0.5rem;
 }
+
+/* What the send still needs, ticked or not.
+   
+   A list rather than a sentence, because the panel is read by somebody trying
+   to get a document out, and "2 things are missing" with the two things under
+   it is a shorter path than a paragraph naming one of them. */
+.agr-check {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: var(--paper);
+  border-radius: 8px;
+}
+
+.agr-check-head {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.agr-check-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.agr-check-list li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.agr-check-mark { font-weight: 700; }
+
+.agr-check-on .agr-check-mark { color: var(--green); }
+.agr-check-off .agr-check-mark { color: var(--maroon); }
+
+.agr-check-on .agr-check-label { color: var(--body-text); }
+.agr-check-off .agr-check-label { color: var(--ink); font-weight: 600; }
+
+.agr-check-value { color: var(--muted); }
+.agr-check-off .agr-check-value { color: var(--maroon); }
+
+@media (max-width: 560px) {
+  .agr-check-list li {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .agr-check-value { grid-column: 2; }
+}

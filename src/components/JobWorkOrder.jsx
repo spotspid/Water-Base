@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import {
-  WORK_ORDER_TYPE, isWorkOrderOut, sendAgreement, workOrderBlocker,
+  WORK_ORDER_TYPE, isWorkOrderOut, sendAgreement,
   workOrderLabel, workOrderReady, workOrderTone,
 } from '../lib/agreements'
+import { workOrderChecklist } from '../lib/workOrder'
 import { balanceState } from '../lib/depositState'
 import { formatCurrency, formatDateTime } from '../lib/inventory'
+import { formatLongDate } from '../lib/schedule'
 
 // The work order panel, beside the customer agreement on the job record.
 //
@@ -13,14 +15,20 @@ import { formatCurrency, formatDateTime } from '../lib/inventory'
 // a document in a subcontractor's inbox. That also settles the reassignment
 // case: there is no path that sends twice, because there is no path that sends
 // once without being asked.
-export default function JobWorkOrder({ job, onChanged }) {
+export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [details, setDetails] = useState(null)
   const [notice, setNotice] = useState('')
 
-  const blocker = workOrderBlocker(job)
+  // What the send needs, ticked or not, rather than the first complaint as a
+  // paragraph. The panel used to say "No installer is assigned" while the
+  // crew box above showed one picked and unsaved, which is the same fact
+  // reported two ways by two panels and the reason nobody could tell what to
+  // press.
+  const checklist = workOrderChecklist(job)
+  const outstanding = checklist.filter(item => !item.done)
   const ready = workOrderReady(job)
   const out = isWorkOrderOut(job)
   const signed = job.work_order_status === 'completed'
@@ -135,7 +143,35 @@ export default function JobWorkOrder({ job, onChanged }) {
         </p>
       )}
 
-      {blocker && !signed && <p className="agr-sub">{blocker}</p>}
+      {/* The one thing the job record cannot see: a crew chosen in the box
+          above and not saved yet. Without this the panel contradicts it. */}
+      {crewUnsaved && !signed && (
+        <p className="agr-offer">
+          Crew and pay above have not been saved yet. Press <strong>Save crew and pay</strong>,
+          then this panel catches up.
+        </p>
+      )}
+
+      {!signed && outstanding.length > 0 && (
+        <div className="agr-check">
+          <p className="agr-check-head">
+            To send this{outstanding.length > 1 ? `, ${outstanding.length} things are missing` : ''}:
+          </p>
+          <ul className="agr-check-list">
+            {checklist.map(item => (
+              <li key={item.key} className={item.done ? 'agr-check-on' : 'agr-check-off'}>
+                <span className="agr-check-mark" aria-hidden="true">{item.done ? '✓' : '•'}</span>
+                <span className="agr-check-label">{item.label}</span>
+                <span className="agr-check-value">
+                  {item.done
+                    ? (item.key === 'date' && item.value ? formatLongDate(item.value) : item.value)
+                    : item.fix}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {error && (
         <div className="form-error" role="alert">
@@ -167,11 +203,18 @@ export default function JobWorkOrder({ job, onChanged }) {
             <button
               type="button"
               className={ready ? 'btn-primary' : 'btn-cancel'}
-              disabled={busy || Boolean(blocker)}
+              disabled={busy || outstanding.length > 0}
               onClick={() => { setConfirming(true); setError(''); setNotice('') }}
             >
               {out ? 'Resend Work Order' : 'Send work order'}
             </button>
+          )}
+          {!confirming && outstanding.length > 0 && (
+            <span className="agr-confirm-text">
+              {outstanding.length === 1
+                ? outstanding[0].fix
+                : `${outstanding.length} things to do first, starting with: ${outstanding[0].fix}`}
+            </span>
           )}
         </div>
       )}

@@ -218,7 +218,12 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
 
-      {!cancelled && <JobWorkOrder job={job} onChanged={onChanged} />}
+      {/* crewDirty is the drawer's only view of the crew panel's unsaved
+          state, and the work order needs it: a crew chosen and not saved is
+          invisible on the job row this panel reads. */}
+      {!cancelled && (
+        <JobWorkOrder job={job} onChanged={onChanged} crewUnsaved={crewDirty} />
+      )}
 
       <JobEarlierDocuments job={job} />
 

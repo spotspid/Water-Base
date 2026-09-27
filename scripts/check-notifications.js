@@ -9,7 +9,9 @@ import {
 import {
   SPECS, matchFields, partGroup, partLines,
 } from '../supabase/functions/send-agreement/fieldMap.ts'
-import { agreedPay, workOrderBlocker } from '../src/lib/workOrder.js'
+import {
+  agreedPay, workOrderBlocker, workOrderChecklist, workOrderNextStep,
+} from '../src/lib/workOrder.js'
 
 // Checks what the notifier says and when it says it.
 //
@@ -700,6 +702,58 @@ check('a missing count reads as empty rather than as fine',
 check('no sheet at all still reports the sheet, not the empty sheet',
   workOrderBlocker({ ...sendable, template_id: null, template_line_count: 0 })
     .includes('no build sheet'))
+
+// --- the checklist on the panel ---------------------------------------------
+//
+// The panel used to print the first complaint as a paragraph, which is how a
+// job with a crew picked and not saved could read "No installer is assigned"
+// while the box above it showed one. A list of what the send needs, each line
+// either ticked or carrying the move that ticks it, is the same rule said in
+// a way somebody can work.
+
+const aprilsJob = {
+  scheduled_date: '2026-09-28',
+  installer_id: null,
+  installer_email: null,
+  installer_pay: null,
+  invoice_number: 'MWP-0008',
+  template_id: 't1',
+  template_line_count: 5,
+}
+
+const list = workOrderChecklist(aprilsJob)
+check('every requirement is listed, done or not', list.length === 5, String(list.length))
+check('the date it has is ticked', list.find(i => i.key === 'date').done)
+check('the job number it has is ticked', list.find(i => i.key === 'job_number').done)
+check('the crew it has not is not', !list.find(i => i.key === 'crew').done)
+check('and says where to pick one',
+  list.find(i => i.key === 'crew').fix.includes('Crew and pay'),
+  list.find(i => i.key === 'crew').fix)
+check('the pay it has not is not ticked', !list.find(i => i.key === 'payout').done)
+check('and says where to type it',
+  list.find(i => i.key === 'payout').fix.includes('Crew and pay'))
+check('the next move is the first thing missing',
+  workOrderNextStep(aprilsJob) === list.find(i => !i.done).fix,
+  workOrderNextStep(aprilsJob))
+
+const readyJob = {
+  ...aprilsJob, installer_id: 'i1', installer_email: 'jay@example.com', installer_pay: 650,
+}
+check('a job with everything has nothing outstanding',
+  workOrderChecklist(readyJob).every(i => i.done))
+check('and no next move to name', workOrderNextStep(readyJob) === '')
+check('an installer with no email is not a ticked crew',
+  !workOrderChecklist({ ...readyJob, installer_email: null })
+    .find(i => i.key === 'crew').done)
+check('and the fix points at the roster rather than the crew box',
+  workOrderChecklist({ ...readyJob, installer_email: null, installer_name: 'Jay Woodward' })
+    .find(i => i.key === 'crew').fix.includes('Settings'))
+
+// The list and the refusal are the same rule, so a ticked list with a dead
+// button, or the reverse, cannot happen.
+check('nothing outstanding means nothing blocking', workOrderBlocker(readyJob) === '')
+check('and something outstanding means something blocking',
+  workOrderBlocker(aprilsJob) !== '')
 
 check('agreedPay reads a real figure', agreedPay({ installer_pay: 450 }) === 450)
 check('and reads zero as missing', agreedPay({ installer_pay: 0 }) === null)

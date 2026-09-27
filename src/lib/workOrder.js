@@ -129,6 +129,78 @@ export function workOrderBlocker(job) {
 }
 
 /**
+ * Everything the send needs, done or not, in the order it gets done.
+ *
+ * workOrderGaps says what is wrong. This says what the job is, which is the
+ * difference between a panel somebody has to decode and a panel somebody can
+ * work: four lines, each either ticked or carrying the one move that ticks it.
+ *
+ *   label  what is needed, as a thing rather than a complaint
+ *   value  what the job holds, when it holds it
+ *   fix    where to do something about it, when it does not
+ *
+ * The checks are the same GAPS the send is refused by, so a ticked list and a
+ * dead button cannot happen.
+ */
+export function workOrderChecklist(job) {
+  const missing = new Set(workOrderGaps(job).map(gap => gap.key))
+  const has = key => !missing.has(key)
+
+  return [
+    {
+      key: 'date',
+      label: 'A date on the calendar',
+      done: has('date'),
+      value: job?.scheduled_date || '',
+      fix: 'Give it a date on the schedule',
+    },
+    {
+      key: 'crew',
+      label: 'An installer with an email address',
+      done: has('crew') && has('crew_email'),
+      value: has('crew') ? (job?.installer_name || '') : '',
+      fix: has('crew')
+        ? `${job?.installer_name || 'That installer'} has no email on the roster. Add one in Settings`
+        : 'Pick one under Crew and pay above',
+    },
+    {
+      key: 'payout',
+      label: 'The installer pay',
+      done: has('payout'),
+      value: has('payout') ? String(job?.installer_pay ?? '') : '',
+      fix: 'Type it under Crew and pay above',
+    },
+    {
+      key: 'job_number',
+      label: 'A job number',
+      done: has('job_number'),
+      value: job?.invoice_number || '',
+      fix: 'Add one from Edit at the top',
+    },
+    {
+      key: 'parts',
+      label: 'Parts to put on it',
+      done: has('sheet') && has('sheet_parts'),
+      value: '',
+      fix: 'Give the job a build sheet with parts on it, or list its own parts below',
+    },
+  ]
+}
+
+/**
+ * The next move, as one short instruction, or '' when there is nothing left.
+ *
+ * Sits beside the send button. A dead button that says "2 things first" and
+ * then lists them is a button somebody can act on; a dead button with a
+ * paragraph beside it is one they scroll past.
+ */
+export function workOrderNextStep(job) {
+  const outstanding = workOrderChecklist(job).filter(item => !item.done)
+  if (outstanding.length === 0) return ''
+  return outstanding[0].fix
+}
+
+/**
  * "a crew, a payout and a job number".
  *
  * Oxford-free on purpose: this is read at a glance on a card, not parsed.
