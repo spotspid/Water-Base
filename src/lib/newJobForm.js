@@ -15,7 +15,6 @@ import { roPickProblem } from './roPicks.js'
 export function validateNewJob(form, { sending = false, selectedTemplate = null } = {}) {
   if (!form.customer_name.trim()) return 'Customer name is required.'
   if (!form.phone.trim()) return 'Phone is required.'
-  if (!form.address.trim()) return 'Address is required.'
 
   // optional, but a typo here means the agreement silently never arrives
   const email = form.customer_email.trim()
@@ -35,6 +34,11 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
   // allowed and shows amber: the finish is often not decided at the kitchen
   // table. A sold or booked job still needs them, because its parts do.
   if (form.status !== 'quoted') {
+    // A price is quoted over the phone before anybody has been to the house.
+    // The address is what an installer drives to, so it is wanted the moment
+    // the job is real, and not before. See addressForSave for what a quote
+    // with none of its own carries instead.
+    if (!form.address.trim()) return 'Address is required.'
     if (!form.payment_type) return 'Pick a payment type.'
     if (!form.faucet_finish) return 'Pick a faucet finish.'
     if (!form.ro_type) return 'Pick an RO type.'
@@ -77,4 +81,31 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
   }
 
   return ''
+}
+
+// What a quote with no address stores.
+//
+// Not blank. The customer agreement is what a quote goes out as, and the
+// deployed send-agreement refuses to send when the address box has no value,
+// so a blank one would save a quote that then cannot be sent. This is the
+// same placeholder somebody would type by hand, put in by the form instead,
+// and it prints on the agreement where the address goes.
+//
+// It exists to be replaced: once the real address is known it is typed over on
+// the job like any other correction. Nothing enforces that yet. The new job
+// form asks for a real address on anything past Quoted, but a quote that is
+// marked sold in the drawer keeps whatever it had, so a job can reach the
+// schedule still saying this. addressIsPlaceholder is here for whatever
+// closes that, whether a database guard or a line on the drawer.
+export const ADDRESS_TBC = 'To be confirmed at a later time'
+
+export function addressForSave(form) {
+  const typed = String(form?.address ?? '').trim()
+  if (typed) return typed
+  return form?.status === 'quoted' ? ADDRESS_TBC : ''
+}
+
+// Whether a job is still carrying the placeholder rather than a real address.
+export function addressIsPlaceholder(address) {
+  return String(address ?? '').trim().toLowerCase() === ADDRESS_TBC.toLowerCase()
 }

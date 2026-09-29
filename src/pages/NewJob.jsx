@@ -5,7 +5,7 @@ import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
-import { validateNewJob } from '../lib/newJobForm'
+import { addressForSave, validateNewJob } from '../lib/newJobForm'
 import { useInstallerPay } from '../lib/useInstallerPay'
 import { applyRoPick } from '../lib/roPicks'
 import {
@@ -159,7 +159,8 @@ export default function NewJob() {
       customer_name: form.customer_name.trim(),
       phone: form.phone.trim(),
       customer_email: form.customer_email.trim() || null,
-      address: form.address.trim(),
+      // A quote with no address carries a placeholder, not a blank; see newJobForm.js.
+      address: addressForSave(form),
       city: form.city.trim(),
       water_source: form.water_source,
       system_template: form.system_template,

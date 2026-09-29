@@ -6,7 +6,7 @@ import {
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
 import * as printed from '../supabase/functions/send-agreement/siteConditions.ts'
-import { validateNewJob } from '../src/lib/newJobForm.js'
+import { ADDRESS_TBC, addressForSave, addressIsPlaceholder, validateNewJob } from '../src/lib/newJobForm.js'
 
 // Checks the sales checklist from the Sept 17 call.
 //
@@ -228,6 +228,33 @@ check('a quote saves with finish, RO type and payment type unanswered',
   validateNewJob({ ...baseJob, status: 'quoted' }))
 check('a sold job still needs a payment type',
   validateNewJob({ ...baseJob, status: 'sold' }) === 'Pick a payment type.')
+
+// A price is quoted over the phone before anybody has been to the house, so a
+// quote takes no address. It does not store a blank one: the deployed
+// send-agreement refuses to send when the address box is empty, so a blank
+// would save a quote that could not then be sent.
+check('a quote saves with no address at all',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '' }) === '',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '' }))
+check('and can be sent with no address',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '', customer_email: 'a@b.co' },
+    { sending: true }) === '')
+check('a sold job still demands a real one',
+  validateNewJob({ ...baseJob, status: 'sold', address: '', payment_type: 'Cash',
+    faucet_finish: 'Chrome', ro_type: 'Tank Style' }) === 'Address is required.')
+check('spaces are not an address either',
+  validateNewJob({ ...baseJob, status: 'sold', address: '   ', payment_type: 'Cash',
+    faucet_finish: 'Chrome', ro_type: 'Tank Style' }) === 'Address is required.')
+check('a blank quote stores the placeholder, not an empty string',
+  addressForSave({ ...baseJob, status: 'quoted', address: '' }) === ADDRESS_TBC,
+  addressForSave({ ...baseJob, status: 'quoted', address: '' }))
+check('a typed address is stored as typed, trimmed',
+  addressForSave({ status: 'quoted', address: '  9598 Mercedes Ave  ' }) === '9598 Mercedes Ave')
+check('and nothing but a quote gets the placeholder',
+  addressForSave({ status: 'sold', address: '' }) === '')
+check('the placeholder is recognised however it is cased',
+  addressIsPlaceholder(ADDRESS_TBC) && addressIsPlaceholder('to be confirmed at a later time ')
+  && !addressIsPlaceholder('9598 Mercedes Ave') && !addressIsPlaceholder(''))
 check('a city typed with only spaces is refused',
   validateNewJob({ ...baseJob, status: 'quoted', city: '   ' }) === 'Enter a city.')
 check('the build sheet message uses the one name for it',

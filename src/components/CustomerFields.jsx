@@ -30,9 +30,18 @@ export default function CustomerFields({ form, onChange, disabled }) {
             value={form.customer_email} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field field-full">
-          <label htmlFor="address">Address</label>
-          <input id="address" name="address" type="text" required
+          <label htmlFor="address">
+            Address{' '}
+            {form.status === 'quoted' && <span className="optional">(optional on a quote)</span>}
+          </label>
+          <input id="address" name="address" type="text" required={form.status !== 'quoted'}
             value={form.address} onChange={onChange} disabled={disabled} />
+          {form.status === 'quoted' && !form.address.trim() && (
+            <span className="field-hint">
+              Left blank, the quote saves and sends with &ldquo;To be confirmed at a later
+              time&rdquo; where the address goes. Type the real one in before the job is sold.
+            </span>
+          )}
         </div>
         <div className="field">
           <label htmlFor="city">City</label>
