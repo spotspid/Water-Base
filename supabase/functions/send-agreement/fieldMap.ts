@@ -211,6 +211,12 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     // the box on the page and locked, so an empty one cannot be typed into by
     // the customer. The work order below still demands it: an installer has to
     // know where to drive.
+    //
+    // The form still asks for an address on a quote, and will until this is
+    // deployed. Relaxing it first would let a quote be saved that this
+    // function then refuses to send, which is worse than asking for an
+    // address. Relax it in src/lib/newJobForm.js and CustomerFields.jsx on the
+    // day this ships.
     { key: 'install_address', required: false, lockBlank: true, names: ['install_address'],
       value: ctx => text(ctx.job.address) },
     { key: 'city', required: false, names: ['city'],

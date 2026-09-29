@@ -15,6 +15,7 @@ import { roPickProblem } from './roPicks.js'
 export function validateNewJob(form, { sending = false, selectedTemplate = null } = {}) {
   if (!form.customer_name.trim()) return 'Customer name is required.'
   if (!form.phone.trim()) return 'Phone is required.'
+  if (!form.address.trim()) return 'Address is required.'
 
   // optional, but a typo here means the agreement silently never arrives
   const email = form.customer_email.trim()
@@ -34,10 +35,6 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
   // allowed and shows amber: the finish is often not decided at the kitchen
   // table. A sold or booked job still needs them, because its parts do.
   if (form.status !== 'quoted') {
-    // A price can be quoted over the phone before anybody has been to the
-    // house. The address is what the installer drives to, so it is needed the
-    // moment the job is real, and not before.
-    if (!form.address.trim()) return 'Address is required.'
     if (!form.payment_type) return 'Pick a payment type.'
     if (!form.faucet_finish) return 'Pick a faucet finish.'
     if (!form.ro_type) return 'Pick an RO type.'
