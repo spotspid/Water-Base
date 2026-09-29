@@ -205,7 +205,13 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     // page and marked required, so putting the city in both would print it
     // twice and leaving the city box empty would leave a required field blank
     // that nobody is allowed to type in.
-    { key: 'install_address', required: true, names: ['install_address'],
+    // Not required, and sent even when empty. A quote is often given before
+    // anybody has been to the house, and refusing to send it over a blank
+    // address sent David to DocuSeal to do it by hand instead. lockBlank keeps
+    // the box on the page and locked, so an empty one cannot be typed into by
+    // the customer. The work order below still demands it: an installer has to
+    // know where to drive.
+    { key: 'install_address', required: false, lockBlank: true, names: ['install_address'],
       value: ctx => text(ctx.job.address) },
     { key: 'city', required: false, names: ['city'],
       value: ctx => text(ctx.job.city) },

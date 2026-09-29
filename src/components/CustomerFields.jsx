@@ -30,8 +30,11 @@ export default function CustomerFields({ form, onChange, disabled }) {
             value={form.customer_email} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field field-full">
-          <label htmlFor="address">Address</label>
-          <input id="address" name="address" type="text" required
+          <label htmlFor="address">
+            Address{' '}
+            {form.status === 'quoted' && <span className="optional">(optional on a quote)</span>}
+          </label>
+          <input id="address" name="address" type="text" required={form.status !== 'quoted'}
             value={form.address} onChange={onChange} disabled={disabled} />
         </div>
         <div className="field">

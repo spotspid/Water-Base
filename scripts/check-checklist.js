@@ -228,6 +228,26 @@ check('a quote saves with finish, RO type and payment type unanswered',
   validateNewJob({ ...baseJob, status: 'quoted' }))
 check('a sold job still needs a payment type',
   validateNewJob({ ...baseJob, status: 'sold' }) === 'Pick a payment type.')
+
+// A price is quoted over the phone before anybody has been to the house. The
+// address is what the installer drives to, so it is wanted once the job is
+// real and not before. Refusing it on a quote sent David to DocuSeal to send
+// the quote by hand instead.
+check('a quote saves with no address at all',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '' }) === '',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '' }))
+check('and can be sent with no address',
+  validateNewJob({ ...baseJob, status: 'quoted', address: '', customer_email: 'a@b.co' },
+    { sending: true }) === '')
+check('a sold job still demands one',
+  validateNewJob({ ...baseJob, status: 'sold', address: '', payment_type: 'Cash',
+    faucet_finish: 'Chrome', ro_type: 'Tank Style' }) === 'Address is required.')
+check('and so does a job with spaces for an address',
+  validateNewJob({ ...baseJob, status: 'sold', address: '   ', payment_type: 'Cash',
+    faucet_finish: 'Chrome', ro_type: 'Tank Style' }) === 'Address is required.')
+check('the customer name and phone are still wanted on a quote',
+  validateNewJob({ ...baseJob, status: 'quoted', customer_name: '' }) === 'Customer name is required.'
+  && validateNewJob({ ...baseJob, status: 'quoted', phone: '' }) === 'Phone is required.')
 check('a city typed with only spaces is refused',
   validateNewJob({ ...baseJob, status: 'quoted', city: '   ' }) === 'Enter a city.')
 check('the build sheet message uses the one name for it',
