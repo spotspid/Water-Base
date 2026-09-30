@@ -17,7 +17,7 @@ export const JOB_MARGIN_COLUMNS =
   + 'work_order_send_count, installer_email, site_conditions, '
   + 'agreement_view_count, work_order_view_count, nag_snoozed_until, '
   + 'deposits_taken, deposit_count, last_deposit_on, balance_due, template_line_count, '
-  + 'collected_by, valve_type, payment_type, water_source, notes, payout_amount, has_job_parts, '
+  + 'collected_by, valve_type, carbon_type, payment_type, water_source, notes, payout_amount, has_job_parts, '
   + 'expected_parts_cost, parts_cost_effective, parts_cost_basis, unresolved_lines, '
   + 'deposit_amount, deposit_outstanding, is_test, sold_at, quote_sent_at, quote_sent_count, '
   // Why a profit figure is or is not shown, and which of the two blanks is
