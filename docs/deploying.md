@@ -62,6 +62,20 @@ curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
 If `vztoleozeqlloaadppnt` is not in that list, the token is for the wrong
 account and no amount of extra permissions on it will help.
 
+## Deploy through the script, always
+
+```bash
+npm run deploy:edge send-agreement    # one function
+npm run deploy:edge                   # all of them
+```
+
+It refuses a token that cannot see this project, deploys, then writes
+`supabase/functions/<slug>/deployed.json`: the sha256 of every file it sent and
+the version Supabase gave back. That record is what makes "is the live copy
+this code" a question with an exact answer, and it is why deploys should not be
+made with the bare CLI. One that is shows up as a version mismatch, which
+check:deploy reports rather than silently trusting.
+
 ## Before trusting any 403
 
 Run `npm run check:deploy` first. It answers, in order:
@@ -69,8 +83,8 @@ Run `npm run check:deploy` first. It answers, in order:
 1. Is there a token at all?
 2. Can that token see **this** project? If not, it says which projects it can
    see, which is the sentence that identifies a wrong-account token instantly.
-3. Is the deployed `send-agreement` the same as the one in this repo, file by
-   file?
+3. For every function: are today's files the ones the last deploy recorded,
+   and is the live version the one that record describes?
 
 It exits non-zero on any of those, so it can sit in front of a deploy rather
 than being something somebody remembers to run.
@@ -78,17 +92,31 @@ than being something somebody remembers to run.
 ## Deploying
 
 ```bash
-npm run check:deploy
-npx supabase functions deploy send-agreement --project-ref vztoleozeqlloaadppnt
+npm run deploy:edge send-agreement
 npm run check:deploy
 ```
 
-The second run is the point: it proves what is live matches the repo, rather
-than assuming the command that printed no error did what it said.
+The second line is the point: it proves what is live is this code, rather than
+assuming the command that printed no error did what it said.
 
-`scripts/deploy-function.js` does the same thing from disk and refuses to
-deploy to a project other than the one `.env.local` points at, because a
-deploy that lands somewhere else reads as success and is worse than a failure.
+`npm run check:deploy` also runs inside `npm run check`, so a function left
+undeployed fails the same suite as a broken test rather than waiting for
+somebody to notice on a customer's quote.
+
+### Three ways it has been got wrong
+
+The check has been written three times, and the first two were worse than
+nothing:
+
+1. **Looking for a line of each file in the deployed bundle.** Three files
+   passed while eight days stale, because the line it picked had not changed.
+2. **Comparing the deploy time to the last commit.** Two current functions
+   failed, because deploying and then committing is the normal order and
+   leaves the commit looking newer.
+3. **Hashing the files at deploy time and comparing.** Exact, and what runs
+   now.
+
+A check that cries wolf gets ignored as surely as one that sleeps.
 
 ## The rule
 

@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { execSync } from 'node:child_process'
+import { STAMP, fileHashes } from './deploy-edge.js'
 
 // Is what is live the same as what is in this repo?
 //
@@ -26,7 +26,10 @@ import { execSync } from 'node:child_process'
 // Run with: npm run check:deploy
 
 const API = 'https://api.supabase.com'
-const FUNCTIONS = ['send-agreement']
+// Every function, not just the one that burned us. ghl-sync, notify and
+// docuseal-webhook can go stale the same way and nobody would see it, because
+// nothing they do is visible on a page.
+const FUNCTIONS = ['send-agreement', 'ghl-sync', 'notify', 'docuseal-webhook']
 
 let failed = 0
 function check(name, condition, detail = '') {
@@ -102,62 +105,61 @@ if (!mine) {
 
 // --- 3. is what is deployed what is in this repo -------------------------------
 
-// The Management API does not hand back the deployed source, so the files
-// cannot be compared line by line from here. What it does give is when the
-// function was last deployed, and git knows when its code last changed. Code
-// newer than the deploy is exactly the failure this file exists for: finished,
-// merged, correct in the database, and not what a customer is reading.
+// Supabase can say when a function was deployed and what version it is on,
+// but not what is inside it, so the comparison is made against the record each
+// deploy leaves behind: deployed.json, holding the sha256 of every file sent
+// and the version Supabase gave back.
 //
-// An earlier version of this check guessed instead, looking for the last long
-// line of each file inside the deployed bundle. Three files reported a match
-// while they were eight days stale, because the line it picked had not
-// changed. A check that passes when it should fail is worse than no check, so
-// it was replaced with a question that has an exact answer.
+// Two earlier versions of this check guessed, and both were wrong in the
+// direction that matters. The first looked for each file's last long line
+// inside the deployed bundle and passed three files that were eight days
+// stale, because the line it picked had not changed. The second compared the
+// deploy time against the last commit, and failed two functions that were
+// perfectly current, because deploying and then committing is the normal order
+// and leaves the commit looking newer. A check that cries wolf gets ignored as
+// surely as one that sleeps, so both were replaced with a hash.
 
 for (const slug of FUNCTIONS) {
   const dir = join('supabase', 'functions', slug)
   if (!existsSync(dir)) { check(`${slug} exists in this repo`, false, dir); continue }
 
+  const stampPath = join(dir, STAMP)
+  if (!existsSync(stampPath)) {
+    check(`${slug}: there is a record of what was deployed`, false,
+      `no ${STAMP}. Deploy with npm run deploy:edge ${slug}, which writes one.`)
+    continue
+  }
+
+  const stamp = JSON.parse(readFileSync(stampPath, 'utf8'))
+  const now = fileHashes(dir)
+
+  // 1. Is the code today the code that was deployed?
+  const changed = []
+  for (const name of new Set([...Object.keys(now), ...Object.keys(stamp.files || {})])) {
+    if (now[name] !== stamp.files?.[name]) changed.push(name)
+  }
+  check(`${slug}: the code here is what was deployed`, changed.length === 0,
+    changed.length === 0
+      ? `v${stamp.version}, ${Object.keys(now).length} files`
+      : `${changed.join(', ')} changed since the last deploy. Whatever it prints is the old `
+        + `version. Run npm run deploy:edge ${slug}.`)
+
+  // 2. Is the live version the one that record describes? A mismatch means
+  //    somebody deployed another way, so the record no longer proves anything.
   const res = await fetch(`${API}/v1/projects/${ref}/functions/${slug}`, { headers: auth })
     .catch(e => ({ ok: false, status: String(e) }))
 
   if (!res.ok) {
-    check(`${slug}: the deployed copy could be read`, false,
-      `Supabase answered ${res.status}. Cannot tell whether what is live matches this repo.`)
+    check(`${slug}: the live version could be read`, false, `Supabase answered ${res.status}`)
     continue
   }
 
   const live = await res.json()
-  const deployedAt = new Date(live.updated_at)
-
-  // The commit that last touched this function, rather than file mtimes, which
-  // a fresh checkout resets to today and would report everything as stale.
-  let changedAt = null
-  try {
-    const iso = execSync(`git log -1 --format=%cI -- ${dir}`, { encoding: 'utf8' }).trim()
-    if (iso) changedAt = new Date(iso)
-  } catch { changedAt = null }
-
-  const dirty = (() => {
-    try { return execSync(`git status --porcelain -- ${dir}`, { encoding: 'utf8' }).trim() !== '' }
-    catch { return false }
-  })()
-
-  const day = d => d.toISOString().slice(0, 10)
-
-  check(`${slug}: nothing uncommitted`, !dirty,
-    dirty ? 'there are local edits to this function that no deploy can have included' : '')
-
-  if (changedAt) {
-    const fresh = deployedAt >= changedAt
-    check(`${slug}: deployed since its code last changed`, fresh,
-      fresh
-        ? `deployed ${day(deployedAt)}, code last changed ${day(changedAt)}, v${live.version}`
-        : `code changed ${day(changedAt)} but the live copy is from ${day(deployedAt)} (v${live.version}). `
-          + 'Whatever it prints is the old wording. Deploy it.')
-  } else {
-    check(`${slug}: the code's history could be read`, false, 'git log returned nothing for this folder')
-  }
+  check(`${slug}: the live version matches that record`, live.version === stamp.version,
+    live.version === stamp.version
+      ? ''
+      : `live is v${live.version}, the record says v${stamp.version}. Someone deployed outside `
+        + `npm run deploy:edge, so nothing here can prove what is live. Redeploy through it.`)
 }
 
 console.log(failed === 0

@@ -1,0 +1,13 @@
+{
+  "note": "Written by npm run deploy:edge. What was last deployed, so check:deploy can tell whether the live copy is this code. Do not edit by hand.",
+  "slug": "send-agreement",
+  "project": "vztoleozeqlloaadppnt",
+  "version": 38,
+  "deployed_at": 1790783461608,
+  "files": {
+    "fieldMap.ts": "aa818ce7275c8284790cb34fd459ec7ab64fd8c9542ffc88f64298aac75a3191",
+    "index.ts": "9c404cb6934d2f8c38d1346df26263a485149e7bb076559697fd8de0e00ace3c",
+    "quote.ts": "28f6dfb952c516fd5cc2f3c29db55a09989e38a7e8b3130401ddeb627b7af194",
+    "siteConditions.ts": "26366d9dec4333dfb57122125bf046726ede6e882890c2b9afa9999d05fd04a2"
+  }
+}
