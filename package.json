@@ -39,7 +39,8 @@
     "check:ro": "node scripts/check-ro.js",
     "check:longname": "node scripts/check-longname.js",
     "check:docuseal": "node scripts/check-docuseal.js",
-    "check:markdown": "node scripts/check-markdown.js"
+    "check:markdown": "node scripts/check-markdown.js",
+    "check:deploy": "node scripts/check-deploy.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.1",

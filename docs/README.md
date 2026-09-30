@@ -18,6 +18,12 @@ the words you actually see on screen.
 
 More pages will be added here as they are walked.
 
+## Shipping
+
+- [Deploying](deploying.md): the two halves that deploy separately, why a
+  finished change can still not be what a customer sees, and the wrong account
+  token that hid it for eight days.
+
 ## The list of faults
 
 - [Known issues](known-issues.md): every rough edge from the guides above in
