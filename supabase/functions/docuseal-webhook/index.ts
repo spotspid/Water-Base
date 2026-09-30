@@ -265,6 +265,18 @@ async function handleEvent(
 
     if (!updated || updated.length === 0) {
       console.error('no agreement matched this event', { eventType, submissionId, jobId })
+
+      // A signature on a document Water Base never sent. There is no agreement
+      // row to update and no job to update it against, so nothing above could
+      // have worked -- but for a completed or declined document that is a fact
+      // somebody needs, not a line in a log.
+      //
+      // Two real sales were found this way only by scanning DocuSeal by hand:
+      // one agreement signed for $899 with no job in Water Base at all, and a
+      // used equipment agreement for $2,000 the same. Both were created
+      // straight from a DocuSeal template rather than sent from here, so they
+      // were invisible until somebody went looking. This is that alert.
+      await announceUnmatched(supabase, supabaseUrl, serviceKey, eventType, submissionId, data, submission)
       return
     }
 
@@ -303,6 +315,78 @@ async function handleEvent(
   } catch (caught) {
     console.error('background handling threw', caught)
   }
+}
+
+// Only these are worth interrupting somebody for. An unmatched view or expiry
+// on a document Water Base never sent is not news: plenty of documents are
+// sent from DocuSeal directly and most of them are nothing to do with a job.
+// A signature is different, because a signature is money.
+const ANNOUNCE_UNMATCHED: Record<string, string> = {
+  'form.completed': 'signed',
+  'form.declined': 'declined',
+}
+
+/**
+ * Says out loud that a document was signed which matches nothing here.
+ *
+ * Deliberately thin on interpretation: it reports who, which submission, and
+ * how much if the document happens to carry an amount, then stops. It does not
+ * try to find the job by name or create one, because guessing which customer a
+ * loose document belongs to is how the wrong job gets the wrong money.
+ */
+async function announceUnmatched(
+  supabase: ReturnType<typeof createClient>,
+  supabaseUrl: string,
+  serviceKey: string,
+  eventType: string,
+  submissionId: string,
+  data: Record<string, unknown>,
+  submission: Record<string, unknown>,
+): Promise<void> {
+  const what = ANNOUNCE_UNMATCHED[eventType]
+  if (!what) return
+
+  // The signer is at the top of data on these events, but fall back to the
+  // submission's list so a shape change degrades to a vaguer message rather
+  // than to silence.
+  const submitters = Array.isArray(submission.submitters)
+    ? submission.submitters as Array<Record<string, unknown>>
+    : []
+
+  const name = String(data.name || submitters.find(s => s.name)?.name || '').trim()
+  const email = String(data.email || submitters.find(s => s.email)?.email || '').trim()
+  const who = [name, email].filter(Boolean).join(', ') || 'an unnamed signer'
+
+  // Any field that looks like money, largest first: on these documents the
+  // total is the biggest number on the page. Reported as "looks like" because
+  // this function cannot know which field is the price.
+  const values = Array.isArray(data.values) ? data.values as Array<Record<string, unknown>> : []
+  const amounts = values
+    .map(v => String(v.value ?? ''))
+    .filter(v => /^\$[\d,]+(\.\d{2})?$/.test(v.trim()))
+    .sort((a, b) => Number(b.replace(/[$,]/g, '')) - Number(a.replace(/[$,]/g, '')))
+
+  const money = amounts.length > 0 ? ` It shows ${amounts[0]}.` : ''
+  const label = String(submission.name || (submission.template as Record<string, unknown>)?.name || '').trim()
+
+  const message = `A document was ${what} in DocuSeal that matches no job in Water Base.`
+    + ` ${who}${label ? `, "${label}"` : ''}, submission ${submissionId}.${money}`
+    + ` Nothing has been recorded, because this document was not sent from Water Base and`
+    + ` there is nothing here to attach it to. Create the job by hand, or re-send it from`
+    + ` Water Base so it links itself next time.`
+
+  await tellNotifier(supabase, supabaseUrl, serviceKey, {
+    mode: 'send',
+    // A signature with no job is a sale nobody has booked, so it goes where
+    // sales go rather than to a quiet corner.
+    channel: 'new_sale',
+    event_type: 'docuseal.unmatched',
+    message,
+    // Keyed on the submission and the event, so DocuSeal retrying the same
+    // signature lands on the same row instead of saying it twice.
+    dedupe_key: `docuseal.unmatched:${submissionId}:${eventType}`,
+    payload: { submission_id: submissionId, event_type: eventType, signer: email || name },
+  })
 }
 
 /**
@@ -375,16 +459,25 @@ async function recordUndelivered(
 ): Promise<void> {
   try {
     const agreementId = String(body.agreement_id ?? '')
-    const event = String(body.event ?? 'event')
+    const event = String(body.event ?? body.event_type ?? 'event')
+
+    // An agreement event is identified by its agreement; a plain send carries
+    // its own key. Without this every unmatched signature would upsert onto
+    // the same row and all but the last would be lost, which is the failure
+    // this whole path exists to prevent.
+    const key = String(body.dedupe_key ?? '')
+      || `notify.undelivered:${agreementId}:${event}`
+
+    const subject = agreementId ? `agreement ${agreementId}` : String(body.message ?? event)
 
     const { error } = await supabase.from('notifications').upsert({
       event_type: 'notify.undelivered',
       // A label rather than a destination. This row is never posted as it
       // stands: the drain re-runs the event, and the real notification picks
       // its own channel.
-      channel: 'scheduling',
-      message: `A ${event} event on agreement ${agreementId} never reached the notifier.`,
-      dedupe_key: `notify.undelivered:${agreementId}:${event}`,
+      channel: String(body.channel ?? 'scheduling'),
+      message: `A ${event} event on ${subject} never reached the notifier.`,
+      dedupe_key: `notify.undelivered:${key}`,
       status: 'failed',
       last_error: problem.slice(0, 500),
       payload: { retry: body },

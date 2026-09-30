@@ -545,7 +545,9 @@ async function replay(
       ? await handleAgreement(supabase, retry, appUrl)
       : mode === 'order'
         ? await handleOrder(supabase, retry, appUrl)
-        : null
+        : mode === 'send'
+          ? await handleSend(supabase, retry)
+          : null
 
     if (!res) return { ok: false, error: `Cannot replay a "${mode}" event.` }
 
