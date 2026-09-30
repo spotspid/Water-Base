@@ -1,0 +1,93 @@
+# Deploy the edge functions when their code changes.
+#
+# The app half of Water Base has deployed itself on every push since the start,
+# through Vercel. The edge functions never did, so they were deployed by hand
+# or, for eight days in September 2026, not at all: quotes printed the old
+# system names while everything else about the change was live and correct.
+# Nothing was wrong with the code. It simply never left the repo.
+#
+# This closes that. A push that touches supabase/functions deploys those
+# functions and records what it sent, the same way npm run deploy:edge does by
+# hand.
+#
+# It needs two things set on the repository, under Settings, Secrets and
+# variables, Actions:
+#
+#   SUPABASE_ACCESS_TOKEN  secret. From the account that OWNS this project.
+#                          A token from another account fails with a message
+#                          about privileges, which reads like a permission to
+#                          raise rather than the wrong account. That is exactly
+#                          how the eight days happened.
+#   SUPABASE_PROJECT_REF   variable. vztoleozeqlloaadppnt
+#
+# Until both exist this workflow fails loudly on the first push that touches a
+# function, which is the intended behaviour: a red run is a fair description of
+# "this change is not live".
+
+name: Deploy edge functions
+
+on:
+  push:
+    branches:
+      # Both, because production tracks the feature branch today and master is
+      # the long term home. Deploying from either is safe: the deploy is of
+      # whatever that branch holds, and the check afterwards proves it.
+      - master
+      - feature/bom-autodeduct
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/deploy-edge.yml'
+
+# One at a time. Two deploys of the same function racing would leave the
+# recorded version describing whichever finished second.
+concurrency:
+  group: deploy-edge-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The stamp commit this job makes would otherwise trigger the job again.
+    if: ${{ !contains(github.event.head_commit.message, '[deploy stamp]') }}
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy every function and record what was sent
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: npm run deploy:edge
+
+      # The proof, not the assumption. deploy:edge exiting zero means the CLI
+      # printed no error; this asks Supabase what is actually live and compares
+      # it to the files in this commit.
+      - name: Prove the live copies are this commit
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: npm run check:deploy
+
+      # The records live in the repo, so they have to come back. Skipped when
+      # nothing moved, which is the usual case for a function that did not
+      # change in this push.
+      - name: Commit the deploy records
+        run: |
+          if [ -z "$(git status --porcelain -- 'supabase/functions/**/deployed.json')" ]; then
+            echo "no deploy records changed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/functions/**/deployed.json
+          git commit -m "chore: record edge deploy [deploy stamp]"
+          git push

@@ -54,13 +54,14 @@ function envValue(key) {
 // Windows with a libuv assertion, which turns a clear failure into a crash.
 async function main() {
 const url = envValue('VITE_SUPABASE_URL')
-const ref = url ? new URL(url).hostname.split('.')[0] : ''
+const ref = envValue('SUPABASE_PROJECT_REF') || (url ? new URL(url).hostname.split('.')[0] : '')
 const token = envValue('SUPABASE_ACCESS_TOKEN')
 
 console.log(`project this app talks to: ${ref || '(unknown)'}\n`)
 
 if (!ref) {
-  console.log('  FAIL  VITE_SUPABASE_URL is not set, so there is no project to check against.')
+  console.log('  FAIL  Neither SUPABASE_PROJECT_REF nor VITE_SUPABASE_URL is set, so there is')
+  console.log('        no project to check against.')
   return 1
 }
 

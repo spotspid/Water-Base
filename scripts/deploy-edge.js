@@ -53,11 +53,17 @@ export function functionDirs() {
 }
 
 async function main() {
+  // SUPABASE_PROJECT_REF first, for CI, which has no .env.local. Locally the
+  // ref is read off the URL the app actually talks to, so a deploy cannot go
+  // to a project the app does not use.
   const url = envValue('VITE_SUPABASE_URL')
-  const ref = url ? new URL(url).hostname.split('.')[0] : ''
+  const ref = envValue('SUPABASE_PROJECT_REF') || (url ? new URL(url).hostname.split('.')[0] : '')
   const token = envValue('SUPABASE_ACCESS_TOKEN')
 
-  if (!ref) { console.error('VITE_SUPABASE_URL is not set, so there is no project to deploy to.'); return 1 }
+  if (!ref) {
+    console.error('Neither SUPABASE_PROJECT_REF nor VITE_SUPABASE_URL is set, so there is no project to deploy to.')
+    return 1
+  }
   if (!token) {
     console.error('No SUPABASE_ACCESS_TOKEN. Generate one at supabase.com under Account,')
     console.error('Access Tokens, from the account that owns this project.')

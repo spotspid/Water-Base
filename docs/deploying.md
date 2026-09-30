@@ -62,7 +62,33 @@ curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
 If `vztoleozeqlloaadppnt` is not in that list, the token is for the wrong
 account and no amount of extra permissions on it will help.
 
-## Deploy through the script, always
+## It should not be manual, and now it is not
+
+The app half has deployed itself on every push since the start, through Vercel.
+The functions half never did, for no better reason than that nobody set it up.
+That asymmetry is the whole failure: a push that changed a page was live in a
+minute and a push that changed a customer's quote sat in the repo for eight
+days, and both looked the same from here.
+
+`.github/workflows/deploy-edge.yml` deploys any function whose code changed on
+a push to master or the production branch, records what it sent, proves the
+live copies match that commit, and commits the records back.
+
+It needs two things set once, under Settings, Secrets and variables, Actions:
+
+| | |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` (secret) | A token from the account that **owns** this project |
+| `SUPABASE_PROJECT_REF` (variable) | `vztoleozeqlloaadppnt` |
+
+Until both exist, the first push touching a function fails the workflow, which
+is the intended behaviour: a red run is a fair description of "this change is
+not live".
+
+Deploying by hand still works and is still the way to ship something without a
+push.
+
+## Deploy by hand through the script
 
 ```bash
 npm run deploy:edge send-agreement    # one function
