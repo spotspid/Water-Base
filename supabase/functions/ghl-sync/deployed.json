@@ -2,8 +2,8 @@
   "note": "Written by npm run deploy:edge. What was last deployed, so check:deploy can tell whether the live copy is this code. Do not edit by hand.",
   "slug": "ghl-sync",
   "project": "vztoleozeqlloaadppnt",
-  "version": 6,
-  "deployed_at": 1790783453990,
+  "version": 7,
+  "deployed_at": 1790785945000,
   "files": {
     "ghl.ts": "0dc8d3ff06eac190b7fc6fc2a4e1313c4311769fca8c14028eedab71f9e31e1c",
     "index.ts": "b50ab58a7861be96ed6b04227745c09558689df57c33b7c29fe0f644318d2d39",
