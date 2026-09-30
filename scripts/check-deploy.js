@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { STAMP, fileHashes } from './deploy-edge.js'
+import { STAMP, fileHashes, accessToken } from './deploy-edge.js'
 
 // Is what is live the same as what is in this repo?
 //
@@ -55,9 +55,17 @@ function envValue(key) {
 async function main() {
 const url = envValue('VITE_SUPABASE_URL')
 const ref = envValue('SUPABASE_PROJECT_REF') || (url ? new URL(url).hostname.split('.')[0] : '')
-const token = envValue('SUPABASE_ACCESS_TOKEN')
+const { token, clash } = accessToken()
 
 console.log(`project this app talks to: ${ref || '(unknown)'}\n`)
+
+// Two tokens is its own failure, and a worse one than none: the environment
+// silently wins, so a good token written in .env.local can sit there unused
+// while every deploy goes on failing for a reason nobody can see.
+if (clash) {
+  console.log(`  FAIL  ${clash}`)
+  return 1
+}
 
 if (!ref) {
   console.log('  FAIL  Neither SUPABASE_PROJECT_REF nor VITE_SUPABASE_URL is set, so there is')
@@ -101,7 +109,7 @@ if (!mine) {
   console.log('  that owns the project above, and set SUPABASE_ACCESS_TOKEN to it.')
   console.log('')
   console.log(`\n${failed} deploy check(s) failed.`)
-  process.exit(1)
+  return 1
 }
 
 // --- 3. is what is deployed what is in this repo -------------------------------

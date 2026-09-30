@@ -47,6 +47,37 @@ export function fileHashes(dir) {
   return out
 }
 
+/**
+ * The Supabase access token, and a refusal when there are two of them.
+ *
+ * envValue prefers the environment over .env.local, so a stale token exported
+ * in a shell silently beats a good one written in the file. That is the same
+ * shape of fault as the wrong account itself: something correct is present,
+ * something wrong is in front of it, and nothing says so. Two different values
+ * stop the run rather than quietly picking one.
+ */
+export function accessToken() {
+  const fromEnv = (process.env.SUPABASE_ACCESS_TOKEN || '').trim()
+  let fromFile = ''
+  if (existsSync('.env.local')) {
+    for (const line of readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
+      const at = line.indexOf('=')
+      if (at > 0 && line.slice(0, at).trim() === 'SUPABASE_ACCESS_TOKEN') fromFile = line.slice(at + 1).trim()
+    }
+  }
+
+  if (fromEnv && fromFile && fromEnv !== fromFile) {
+    return {
+      token: '',
+      clash: 'There are two different SUPABASE_ACCESS_TOKEN values: one in the environment '
+        + `(${fromEnv.slice(0, 8)}...) and a different one in .env.local (${fromFile.slice(0, 8)}...). `
+        + 'The environment one would win. Remove whichever is stale so there is one answer.',
+    }
+  }
+
+  return { token: fromEnv || fromFile, clash: '' }
+}
+
 export function functionDirs() {
   const root = join('supabase', 'functions')
   return readdirSync(root).filter(name => existsSync(join(root, name, 'index.ts')))
@@ -58,8 +89,12 @@ async function main() {
   // to a project the app does not use.
   const url = envValue('VITE_SUPABASE_URL')
   const ref = envValue('SUPABASE_PROJECT_REF') || (url ? new URL(url).hostname.split('.')[0] : '')
-  const token = envValue('SUPABASE_ACCESS_TOKEN')
+  const { token, clash } = accessToken()
 
+  if (clash) {
+    console.error(clash)
+    return 1
+  }
   if (!ref) {
     console.error('Neither SUPABASE_PROJECT_REF nor VITE_SUPABASE_URL is set, so there is no project to deploy to.')
     return 1
