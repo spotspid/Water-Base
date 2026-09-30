@@ -7,6 +7,10 @@ import { includedLines, quoteMessage } from './quote.ts'
 //
 // Creates a DocuSeal submission for a job and records it against the job.
 //
+// This function ships on its own, separately from the app. Changing the
+// wording of a quote here does nothing until it is deployed, which a push now
+// does automatically. See docs/deploying.md for why that sentence exists.
+//
 // The API key is an edge function secret and is only ever read here. It must
 // not move to the frontend: Vite inlines anything it can reach into the
 // bundle, which would publish the key to every visitor.
