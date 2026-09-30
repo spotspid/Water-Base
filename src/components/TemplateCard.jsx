@@ -6,7 +6,7 @@ import { useSettings } from '../lib/settings'
 export default function TemplateCard({
   template, lines, items, onEditTemplate, onAddLine, onEditLine, onDeleteLine,
 }) {
-  const { finishes, roTypes, valveTypes } = useSettings()
+  const { finishes, roTypes, valveTypes, carbonTypes } = useSettings()
   const [confirmingId, setConfirmingId] = useState('')
 
   const cost = useMemo(() => templateCost(lines, items), [lines, items])
@@ -16,8 +16,9 @@ export default function TemplateCard({
   const gaps = useMemo(
     () => unsupportedPicks(lines, items, {
       faucet_finish: finishes, ro_type: roTypes, valve_type: valveTypes,
+      carbon_type: carbonTypes,
     }),
-    [lines, items, finishes, roTypes, valveTypes],
+    [lines, items, finishes, roTypes, valveTypes, carbonTypes],
   )
 
   const price = template.default_price == null ? null : Number(template.default_price)

@@ -147,6 +147,7 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
         <JobSystemFields
           form={form}
           onChange={handleChange}
+          showCarbonType={false}
           disabled={saving}
           lockedPicks={installed}
           hidePreview

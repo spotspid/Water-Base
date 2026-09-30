@@ -37,12 +37,21 @@ export const PICK_SOURCES = [
     help: 'Resolves to the control valve whose variant matches the type chosen on the job. '
       + 'Valve items cost zero, because the valve is already inside the system price.',
   },
+  {
+    value: 'carbon_type',
+    label: 'Carbon Type',
+    jobField: 'carbon_type',
+    defaultCategory: 'Carbon',
+    help: 'Resolves to the carbon tank whose variant matches the type chosen on the job. '
+      + 'Catalytic costs more than standard, so this one moves the job’s parts cost.',
+  },
 ]
 
 export const PICK_SOURCE_LABELS = {
   faucet_finish: 'Faucet Finish',
   ro_type: 'RO Type',
   valve_type: 'Valve Type',
+  carbon_type: 'Carbon Type',
 }
 
 export const STATUS_LABELS = {

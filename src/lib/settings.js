@@ -14,6 +14,7 @@ export const OPTION_LISTS = [
   'expense_category',
   'ro_type',
   'valve_type',
+  'carbon_type',
 ]
 
 export const DIRECTION_LABELS = {

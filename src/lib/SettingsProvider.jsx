@@ -93,6 +93,7 @@ export function SettingsProvider({ children }) {
       expenseCategories: activeValues('expense_category'),
       roTypes: activeValues('ro_type'),
       valveTypes: activeValues('valve_type'),
+      carbonTypes: activeValues('carbon_type'),
       txnTypes: sortedTypes.filter(t => t.active),
       ...readScalars(scalarRows),
     }

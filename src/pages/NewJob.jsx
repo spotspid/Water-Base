@@ -39,6 +39,7 @@ const EMPTY_FORM = {
   // No RO is still on the list for a job that genuinely has none.
   ro_type: 'Tank Style',
   valve_type: '',
+  carbon_type: '',
   // Quoted by default. Sold stays in the list for a sale closed on the phone.
   status: 'quoted',
   scheduled_date: '',
@@ -173,6 +174,7 @@ export default function NewJob() {
       // Optional here. An RO only job has no control valve, and the parts
       // preview flags an unresolved valve line on a sheet that needs one.
       valve_type: form.valve_type || null,
+      carbon_type: form.carbon_type || null,
       status: wantsInstall ? 'scheduled' : form.status,
       scheduled_date: form.scheduled_date || null,
       time_window: form.scheduled_date ? (form.time_window || null) : null,

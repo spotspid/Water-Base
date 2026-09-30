@@ -22,9 +22,10 @@ import { NO_RO, faucetChoices } from '../lib/roPicks'
 export default function JobSystemFields({
   form, onChange, disabled, templates, loadingTemplates, templateError, onReloadTemplates,
   selectedTemplate, lockedPicks = false, hidePreview = false, templateOptional = false,
+  showCarbonType = true,
 }) {
   const {
-    finishes, roTypes, valveTypes, paymentTypes, loading: loadingSettings,
+    finishes, roTypes, valveTypes, carbonTypes, paymentTypes, loading: loadingSettings,
   } = useSettings()
 
   // The deposit is offered, never imposed. The hint names thirty percent of
@@ -144,6 +145,26 @@ export default function JobSystemFields({
             valve line will not install until one is chosen. RO only needs none.
           </span>
         </div>
+        {showCarbonType && (
+        <div className="field">
+          <label htmlFor="carbon_type">
+            Carbon type <span className="optional">(filtration systems)</span>
+          </label>
+          <select id="carbon_type" name="carbon_type"
+            value={form.carbon_type} onChange={onChange}
+            disabled={disabled || lockedPicks || loadingSettings}>
+            <option value="">
+              {loadingSettings ? 'Loading carbon types...' : 'Not chosen'}
+            </option>
+            {carbonTypes.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <span className="field-hint">
+            Which carbon tank the build sheet takes off the shelf. Catalytic costs
+            more, so it moves the job&rsquo;s parts cost. A sheet with a carbon line
+            will not install until one is chosen.
+          </span>
+        </div>
+        )}
         <div className="field">
           <label htmlFor="payment_type">Payment type</label>
           <select id="payment_type" name="payment_type" required
@@ -164,6 +185,7 @@ export default function JobSystemFields({
           faucetFinish={form.faucet_finish}
           roType={form.ro_type}
           valveType={form.valve_type}
+          carbonType={form.carbon_type}
         />
       )}
     </section>
