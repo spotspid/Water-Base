@@ -2,10 +2,10 @@
   "note": "Written by npm run deploy:edge. What was last deployed, so check:deploy can tell whether the live copy is this code. Do not edit by hand.",
   "slug": "notify",
   "project": "vztoleozeqlloaadppnt",
-  "version": 16,
-  "deployed_at": 1790785947895,
+  "version": 17,
+  "deployed_at": 1790788108505,
   "files": {
-    "index.ts": "303815bebfa62dcea3d88e100dc14367e191c50b7dbcef791489248c81daed13",
+    "index.ts": "d43f767ba36d04e83c5803c8ebb48aa99b2e5f7ce02f065c0b429383a35e8d84",
     "messages.ts": "e6ed8f9dc8debf062c06187d36dcb340abd0e0f9f597526ad29ae0c87f815c4f",
     "slack.ts": "b093c3dbe7d34da7e902c0d2c2f19c0a251f87ef593eda790cc5a9279edf3e67"
   }
