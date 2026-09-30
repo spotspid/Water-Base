@@ -127,7 +127,9 @@ async function main() {
     if (!existsSync(dir)) { console.error(`${slug}: no such function in this repo`); return 1 }
 
     console.log(`\ndeploying ${slug}...`)
-    execSync(`npx supabase functions deploy ${slug} --project-ref ${ref}`, { stdio: 'inherit' })
+    // -y so npx installs the CLI without asking. Without it CI hangs on a
+    // prompt nobody is there to answer.
+    execSync(`npx -y supabase functions deploy ${slug} --project-ref ${ref}`, { stdio: 'inherit' })
 
     const live = await (await fetch(`${API}/v1/projects/${ref}/functions/${slug}`, {
       headers: { Authorization: `Bearer ${token}` },

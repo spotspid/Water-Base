@@ -58,9 +58,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
-      - run: npm ci
+      # No npm ci. Both scripts use Node builtins only and the Supabase CLI
+      # comes from npx, so nothing here needs node_modules. Installing it
+      # anyway made the deploy depend on the frontend dependency tree, and the
+      # first run failed on a lockfile missing two Linux-only optional
+      # packages: a React dependency stopping a customer's quote from shipping.
+      # The two halves deploy separately; their CI should not be joined either.
 
       - name: Deploy every function and record what was sent
         env:
