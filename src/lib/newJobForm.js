@@ -85,24 +85,19 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
 
 // What a quote with no address stores.
 //
-// Not blank. The customer agreement is what a quote goes out as, and the
-// deployed send-agreement refuses to send when the address box has no value,
-// so a blank one would save a quote that then cannot be sent. This is the
-// same placeholder somebody would type by hand, put in by the form instead,
-// and it prints on the agreement where the address goes.
+// A quote with no address now saves a blank one, and the agreement asks the
+// customer for it at signing: the box goes to them empty and required, and
+// docuseal-webhook writes what they type onto a job that has none. That was
+// the whole objection to quoting without one -- an install with no address in
+// writing -- answered without making the sender invent it.
 //
-// It exists to be replaced: once the real address is known it is typed over on
-// the job like any other correction. Nothing enforces that yet. The new job
-// form asks for a real address on anything past Quoted, but a quote that is
-// marked sold in the drawer keeps whatever it had, so a job can reach the
-// schedule still saying this. addressIsPlaceholder is here for whatever
-// closes that, whether a database guard or a line on the drawer.
+// The placeholder below is kept only to recognise jobs that already hold it,
+// saved while the agreement could not yet ask. send-agreement treats it as no
+// address, so those get the same box the customer fills.
 export const ADDRESS_TBC = 'To be confirmed at a later time'
 
 export function addressForSave(form) {
-  const typed = String(form?.address ?? '').trim()
-  if (typed) return typed
-  return form?.status === 'quoted' ? ADDRESS_TBC : ''
+  return String(form?.address ?? '').trim()
 }
 
 // Whether a job is still carrying the placeholder rather than a real address.

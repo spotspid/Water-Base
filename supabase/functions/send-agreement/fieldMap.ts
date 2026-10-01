@@ -27,6 +27,17 @@ export function partGroup(category: unknown): 'system' | 'finish' {
 }
 
 // One line per part, quantity first, as the single list always printed.
+// The placeholder a quote used to save instead of a blank address, kept in
+// src/lib/newJobForm.js as ADDRESS_TBC. It is not an address, and a document
+// that prints it as one tells the customer their install is going to a
+// sentence. Treated here as nothing, so the box goes to the signer instead.
+export const ADDRESS_TBC = 'to be confirmed at a later time'
+
+export function addressOrNothing(value: unknown): string {
+  const address = String(value ?? '').trim()
+  return address.toLowerCase() === ADDRESS_TBC ? '' : address
+}
+
 export function partLines(parts: Part[]): string {
   return parts.map(p => `${p.quantity} x ${p.name} (${p.sku})`).join('\n')
 }
@@ -52,6 +63,10 @@ export type FieldSpec = {
   // than left open. Used for the collected by boxes, where exactly one is
   // ticked and the other must not be tickable.
   lockBlank?: boolean
+  // when there is a value, prefill and lock it; when there is not, hand the
+  // empty box to the signer and make them complete it. For the install
+  // address, which the office usually knows and occasionally does not.
+  openWhenBlank?: boolean
   value: (ctx: Context) => string
 }
 
@@ -205,20 +220,22 @@ const CUSTOMER_INSTALL: AgreementSpec = {
     // page and marked required, so putting the city in both would print it
     // twice and leaving the city box empty would leave a required field blank
     // that nobody is allowed to type in.
-    // Not required, and sent even when empty. A quote is often given before
-    // anybody has been to the house, and refusing to send it over a blank
-    // address sent David to DocuSeal to do it by hand instead. lockBlank keeps
-    // the box on the page and locked, so an empty one cannot be typed into by
-    // the customer. The work order below still demands it: an installer has to
-    // know where to drive.
+    // A quote is often given before anybody has been to the house, so this
+    // cannot be demanded of the sender. It can be demanded of the signer.
     //
-    // The form still asks for an address on a quote, and will until this is
-    // deployed. Relaxing it first would let a quote be saved that this
-    // function then refuses to send, which is worse than asking for an
-    // address. Relax it in src/lib/newJobForm.js and CustomerFields.jsx on the
-    // day this ships.
-    { key: 'install_address', required: false, lockBlank: true, names: ['install_address'],
-      value: ctx => text(ctx.job.address) },
+    // When the office knows the address it is prefilled and locked, as before.
+    // When it does not, the box goes to the customer empty and required, so
+    // the signed agreement carries an address even though the quote did not.
+    // That was the whole objection to sending without one: an install with no
+    // address in writing.
+    //
+    // What they type is read back by docuseal-webhook, but only onto a job
+    // that has no address. A customer writes what they would say out loud --
+    // the real example is "32046 Alameda" against the office's "32046 Alameda
+    // Dr, Farmington Hills, MI 48336" -- so overwriting a good address with a
+    // signed one would make the record worse, not better.
+    { key: 'install_address', required: false, openWhenBlank: true, names: ['install_address'],
+      value: ctx => text(addressOrNothing(ctx.job.address)) },
     { key: 'city', required: false, names: ['city'],
       value: ctx => text(ctx.job.city) },
 
@@ -417,7 +434,7 @@ function normalise(name: string): string {
 }
 
 export type MatchResult = {
-  fields: Array<{ name: string; default_value: string; readonly: boolean }>
+  fields: Array<{ name: string; default_value: string; readonly: boolean; required?: boolean }>
   missing: string[]
   filled: string[]
   openToSigner: string[]
@@ -472,6 +489,14 @@ export function matchFields(
     }
 
     const value = field.value(ctx)
+
+    // Nothing to prefill, but somebody has to answer it: hand the box over
+    // rather than sending it locked and empty.
+    if (!value && field.openWhenBlank) {
+      fields.push({ name: actual, default_value: '', readonly: false, required: true })
+      openToSigner.push(actual)
+      continue
+    }
 
     if (!value && !field.lockBlank) {
       if (field.required) missing.push(`${field.key} (template has "${actual}" but there is no value for it)`)

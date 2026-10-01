@@ -285,6 +285,11 @@ async function handleEvent(
     console.log('agreement updated', { eventType, status, rows: updated.length })
 
     const agreement = updated[0] as Record<string, unknown>
+
+    // What the customer typed into the agreement, now that they have signed it.
+    if (status === 'completed') {
+      await absorbSignedAddress(supabase, supabaseUrl, serviceKey, agreement, data, submission)
+    }
     const agreementId = String(agreement.id || '')
     const intent = NOTIFY_AS[eventType]
 
@@ -314,6 +319,136 @@ async function handleEvent(
     })
   } catch (caught) {
     console.error('background handling threw', caught)
+  }
+}
+
+// The placeholder a quote saved instead of a blank address, as ADDRESS_TBC in
+// src/lib/newJobForm.js and in send-agreement's fieldMap. Repeated rather than
+// imported because each function deploys on its own and cannot reach the
+// others' files. A job holding it has no address.
+const ADDRESS_TBC = 'to be confirmed at a later time'
+
+// What the address box is called on the templates. DocuSeal returns the label
+// as it appears on the document, so this is matched loosely.
+const ADDRESS_FIELDS = ['address', 'install address', 'installation address', 'service address']
+
+function valuesOf(data: Record<string, unknown>, submission: Record<string, unknown>): Array<Record<string, unknown>> {
+  // On form.completed the signer is the event's data. Falling back to the
+  // submission's list keeps this working if that shape changes.
+  if (Array.isArray(data.values)) return data.values as Array<Record<string, unknown>>
+
+  const submitters = Array.isArray(submission.submitters)
+    ? submission.submitters as Array<Record<string, unknown>>
+    : []
+
+  for (const s of submitters) {
+    if (Array.isArray(s.values) && s.completed_at) return s.values as Array<Record<string, unknown>>
+  }
+
+  return []
+}
+
+/**
+ * Takes the address the customer typed, if the job has none.
+ *
+ * Only onto a blank. A customer writes the address they would say out loud:
+ * the real example that prompted this is "32046 Alameda" against the office's
+ * "32046 Alameda Dr, Farmington Hills, MI 48336". Letting the signed version
+ * win would quietly make the record worse, and for the legal purpose this
+ * exists to serve a partial address is close to useless.
+ *
+ * So: fill a blank, never overwrite, and say so when the two disagree. The
+ * disagreement is the interesting case, and it is the one a human should see
+ * rather than a function decide.
+ */
+async function absorbSignedAddress(
+  supabase: ReturnType<typeof createClient>,
+  supabaseUrl: string,
+  serviceKey: string,
+  agreement: Record<string, unknown>,
+  data: Record<string, unknown>,
+  submission: Record<string, unknown>,
+): Promise<void> {
+  try {
+    // The work order is signed by the installer, who is not the person whose
+    // address this is.
+    if (String(agreement.type || '') !== 'customer_install') return
+
+    const jobId = String(agreement.job_id || '')
+    if (!jobId) return
+
+    const entry = valuesOf(data, submission)
+      .find(v => ADDRESS_FIELDS.includes(String(v.field ?? '').trim().toLowerCase()))
+
+    const signed = String(entry?.value ?? '').trim()
+    if (!signed) return
+
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select('id, address, customer_name')
+      .eq('id', jobId)
+      .maybeSingle()
+
+    if (error || !job) {
+      console.error('could not read the job to compare its address', { jobId, error })
+      return
+    }
+
+    const current = String((job as Record<string, unknown>).address ?? '').trim()
+    const held = current.toLowerCase() === ADDRESS_TBC ? '' : current
+
+    if (!held) {
+      const { error: wrote } = await supabase
+        .from('jobs')
+        .update({ address: signed })
+        .eq('id', jobId)
+
+      if (wrote) {
+        console.error('could not write the signed address to the job', { jobId, wrote })
+        return
+      }
+
+      console.log('took the signed address onto a job that had none', { jobId })
+
+      await tellNotifier(supabase, supabaseUrl, serviceKey, {
+        mode: 'send',
+        channel: 'new_sale',
+        event_type: 'docuseal.address_filled',
+        message: `${(job as Record<string, unknown>).customer_name} signed with an address, and the job had none.`
+          + ` It now reads "${signed}". Check it is complete enough to install from`
+          + ` and to hold up: customers often leave off the city and the zip.`,
+        dedupe_key: `docuseal.address_filled:${jobId}`,
+        job_id: jobId,
+        payload: { signed_address: signed },
+      })
+
+      return
+    }
+
+    // Both exist. Loose comparison, because "Dr" against "Drive" and a missing
+    // zip are the same address written twice, and an alert that fires on those
+    // is an alert nobody reads.
+    const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '')
+
+    if (loose(held).startsWith(loose(signed)) || loose(signed).startsWith(loose(held))) return
+
+    console.log('the signed address differs from the job', { jobId })
+
+    await tellNotifier(supabase, supabaseUrl, serviceKey, {
+      mode: 'send',
+      channel: 'new_sale',
+      event_type: 'docuseal.address_differs',
+      message: `${(job as Record<string, unknown>).customer_name} signed an agreement showing a different address`
+        + ` from the job. The job says "${held}". They signed "${signed}". Nothing has been`
+        + ` changed, because the signed document is what they agreed to and the job is what`
+        + ` the installer drives to. Decide which is right.`,
+      dedupe_key: `docuseal.address_differs:${jobId}`,
+      job_id: jobId,
+      payload: { job_address: held, signed_address: signed },
+    })
+  } catch (caught) {
+    // Never worth failing the event over. The signature is recorded either way.
+    console.error('reading the signed address threw', caught)
   }
 }
 

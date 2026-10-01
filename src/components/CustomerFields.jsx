@@ -38,8 +38,8 @@ export default function CustomerFields({ form, onChange, disabled }) {
             value={form.address} onChange={onChange} disabled={disabled} />
           {form.status === 'quoted' && !form.address.trim() && (
             <span className="field-hint">
-              Left blank, the quote saves and sends with &ldquo;To be confirmed at a later
-              time&rdquo; where the address goes. Type the real one in before the job is sold.
+              Left blank, the customer is asked for it on the agreement and cannot sign
+              without filling it in. What they type comes back onto this job.
             </span>
           )}
         </div>
