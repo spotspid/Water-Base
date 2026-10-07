@@ -24,6 +24,13 @@ More pages will be added here as they are walked.
   finished change can still not be what a customer sees, and the wrong account
   token that hid it for eight days.
 
+## Where this is going
+
+- [Platform readiness](platform-readiness.md): what stands between one business
+  running on Water Base and a hundred doing it. The open row level security,
+  the six corrections that today need somebody to write SQL, and the order the
+  work has to happen in.
+
 ## The list of faults
 
 - [Known issues](known-issues.md): every rough edge from the guides above in
