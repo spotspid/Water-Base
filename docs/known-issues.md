@@ -1,8 +1,8 @@
 # Known issues
 
 Everything the page guides found, in one list, ordered by what it costs rather
-than by how annoying it is. Item 1 is fixed. Nothing else on this list is, and
-the numbering is left alone so a fault keeps the number it was reported under.
+than by how annoying it is. The numbering is left alone so a fault keeps the
+number it was reported under.
 
 The order is roughly: money that comes out wrong, then work that gets lost,
 then work that gets blocked or misdirected, then noise.
@@ -11,12 +11,35 @@ Collected 2026-09-26 from the Quotes, Jobs, Inventory, Documents and Schedule
 guides. Each entry says where it shows, so a fix can be checked in every place
 it appears rather than only in the one where it was noticed.
 
+**Re-checked 2026-10-07**, against the code and the database rather than
+against this file's own claims. Of the eighteen:
+
+| | |
+|---|---|
+| Fixed | **1** |
+| Half fixed | **3** |
+| Partly addressed from another direction | **16** |
+| Unchanged | the other fifteen |
+
+Nothing has regressed. The two fixes this file already claimed both hold up
+under checking, and item 16 improved by a route nobody planned: the deploy
+work of 2026-09-30 added a push, which is a different fix to the one the entry
+asks for. Each of the three says below what was checked and what proves it.
+
+A second section, **What exists and what does not**, audits twelve features
+people keep asking after. It is on the end rather than mixed in here, because
+a thing that was never built is not a fault.
+
 ## Faults that show on more than one page
 
 These are one fault each, seen from several places. Fixing the cause fixes all
 the symptoms; fixing one page leaves the others lying.
 
-### 1. Unknown is counted as zero, so profit reads high. Fixed 2026-09-26
+### 1. Unknown is counted as zero, so profit reads high. FIXED 2026-09-26
+
+**Still fixed on 2026-10-07.** `job_margin` carries `pay_known`,
+`uncosted_parts_lines` and `profit_basis`, and `src/lib/jobColumns.js` reads
+all three, so the page can still tell a blank from a zero.
 
 **Where it was:** Jobs (gross profit, and the figures at the top), Inventory
 (unit cost and value), and through job margins into Profit and loss.
@@ -77,7 +100,7 @@ Each of these is one label computed twice:
 **Harm:** two screens disagree, so people stop trusting both, and the one case
 that matters (readiness) can put a crew on the road without parts.
 
-### 3. Closing something throws away what was typed in it
+### 3. Closing something throws away what was typed in it. HALF FIXED
 
 **Where:** Jobs (the job drawer and the Edit job form inside it), Schedule (the
 job window on top of the day window).
@@ -91,6 +114,13 @@ the schedule's job window no longer closes them: a click outside is how you
 finish typing in a box, and it was closing the drawer and landing the reader
 on the jobs list. Escape still closes both windows at once, which is the half
 that remains.
+
+**Checked again 2026-10-07, and that is still exactly the split.** The
+backdrop guard is real: `Modal.jsx` takes `dismissOnBackdrop` and the surfaces
+holding work pass it false. The Escape half is untouched. Every modal adds its
+own `keydown` listener on `document` (`src/components/Modal.jsx:18`) and
+nothing tracks which one is on top, so one press still reaches all of them.
+The fix is a stack: only the topmost modal should answer Escape.
 
 **Harm:** typed work disappears with no error and no way to get it back.
 
@@ -221,7 +251,7 @@ afterwards.
 
 **Harm:** the reorder signal drifts out of date and cannot be corrected.
 
-### 16. The DocuSeal gap scan is only found by scrolling
+### 16. The DocuSeal gap scan is only found by scrolling. PARTLY ADDRESSED
 
 **Where:** Documents.
 
@@ -230,6 +260,28 @@ customers with no job is found only by somebody who already knows it is there.
 That fault is how eight signed agreements went unnoticed for a month.
 
 **Harm:** the check exists but nobody is prompted to run it.
+
+**Partly addressed 2026-09-30, by a different route.** The entry asks for the
+dashboard to advertise the scan. That has not been done: `DocumentsGaps` is
+still reachable only by scrolling the Documents page, and `Dashboard.jsx` does
+not mention it.
+
+What changed instead is that the gap now comes to you. `docuseal-webhook`
+announces any completed or declined document matching no job in Water Base, to
+the new_sale channel, within a second of the signature. The waiting check is
+still only found by somebody who knows it is there; the waiting is no longer
+how a gap gets noticed.
+
+It proved itself on 2026-10-03, on the first real case after it shipped:
+
+    2026-10-03 21:40:23 | docuseal.unmatched | sent
+    A document was signed in DocuSeal that matches no job in Water Base.
+    daniel.olmstead.5@us.af.mil, submission 11543590.
+
+Signed at 21:40:22, announced at 21:40:23, about five hours before the nightly
+reconciliation would have said the same thing. It is still worth doing what
+this entry actually asks, because the push only covers signatures arriving
+from now on. Anything already sitting unmatched is found only by the scan.
 
 ### 17. Value on hand is priced at today's cost
 
@@ -272,3 +324,78 @@ These are not bugs. Somebody has to say what the app should do.
   "Steve", $2,999, never sent, so nobody has seen a list of quotes out with
   ages against them. It also looks like somebody's own test and neither test
   rule catches it.
+
+# What exists and what does not
+
+Twelve features people keep asking after, checked 2026-10-07 against the code
+and the database. A thing that was never built is not a fault, which is why
+this is a section of its own rather than more numbered entries.
+
+Each verdict names the file or table that proves it, so the next person can
+disagree with the evidence rather than with the summary.
+
+## Built
+
+**No RO option on the RO type.** `settings_options.ro_type` holds Tank Style,
+Tankless and No RO. Migration `20260922160003_no_ro`. A job that takes no
+drinking water unit can say so, rather than leaving the field blank and
+looking unanswered.
+
+**"Not sure yet" on the checklist questions.** `src/lib/salesChecklist.js`
+defines `NOT_SURE`, and `20260922165527_not_sure_blocks_scheduling` stops a job
+carrying one from taking a date, a crew or an install. The answer means the
+question was asked and nobody in the house knew, which is different from
+nobody having asked.
+
+**Address optional on a quote.** `src/lib/newJobForm.js` no longer demands one
+before Quoted, and `send-agreement`'s `openWhenBlank` hands the empty box to
+the customer as a required field at signing. `docuseal-webhook` writes what
+they type back, but only onto a job that has none. Shipped 2026-09-30.
+
+**Old equipment removal upcharge.** `src/components/SalesChecklistFields.jsx`
+carries `old_equipment_upcharge`, and clears it when the removal answer stops
+being yes, so a stale number cannot survive a changed answer.
+
+**Timed snooze on a job.** `jobs.nag_snoozed_until`, set through the
+`snooze_job_nag` function and shown by `JobNagPause.jsx`. A job can be taken
+out of the 8am message until a date without being taken out of the book.
+
+## Partly built
+
+**Change orders.** Water Base can read one: `src/lib/docusealScan.js`
+recognises "service agreement change order" when scanning DocuSeal. One has
+been handled, by hand, in `20260916050000_install_prudhvi_yalavarthi.sql`.
+There is no table and no screen, so a change order cannot be raised in the
+app, and the parts it moves are moved by a migration somebody writes.
+
+**GHL notes sync.** `ghl-sync` in `lookup` mode returns a contact's notes
+along with their messages and appointments. It is read only and nothing is
+stored: the notes are visible to whoever runs the lookup and are not on the
+job, not searchable, and not written back to GHL.
+
+## Not built
+
+**Partial install.** Supplier orders understand a part delivery
+(`src/lib/orderState.js`), jobs do not. The install function refuses on
+purpose, in its own words: "a partial deduction is worse than none"
+(`20260819000100_job_install_functions.sql`). A job that went in half way has
+to be recorded as installed or not at all.
+
+**Photos.** No storage bucket, no column, no upload. Install photos are
+referred to in job notes as something somebody has elsewhere.
+
+**Customers as records.** There is no customers table. Name, phone, email and
+address are columns on `jobs`, repeated per job, so the same person on two
+jobs is two unconnected rows. Daniel Olmstead carries three email addresses
+across Water Base, GHL and DocuSeal with nothing tying them together.
+
+**Used SKUs.** `inventory_items` has `sku`, `category` and `variant` and no
+condition, so a used tank cannot be told from a new one. Donna Burgess's
+2026-09-30 job is the live example: used equipment on the Custom sheet at
+$2,000, reserving nothing and costing nothing, so its margin is not a figure
+anybody should rely on.
+
+**Multiple supplier part numbers per item.** Nothing anywhere holds a
+supplier's own code for a part. `supplier_order_lines` points at `item_id`,
+so a part that two suppliers call two different things is reconciled by
+whoever is reading the invoice.
