@@ -36,9 +36,21 @@ export default function JobStatusActions({
   // zero payout both warn, because a zero nobody chose is usually a payout
   // nobody entered. The pay can be corrected after the install now, so the
   // dialog offers "anyway" rather than blocking.
+  // Marking installed with no payout used to go straight through: the profit
+  // on the job then read high with nothing saying why. A missing payout and a
+  // zero payout both warn, because a zero nobody chose is usually a payout
+  // nobody entered. The pay can be corrected after the install now, so the
+  // dialog offers "anyway" rather than blocking.
   const [confirmInstall, setConfirmInstall] = useState(false)
   const payKnown = isKnownAmount(job.installer_pay)
   const paySuspect = !payKnown || Number(job.installer_pay) === 0
+
+  // Reverse install and Back to sold used to run on one click, each moving
+  // stock or releasing promised parts. Cancel, the button beside them, asks
+  // first, so these do now too. The copy is written for a future dealer
+  // reading it cold: what happens, in plain words, and what does not.
+  const [confirmBackToSold, setConfirmBackToSold] = useState(false)
+  const [confirmReverse, setConfirmReverse] = useState(false)
 
   return (
     <section className="job-action">
@@ -143,7 +155,7 @@ export default function JobStatusActions({
         )}
         {job.status === 'scheduled' && (
           <button type="button" className="btn-cancel"
-            onClick={() => onSchedule('')} disabled={busy}>
+            onClick={() => setConfirmBackToSold(true)} disabled={busy}>
             Back to sold
           </button>
         )}
@@ -180,7 +192,7 @@ export default function JobStatusActions({
           </button>
         )}
         {installed && (
-          <button type="button" className="btn-primary" onClick={onRevert} disabled={busy}>
+          <button type="button" className="btn-primary" onClick={() => setConfirmReverse(true)} disabled={busy}>
             {busy ? 'Working...' : 'Reverse install and return parts'}
           </button>
         )}
@@ -217,6 +229,58 @@ export default function JobStatusActions({
             <button type="button" className="btn-primary"
               onClick={() => { setConfirmInstall(false); onMarkInstalled() }}>
               Mark installed anyway
+            </button>
+          </div>
+        </Modal>
+      )}
+      {/* Back to sold clears the date, takes the job off the calendar and
+          releases its promised parts back to available stock. Nothing is
+          deducted and nothing is deleted. */}
+      {confirmBackToSold && (
+        <Modal
+          title="Move this job back to sold?"
+          onClose={() => setConfirmBackToSold(false)}
+        >
+          <p>
+            The date is cleared, the job comes off the calendar, and the parts
+            it promised go back to available stock. Nothing is deducted from
+            inventory and no records are removed.
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel"
+              onClick={() => setConfirmBackToSold(false)}>
+              Keep it scheduled
+            </button>
+            <button type="button" className="btn-danger"
+              onClick={() => { setConfirmBackToSold(false); onSchedule('') }}>
+              Move back to sold
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Reversing returns every deducted part to inventory and moves the job
+          back to the chosen status with its parts promised again. The history
+          keeps the full record: the install and the return both stay on it. */}
+      {confirmReverse && (
+        <Modal
+          title="Reverse this install?"
+          onClose={() => setConfirmReverse(false)}
+        >
+          <p>
+            Every part deducted for this install goes back into inventory, and
+            the job moves back to {STATUS_LABELS[revertTo] || revertTo} with
+            its parts promised again. The install and the return both stay on
+            the job's history.
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel"
+              onClick={() => setConfirmReverse(false)}>
+              Keep it installed
+            </button>
+            <button type="button" className="btn-danger"
+              onClick={() => { setConfirmReverse(false); onRevert() }}>
+              Reverse the install
             </button>
           </div>
         </Modal>
