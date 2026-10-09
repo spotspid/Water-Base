@@ -36,11 +36,6 @@ export default function JobStatusActions({
   // zero payout both warn, because a zero nobody chose is usually a payout
   // nobody entered. The pay can be corrected after the install now, so the
   // dialog offers "anyway" rather than blocking.
-  // Marking installed with no payout used to go straight through: the profit
-  // on the job then read high with nothing saying why. A missing payout and a
-  // zero payout both warn, because a zero nobody chose is usually a payout
-  // nobody entered. The pay can be corrected after the install now, so the
-  // dialog offers "anyway" rather than blocking.
   const [confirmInstall, setConfirmInstall] = useState(false)
   const payKnown = isKnownAmount(job.installer_pay)
   const paySuspect = !payKnown || Number(job.installer_pay) === 0
