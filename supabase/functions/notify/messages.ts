@@ -139,7 +139,7 @@ function mentionFor(agreementType: string): string {
 }
 
 /* ---------------------------------------------------------------------------
-   DocuSeal events, all to the new sale channel
+   DocuSeal agreement events
 --------------------------------------------------------------------------- */
 
 // Once ever, per document. A DocuSeal retry carries the same agreement, so it
@@ -203,7 +203,11 @@ export function buildViewed(
   const times = viewCount > 1 ? `, ${viewCount} times now` : ''
 
   return {
-    channel: channelForDocument(agreementType),
+    // A view is a chase signal, not a sale. This used to resolve through
+    // channelForDocument, so an unsigned customer agreement opened five times
+    // posted to #new-sale as if it were a sale. Views go to scheduling, where
+    // the 8am unsigned-document nag already lives.
+    channel: 'scheduling',
     event_type: 'agreement.viewed',
     dedupe_key: `agreement.viewed:${agreementId}:${day}`,
     job_id: job.id,
