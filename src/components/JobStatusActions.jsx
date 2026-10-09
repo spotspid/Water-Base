@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { CANCELLED_STATUS, STATUS_LABELS } from '../lib/constants'
 import { formatDateTime } from '../lib/inventory'
+import { isKnownAmount } from '../lib/profit'
+import Modal from './Modal'
 
 // The status half of the job detail modal: where it is now, and the buttons
 // that move it. Split out of JobDetailModal so that file stays about loading
@@ -27,6 +30,15 @@ export default function JobStatusActions({
   const quoted = job.status === 'quoted'
   const cancelled = job.status === CANCELLED_STATUS
   const open = !installed && !cancelled
+
+  // Marking installed with no payout used to go straight through: the profit
+  // on the job then read high with nothing saying why. A missing payout and a
+  // zero payout both warn, because a zero nobody chose is usually a payout
+  // nobody entered. The pay can be corrected after the install now, so the
+  // dialog offers "anyway" rather than blocking.
+  const [confirmInstall, setConfirmInstall] = useState(false)
+  const payKnown = isKnownAmount(job.installer_pay)
+  const paySuspect = !payKnown || Number(job.installer_pay) === 0
 
   return (
     <section className="job-action">
@@ -153,7 +165,8 @@ export default function JobStatusActions({
               Cancel job
             </button>
             {!quoted && (
-              <button type="button" className="btn-primary" onClick={onMarkInstalled}
+              <button type="button" className="btn-primary"
+                onClick={() => (paySuspect ? setConfirmInstall(true) : onMarkInstalled())}
                 disabled={busy || crewDirty}>
                 {busy ? 'Working...' : 'Mark installed and deduct parts'}
               </button>
@@ -172,6 +185,42 @@ export default function JobStatusActions({
           </button>
         )}
       </div>
+
+      {/* The profit figure counts the payout as its third subtraction. With no
+          payout recorded it is counted as nothing and the profit reads high,
+          which used to happen silently. This says so in plain words and lets
+          the install go ahead anyway, because the pay is now correctable on
+          the installed job. */}
+      {confirmInstall && (
+        <Modal
+          title="Mark installed with no installer pay?"
+          subtitle="The profit on this job will read too high until a payout is recorded."
+          onClose={() => setConfirmInstall(false)}
+        >
+          <p>
+            {payKnown
+              ? 'The installer pay on this job is $0. That is counted as a payout somebody '
+                + 'chose, so if the crew has not been paid out yet the profit figure is '
+                + 'overstated.'
+              : 'No installer pay is recorded on this job. It is counted as nothing, so '
+                + 'the profit figure reads higher than it really is.'}
+            {' '}
+            Enter the payout in Crew and pay above to fix it first, or mark it
+            installed now and correct the pay afterwards. Correcting the pay
+            moves no stock.
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel"
+              onClick={() => setConfirmInstall(false)}>
+              Set pay first
+            </button>
+            <button type="button" className="btn-primary"
+              onClick={() => { setConfirmInstall(false); onMarkInstalled() }}>
+              Mark installed anyway
+            </button>
+          </div>
+        </Modal>
+      )}
     </section>
   )
 }
