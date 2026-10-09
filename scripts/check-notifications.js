@@ -101,11 +101,13 @@ check('a view interrupts nobody', !viewed.message.includes('<!channel>'))
 check('a view does not shout', !viewed.message.includes('*'))
 check('a morning reminder interrupts nobody', !nag.message.includes('<!channel>'))
 
-// --- channels, which follow who signed rather than what happened ------------
+// --- channels ----------------------------------------------------------------
+// Signed and declined follow who signed. A view is a chase signal, not a sale,
+// so it goes to scheduling where the morning nag already chases it.
 
 check('a customer signature is a sale', signed.channel === 'new_sale')
 check('a customer decline is a sale', declined.channel === 'new_sale')
-check('a customer view is a sale', viewed.channel === 'new_sale')
+check('a customer view is a chase, not a sale', viewed.channel === 'scheduling')
 
 // The work order is chased in scheduling by the morning sweep, so its outcome
 // belongs there too rather than splitting one conversation across two rooms.
