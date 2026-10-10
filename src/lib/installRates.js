@@ -111,8 +111,14 @@ export function payoutNote(payout, suggestion, { pending = false } = {}) {
 // What the "back to the rate" button says, or an empty string when there is
 // nothing to offer. Not named useSomething: it is a sentence, not a hook, and
 // the linter is right to insist on the difference.
-export function rateButtonLabel(suggestion) {
-  return hasSuggestion(suggestion) ? `Back to ${rateAmount(suggestion)}` : ''
+export function rateButtonLabel(suggestion, { pending = false } = {}) {
+  if (!hasSuggestion(suggestion)) return ''
+
+  // Two different acts, so two different words. Pending means the box is
+  // showing the rate and the job does not hold it yet, so the button confirms
+  // the figure. Otherwise the box holds something typed, and the button puts
+  // the rate back.
+  return pending ? `Confirm ${rateAmount(suggestion)}` : `Back to ${rateAmount(suggestion)}`
 }
 
 /**

@@ -105,6 +105,30 @@ check('no rate line explains itself rather than going quiet',
 
 check('the button offers the way back to the rate', rateButtonLabel(OWN) === 'Back to $500')
 check('and says nothing when there is nothing to offer', rateButtonLabel(NONE) === '')
+
+// The pending case, which is the one the panel got wrong until 2026-10-10.
+//
+// The box starts on the rate, so the box and the rate agree, so the old
+// condition hid the button in precisely the state where somebody needs it.
+// The only way to put the rate on the job was to delete the figure and type
+// the same one back in, and a work order will not send without pay on the job.
+check('a pending figure is confirmed rather than restored',
+  rateButtonLabel(OWN, { pending: true }) === 'Confirm $500',
+  rateButtonLabel(OWN, { pending: true }))
+check('and still says nothing when there is no rate to confirm',
+  rateButtonLabel(NONE, { pending: true }) === '')
+
+// The condition the component uses, asserted here so the button cannot go
+// missing again without this failing. Pending shows it even when the figures
+// match, which is the whole point.
+const shows = (suggestion, value, pending) =>
+  hasSuggestion(suggestion) && (pending || String(value ?? '').trim() !== rateValue(suggestion))
+
+check('the button shows while the rate is pending, though the figures match',
+  shows(OWN, '500', true))
+check('it still shows when a typed figure differs', shows(OWN, '800', false))
+check('it stays hidden once the rate is on the job and matches', !shows(OWN, '500', false))
+check('and never shows when there is no rate at all', !shows(NONE, '', true))
 check('it writes a plain number', rateValue(OWN) === '500')
 check('cents survive when there are any', rateValue({ ...OWN, amount: 412.5 }) === '412.50')
 check('and nothing is written when there is no rate', rateValue(NONE) === '')

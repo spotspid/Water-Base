@@ -473,6 +473,22 @@ a {
 
 .tpl-link:hover { text-decoration: underline; }
 
+/* Confirming a preset payout.
+   The same control as the plain link, given weight because it is the step
+   that lets a work order send. A pending figure is showing and not saved, and
+   a hairline link is easy to read past when the number beside it already
+   looks settled. */
+.pay-confirm {
+  font-weight: 600;
+  padding: 2px 8px;
+  min-height: 24px;
+  border: 1px solid var(--teal);
+  border-radius: 6px;
+}
+
+.pay-confirm:hover { text-decoration: none; background: var(--teal); color: #fff; }
+.pay-confirm:disabled { opacity: 0.55; cursor: default; }
+
 /* ---------------------------------------------------------------------------
    The error card. Rendered by every route that loads from the database, so it
    belongs here rather than in whichever page stylesheet happens to be loaded.
