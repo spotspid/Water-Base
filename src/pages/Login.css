@@ -163,3 +163,42 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+/* Forgot password.
+   A plain text button under Sign in rather than a link beside the password
+   label: on a phone the label row is tight, and a target that small beside a
+   field people are typing into is a mis-tap waiting to happen. */
+.btn-forgot {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: var(--muted, #5B6E7B);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.btn-forgot:hover:not(:disabled) {
+  color: var(--ink, #16222E);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.btn-forgot:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.login-sent {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #F2F8FA;
+  border-left: 3px solid #2C819B;
+  color: #16222E;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
