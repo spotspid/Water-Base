@@ -77,7 +77,7 @@ const nagFacts = {
 
 const quoteNag = buildQuoteNag({ job_id: 'q1', customer_name: 'Steve Burgess', system_template: 'Flagship Bundle',
   sale_price: 2999, days_since_sent: 5, quote_sent_count: 1, agreement_view_count: 2 }, '2026-09-20')
-check('a quote reminder goes to the sales channel', quoteNag.channel === 'new_sale')
+check('a quote reminder goes to documents, not sales', quoteNag.channel === 'documents')
 check('a quote reminder says how long it has been unsigned', quoteNag.message.includes('unsigned 5 days'), quoteNag.message)
 check('a quote reminder links to the job to resend', quoteNag.message.includes('/jobs?job=q1|Open the job to resend the quote'))
 check('a quote reminder is once per job per day', quoteNag.dedupe_key === 'nag.quote:q1:2026-09-20')
@@ -104,8 +104,8 @@ check('a morning reminder interrupts nobody', !nag.message.includes('<!channel>'
 // --- channels, which follow who signed rather than what happened ------------
 
 check('a customer signature is a sale', signed.channel === 'new_sale')
-check('a customer decline is a sale', declined.channel === 'new_sale')
-check('a customer view is a sale', viewed.channel === 'new_sale')
+check('a customer decline is paperwork, not a sale', declined.channel === 'documents')
+check('a customer view is paperwork, not a sale', viewed.channel === 'documents')
 
 // The work order is chased in scheduling by the morning sweep, so its outcome
 // belongs there too rather than splitting one conversation across two rooms.
@@ -124,6 +124,10 @@ check('routing follows the document type',
   && channelForDocument('subcontractor_service') === 'scheduling')
 check('an unknown document type stays with the customer channel',
   channelForDocument('something_else') === 'new_sale')
+check('only a customer signature reaches sales',
+  channelForDocument('customer_install', 'signed') === 'new_sale'
+  && channelForDocument('customer_install', 'viewed') === 'documents'
+  && channelForDocument('customer_install', 'declined') === 'documents')
 
 // Routing must not change the wording or the keys.
 check('a work order signature still names the right document',

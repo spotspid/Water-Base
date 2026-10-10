@@ -232,8 +232,8 @@ async function handleSend(
   const dedupeKey = String(body.dedupe_key || '').trim()
   const eventType = String(body.event_type || '').trim()
 
-  if (!['new_sale', 'scheduling', 'stock'].includes(channel)) {
-    return fail(`"${channel}" is not a channel. Use new_sale, scheduling or stock.`, 400)
+  if (!['new_sale', 'scheduling', 'stock', 'documents'].includes(channel)) {
+    return fail(`"${channel}" is not a channel. Use new_sale, scheduling, stock or documents.`, 400)
   }
   if (!message) return fail('A message is required.', 400)
   if (!dedupeKey) return fail('A dedupe key is required. Nothing sends without one.', 400)

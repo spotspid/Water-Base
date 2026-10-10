@@ -29,7 +29,7 @@
 //   arrived   no mention. Stock landing is good news, and good news that
 //             pings twelve people is still a ping.
 
-export type Channel = 'new_sale' | 'scheduling' | 'stock'
+export type Channel = 'new_sale' | 'scheduling' | 'stock' | 'documents'
 
 export type JobFacts = {
   id: string
@@ -124,22 +124,30 @@ export function documentLabel(type: string): string {
  *
  * The work order is chased in scheduling by the morning sweep, so its outcome
  * belongs there too: the message saying it came back signed lands beside the
- * messages that were asking for it. Everything else is a customer document and
- * is news for the sales channel.
+ * messages that were asking for it.
+ *
+ * A customer document is split by what happened. The sales channel is for
+ * sold jobs and nothing else, and a customer signature is the moment a job
+ * becomes sold. A view or a decline is paperwork still in play, so it goes to
+ * documents with the unsigned quote reminders that chase the same paper.
  */
-export function channelForDocument(agreementType: string): Channel {
-  return agreementType === 'subcontractor_service' ? 'scheduling' : 'new_sale'
+export type DocumentEvent = 'signed' | 'declined' | 'viewed'
+
+export function channelForDocument(agreementType: string, event: DocumentEvent = 'signed'): Channel {
+  if (agreementType === 'subcontractor_service') return 'scheduling'
+  return event === 'signed' ? 'new_sale' : 'documents'
 }
 
 // Whether an event about this document should interrupt the room it lands in.
-// Only the sales channel gets a mention: a work order coming back signed is
-// good to know, not something to pull twelve people out of what they are doing.
+// A customer signing is a sale and a customer declining is a sale coming
+// apart, so both interrupt. A work order coming back signed is good to know,
+// not something to pull twelve people out of what they are doing.
 function mentionFor(agreementType: string): string {
-  return channelForDocument(agreementType) === 'new_sale' ? '<!channel> ' : ''
+  return agreementType === 'subcontractor_service' ? '' : '<!channel> '
 }
 
 /* ---------------------------------------------------------------------------
-   DocuSeal agreement events
+   DocuSeal events: a customer signature to sales, the rest to documents
 --------------------------------------------------------------------------- */
 
 // Once ever, per document. A DocuSeal retry carries the same agreement, so it
@@ -174,7 +182,7 @@ export function buildDeclined(
   const who = agreementType === 'subcontractor_service' ? 'The installer' : 'The customer'
 
   return {
-    channel: channelForDocument(agreementType),
+    channel: channelForDocument(agreementType, 'declined'),
     event_type: 'agreement.declined',
     dedupe_key: `agreement.declined:${agreementId}`,
     job_id: job.id,
@@ -203,11 +211,7 @@ export function buildViewed(
   const times = viewCount > 1 ? `, ${viewCount} times now` : ''
 
   return {
-    // A view is a chase signal, not a sale. This used to resolve through
-    // channelForDocument, so an unsigned customer agreement opened five times
-    // posted to #new-sale as if it were a sale. Views go to scheduling, where
-    // the 8am unsigned-document nag already lives.
-    channel: 'scheduling',
+    channel: channelForDocument(agreementType, 'viewed'),
     event_type: 'agreement.viewed',
     dedupe_key: `agreement.viewed:${agreementId}:${day}`,
     job_id: job.id,
@@ -270,7 +274,7 @@ export function buildNag(facts: NagFacts, day: string, appUrl?: string): Built {
 }
 
 /* ---------------------------------------------------------------------------
-   Unsigned quotes, to the sales channel
+   Unsigned quotes, to the documents channel
 --------------------------------------------------------------------------- */
 
 export type QuoteNagFacts = {
@@ -293,7 +297,7 @@ export function buildQuoteNag(facts: QuoteNagFacts, day: string, appUrl?: string
   const lead = age >= 10 ? ':warning: ' : ''
 
   return {
-    channel: 'new_sale',
+    channel: 'documents',
     event_type: 'nag.quote',
     dedupe_key: `nag.quote:${facts.job_id}:${day}`,
     job_id: facts.job_id,

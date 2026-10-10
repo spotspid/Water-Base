@@ -10,6 +10,7 @@ const SECRET_BY_CHANNEL: Record<Channel, string> = {
   new_sale: 'SLACK_WEBHOOK_NEW_SALE',
   scheduling: 'SLACK_WEBHOOK_SCHEDULING',
   stock: 'SLACK_WEBHOOK_STOCK',
+  documents: 'SLACK_WEBHOOK_DOCUMENTS',
 }
 
 export function secretNameFor(channel: Channel): string {
