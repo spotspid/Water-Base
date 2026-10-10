@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { attempt } from '../lib/errors'
 import wordmark from '../assets/wordmark.png'
 import './Login.css'
 
@@ -35,12 +36,59 @@ function IconLock() {
   )
 }
 
+// Starting a password reset, which until now was the one part of the flow
+// that did not exist.
+//
+// AuthCallback has handled recovery links since it was written: it parses the
+// link, asks for a new password and saves it. Nothing ever sent the link, so
+// the whole machine was unreachable and the only way back into an account was
+// somebody else resetting it.
+//
+// It cost a sale on 2026-10-10. David was away from his saved password, found
+// no way to sign in, and sent a customer agreement straight from DocuSeal
+// instead, which arrives in Water Base as a signature matching no job.
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  async function handleReset() {
+    setError('')
+    setSent(false)
+
+    const address = email.trim()
+
+    if (!address) {
+      setError('Enter your email address first, then choose Forgot password.')
+      return
+    }
+
+    setSending(true)
+
+    // Back to the same callback the magic links use, which already knows what
+    // to do with a recovery link.
+    const { error: resetError } = await attempt(
+      () => supabase.auth.resetPasswordForEmail(address, {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      }),
+      'The reset email could not be sent.',
+    )
+
+    setSending(false)
+
+    if (resetError) {
+      setError(resetError)
+      return
+    }
+
+    // Said the same way whether or not the address has an account. Telling a
+    // stranger which addresses exist is how an account list leaks.
+    setSent(true)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -105,8 +153,24 @@ export default function Login() {
 
           {error && <p className="login-error" role="alert">{error}</p>}
 
-          <button type="submit" className="btn-signin" disabled={loading}>
+          {sent && (
+            <p className="login-sent" role="status">
+              If that address has an account, a reset link is on its way. It works for
+              one hour. Check the spam folder if it is not there in a minute.
+            </p>
+          )}
+
+          <button type="submit" className="btn-signin" disabled={loading || sending}>
             {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+
+          <button
+            type="button"
+            className="btn-forgot"
+            onClick={handleReset}
+            disabled={loading || sending}
+          >
+            {sending ? 'Sending...' : 'Forgot password'}
           </button>
         </form>
       </div>
