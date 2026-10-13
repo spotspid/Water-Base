@@ -58,7 +58,7 @@ export default function JobSystemFields({
       )}
 
       <div className="form-grid">
-        <div className="field">
+        <div className="field field-sheet">
           <label htmlFor="system_template">Build sheet</label>
           <select id="system_template" name="system_template" required={!templateOptional}
             value={form.system_template} onChange={onChange}
@@ -66,7 +66,11 @@ export default function JobSystemFields({
             <option value="">
               {loadingTemplates ? 'Loading build sheets...' : 'Select build sheet...'}
             </option>
-            {templates.map(t => <option key={t.id} value={t.label}>{t.label}</option>)}
+            {/* The long name is what the customer reads, so the office picks by
+                it too. The value stays the short label, which jobs store. */}
+            {templates.map(t => (
+              <option key={t.id} value={t.label}>{t.long_label?.trim() || t.label}</option>
+            ))}
           </select>
         </div>
         <div className="field">
