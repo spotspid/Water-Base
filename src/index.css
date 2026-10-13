@@ -755,6 +755,14 @@ a {
   padding-right: 32px;
 }
 
+/* The build sheet picker shows the long names, which are wider than the
+   column. Without this the select sizes the grid column to its longest
+   option and pushes Sale price off the side. */
+.field-sheet,
+.field-sheet select {
+  min-width: 0;
+}
+
 .field textarea {
   resize: vertical;
   min-height: 72px;
