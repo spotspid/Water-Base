@@ -19,6 +19,7 @@ import JobDeposits from './JobDeposits'
 import JobNagPause from './JobNagPause'
 import JobSiteConditions from './JobSiteConditions'
 import JobCrewPay from './JobCrewPay'
+import JobInstalledPay from './JobInstalledPay'
 import JobSystemSummary from './JobSystemSummary'
 import JobStatusActions from './JobStatusActions'
 import JobParts from './JobParts'
@@ -223,6 +224,13 @@ export default function JobDetailModal({ job, fixField = '', onClose, onChanged 
           onChanged={onChanged}
           onDirtyChange={setCrewDirty}
         />
+      )}
+
+      {/* Installed jobs: the crew cannot change, but the payout was costing
+          real money to get wrong, because the only way back was reversing the
+          install and moving stock. The pay is corrected on its own here. */}
+      {installed && (
+        <JobInstalledPay job={job} onChanged={onChanged} />
       )}
 
       {!cancelled && <JobAgreement job={job} onChanged={onChanged} />}
