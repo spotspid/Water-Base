@@ -6,7 +6,9 @@ import {
   unansweredItems, validateChecklist, workOrderSiteConditions, workOrderSiteLines,
 } from '../src/lib/salesChecklist.js'
 import * as printed from '../supabase/functions/send-agreement/siteConditions.ts'
-import { ADDRESS_TBC, addressForSave, addressIsPlaceholder, validateNewJob } from '../src/lib/newJobForm.js'
+import {
+  ADDRESS_TBC, addressForSave, addressIsPlaceholder, validateNewJob, isCustomSheet, customNameForSave,
+} from '../src/lib/newJobForm.js'
 
 // Checks the sales checklist from the Sept 17 call.
 //
@@ -401,6 +403,21 @@ check('under the label the checklist shows',
 check('in the order the checklist asks them',
   [...sqlPairs].sort((a, b) => a.ord - b.ord).map(q => q.key).join() === offered.map(i => i.key).join())
 
+// --- a Custom job says what it is ---------------------------------------------
+
+check('Custom is recognised however it is cased',
+  isCustomSheet('Custom') && isCustomSheet(' custom ') && !isCustomSheet('Flagship Bundle') && !isCustomSheet(''))
+check('a Custom job with no description is refused',
+  validateNewJob({ ...baseJob, status: 'quoted', system_template: 'Custom', custom_system_name: '  ' })
+    === 'Say what the custom system is.')
+check('and saves once it has one',
+  validateNewJob({ ...baseJob, status: 'quoted', system_template: 'Custom', custom_system_name: 'Iron filter' }) === '')
+check('a named sheet never asks for one',
+  validateNewJob({ ...baseJob, status: 'quoted', custom_system_name: '' }) === '')
+check('the description is stored trimmed on a Custom job',
+  customNameForSave({ system_template: 'Custom', custom_system_name: '  Iron filter ' }) === 'Iron filter')
+check('and not at all on a named sheet, so it cannot ride along after a switch',
+  customNameForSave({ system_template: 'Flagship Bundle', custom_system_name: 'Iron filter' }) === null)
 
 console.log(failed === 0
   ? '\nAll checklist checks passed.'

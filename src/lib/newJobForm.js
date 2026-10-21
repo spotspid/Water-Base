@@ -30,6 +30,9 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
 
   if (!form.city.trim()) return 'Enter a city.'
   if (!form.system_template) return 'Pick a build sheet.'
+  if (isCustomSheet(form.system_template) && !String(form.custom_system_name ?? '').trim()) {
+    return 'Say what the custom system is.'
+  }
   // On a quote these three are part of the sales checklist, where a blank is
   // allowed and shows amber: the finish is often not decided at the kitchen
   // table. A sold or booked job still needs them, because its parts do.
@@ -81,6 +84,21 @@ export function validateNewJob(form, { sending = false, selectedTemplate = null 
   }
 
   return ''
+}
+
+// The Custom build sheet has no one true name, because its parts are chosen per
+// job. So a job on it says what it is in its own words, and the database uses
+// those words wherever a named sheet would print its long name: the quote, the
+// agreement and the work order. Matched by label, as the sheet has no flag.
+export function isCustomSheet(label) {
+  return String(label ?? '').trim().toLowerCase() === 'custom'
+}
+
+// What the job stores. Only a Custom job keeps the words, so switching a job to
+// a named sheet does not leave a stale description riding along.
+export function customNameForSave(form) {
+  if (!isCustomSheet(form?.system_template)) return null
+  return String(form?.custom_system_name ?? '').trim() || null
 }
 
 // What a quote with no address stores.

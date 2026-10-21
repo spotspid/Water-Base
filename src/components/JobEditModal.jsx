@@ -6,6 +6,9 @@ import {
 import CustomerFields from './CustomerFields'
 import JobSystemFields from './JobSystemFields'
 import { applyRoPick } from '../lib/roPicks'
+import { customNameForSave } from '../lib/newJobForm'
+import { supabase } from '../lib/supabase'
+import { attempt } from '../lib/errors'
 import JobEditDetailFields from './JobEditDetailFields'
 import Modal from './Modal'
 
@@ -20,7 +23,10 @@ import Modal from './Modal'
 // own panels behind their own functions, and this form would be a second
 // writer for them.
 export default function JobEditModal({ job, hasOwnParts, focusField = '', onClose, onSaved }) {
-  const [form, setForm] = useState(() => formFromJob(job))
+  const [form, setForm] = useState(() => ({ ...formFromJob(job), custom_system_name: '' }))
+  // What the job holds now, read on open. The drawer's row comes from
+  // job_margin, which does not carry it.
+  const [savedCustomName, setSavedCustomName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const formRef = useRef(null)
@@ -58,6 +64,20 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
     return () => { cancelled = true; window.clearTimeout(timer) }
   }, [focusField])
 
+  useEffect(() => {
+    let cancelled = false
+
+    supabase.from('jobs').select('custom_system_name').eq('id', job.id).maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return
+        const name = data?.custom_system_name || ''
+        setSavedCustomName(name)
+        setForm(f => ({ ...f, custom_system_name: f.custom_system_name || name }))
+      })
+
+    return () => { cancelled = true }
+  }, [job.id])
+
   const installed = job.parts_deducted_at != null
 
   // The job's current sheet stays selectable even if it has since been
@@ -71,7 +91,9 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
     [templates, form.system_template],
   )
 
-  const dirty = isDirty(form, job)
+  const customName = customNameForSave(form) || ''
+  const customChanged = customName !== savedCustomName.trim()
+  const dirty = isDirty(form, job) || customChanged
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -102,9 +124,24 @@ export default function JobEditModal({ job, hasOwnParts, focusField = '', onClos
     setError('')
     setSaving(true)
 
-    const { error: saveError, message } = await saveJobDetails(
-      job, form, selectedTemplate?.id || null,
-    )
+    let saveError = ''
+    let message = 'Saved.'
+
+    if (isDirty(form, job)) {
+      const result = await saveJobDetails(job, form, selectedTemplate?.id || null)
+      saveError = result.error || ''
+      message = result.message
+    }
+
+    // After the details, so a job switched onto or off Custom has its sheet in
+    // place when the database recomposes the name from these words.
+    if (!saveError && customChanged) {
+      const { error: nameError } = await attempt(
+        () => supabase.from('jobs').update({ custom_system_name: customName || null }).eq('id', job.id),
+        'The custom system type could not be saved.',
+      )
+      if (nameError) saveError = nameError
+    }
 
     setSaving(false)
 

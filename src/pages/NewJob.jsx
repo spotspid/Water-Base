@@ -5,7 +5,7 @@ import { attempt } from '../lib/errors'
 import { useSystemTemplates } from '../lib/useSystemTemplates'
 import { suggestedDeposit, withPrice } from '../lib/depositState'
 import { sendQuote } from '../lib/agreements'
-import { addressForSave, validateNewJob } from '../lib/newJobForm'
+import { addressForSave, customNameForSave, validateNewJob } from '../lib/newJobForm'
 import { useInstallerPay } from '../lib/useInstallerPay'
 import { applyRoPick } from '../lib/roPicks'
 import {
@@ -28,6 +28,7 @@ const EMPTY_FORM = {
   city: '',
   water_source: 'city',
   system_template: '',
+  custom_system_name: '',
   sale_price: '',
   deposit_amount: '',
   payment_type: '',
@@ -166,6 +167,7 @@ export default function NewJob() {
       water_source: form.water_source,
       system_template: form.system_template,
       template_id: selectedTemplate?.id || null,
+      custom_system_name: customNameForSave(form),
       sale_price: Number(form.sale_price),
       deposit_amount: Number(form.deposit_amount),
       payment_type: form.payment_type || null,

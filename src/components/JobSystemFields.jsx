@@ -3,6 +3,7 @@ import { suggestedDeposit } from '../lib/depositState'
 import { formatCurrency } from '../lib/inventory'
 import JobPartsPreview from './JobPartsPreview'
 import { NO_RO, faucetChoices } from '../lib/roPicks'
+import { isCustomSheet } from '../lib/newJobForm'
 
 // What is being sold and what it costs, plus the live parts preview for the
 // chosen template. Split out of NewJob so that page stays about the form's
@@ -73,6 +74,18 @@ export default function JobSystemFields({
             ))}
           </select>
         </div>
+        {isCustomSheet(form.system_template) && (
+          <div className="field field-full">
+            <label htmlFor="custom_system_name">Custom system type</label>
+            <input id="custom_system_name" name="custom_system_name" type="text" maxLength={200}
+              value={form.custom_system_name ?? ''} onChange={onChange} disabled={disabled}
+              placeholder="e.g. Whole home carbon filter with UV light" />
+            <span className="field-hint">
+              What the customer is getting. It prints on the quote, the agreement and the
+              work order in place of a build sheet name.
+            </span>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="sale_price">Sale price ($)</label>
           <input id="sale_price" name="sale_price" type="number" min="0" step="0.01" required
