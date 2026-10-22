@@ -112,9 +112,25 @@ async function main() {
     headers: { Authorization: `Bearer ${token}` },
   })).json().catch(() => [])
 
-  if (!Array.isArray(projects) || !projects.some(p => p.id === ref)) {
+  // An expired or revoked token answers with an object, not a list, so the
+  // guard below has to survive being handed one. It did not: `projects || []`
+  // is the object itself, because an object is truthy, and calling .map on it
+  // threw. From 9 October the deploy died on that TypeError instead of saying
+  // the token had expired, and five edge function deploys failed silently for
+  // thirteen days. A defensive default that defends the wrong case is worse
+  // than none, because it hides the sentence that would have explained it.
+  const visible = Array.isArray(projects) ? projects : []
+
+  if (!visible.some(p => p.id === ref)) {
+    if (!Array.isArray(projects)) {
+      console.error('Supabase did not return a project list, which means the token was refused.')
+      console.error(`It said: ${JSON.stringify(projects).slice(0, 200)}`)
+      console.error('Generate a new one from the account that owns this project.')
+      return 1
+    }
+
     console.error(`This token cannot see ${ref}. It can see: `
-      + `${(projects || []).map(p => `${p.name} (${p.id})`).join(', ') || 'nothing'}.`)
+      + `${visible.map(p => `${p.name} (${p.id})`).join(', ') || 'nothing'}.`)
     console.error('It belongs to a different account. No extra permission on it will help.')
     return 1
   }
