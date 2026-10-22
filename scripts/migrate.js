@@ -57,12 +57,27 @@ async function run(sql) {
   try { return JSON.parse(text) } catch { return [] }
 }
 
-// The version is the 14 digit prefix, which is what Supabase keys its history
-// on. A file without one is a mistake rather than a migration, and is said so
-// rather than skipped quietly.
+// The 14 digit prefix. A file without one is a mistake rather than a
+// migration, and is said so rather than skipped quietly.
 function versionOf(name) {
   const match = name.match(/^(\d{14})_/)
   return match ? match[1] : null
+}
+
+// What a migration is called, with the timestamp taken off both sides.
+//
+// The history does NOT key on the filename prefix. Its version column is the
+// moment the migration was applied, and its name column is the label, which
+// sometimes carries the prefix and sometimes does not, depending on which tool
+// ran it. Matching on the prefix reported 67 of 94 migrations as pending when
+// 88 had already run, and applying that list would have re-run data
+// migrations: Prudhvi's install, Donna's parts, four customers' jobs. The
+// label, normalised, is the only thing both sides agree on.
+function labelOf(name) {
+  return name
+    .replace(/\.sql$/i, '')
+    .replace(/^\d{14}_/, '')
+    .toLowerCase()
 }
 
 async function main() {
@@ -111,11 +126,10 @@ async function main() {
     create table if not exists supabase_migrations.schema_migrations (
       version text primary key, name text, statements text[], created_by text);`)
 
-  const applied = new Set(
-    (await run('select version from supabase_migrations.schema_migrations'))
-      .map(row => String(row.version)))
+  const history = await run('select version, name from supabase_migrations.schema_migrations')
+  const applied = new Set(history.map(row => labelOf(String(row.name ?? ''))))
 
-  const pending = files.filter(name => !applied.has(versionOf(name)))
+  const pending = files.filter(name => !applied.has(labelOf(name)))
 
   console.log(`${files.length} migration(s) on disk, ${applied.size} already applied, ${pending.length} pending\n`)
 
@@ -144,7 +158,7 @@ async function main() {
     }
 
     await run(`insert into supabase_migrations.schema_migrations (version, name)
-      values ('${version}', '${name.replace(/'/g, "''")}')
+      values ('${version}', '${labelOf(name).replace(/'/g, "''")}')
       on conflict (version) do nothing`)
 
     console.log(`  applied     ${name}`)

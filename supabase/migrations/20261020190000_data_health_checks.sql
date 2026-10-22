@@ -216,11 +216,22 @@ begin
 
   -- 3. a check goes quiet when the thing is fixed. Proved on a scratch job so
   --    no real row is touched.
+  -- The template is linked, not just named. Naming it without linking it makes
+  -- sync_job_reservations refuse on the next date change, which is how the
+  -- first run of this proof failed: the scratch job could not be given a
+  -- scheduled date at all. That refusal is itself one of the faults this
+  -- function exists to report, met inside the migration that adds it.
   insert into public.jobs (customer_name, phone, address, city, water_source,
-                           system_template, sale_price, status, is_test)
-  values ('ZZ Health Check Probe', '000', 'nowhere', 'nowhere', 'city',
-          'Custom', 1000, 'scheduled', false)
+                           system_template, template_id, sale_price, status, is_test)
+  select 'ZZ Health Check Probe', '000', 'nowhere', 'nowhere', 'city',
+         t.label, t.id, 1000, 'scheduled', false
+  from public.system_templates t where t.label = 'Custom'
   returning id into v_job;
+
+  if v_job is null then
+    raise notice 'no Custom build sheet exists, so the behaviour proofs are skipped';
+    return;
+  end if;
 
   update public.jobs set scheduled_date = current_date - 5 where id = v_job;
 
@@ -231,7 +242,10 @@ begin
     raise exception 'A job five days past its date was not reported.';
   end if;
 
-  update public.jobs set status = 'installed', install_date = current_date - 5 where id = v_job;
+  -- Through the function, because jobs_guard_install_status refuses a status
+  -- set directly to installed. The Custom sheet has no lines, so this deducts
+  -- nothing and the ledger is untouched.
+  perform public.mark_job_installed(v_job, current_date - 5);
 
   select count(*) into v_after from public.data_health()
   where job_id = v_job and check_key = 'install_overdue';
