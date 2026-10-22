@@ -14,6 +14,9 @@ import './App.css'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Jobs = lazy(() => import('./pages/Jobs'))
 const NewJob = lazy(() => import('./pages/NewJob'))
+// The rebuild. Its own route so it sits beside the live app rather than
+// replacing anything; at cutover these become the ordinary paths.
+const NewQuote = lazy(() => import('./pages/NewQuote'))
 const Schedule = lazy(() => import('./pages/Schedule'))
 const Inventory = lazy(() => import('./pages/Inventory'))
 const Orders = lazy(() => import('./pages/Orders'))
@@ -48,6 +51,7 @@ export default function App() {
             <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
             <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
             <Route path="/jobs/new" element={<ProtectedRoute><NewJob /></ProtectedRoute>} />
+            <Route path="/v2/quote" element={<ProtectedRoute><NewQuote /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />

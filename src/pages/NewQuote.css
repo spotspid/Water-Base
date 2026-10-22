@@ -1,0 +1,239 @@
+/* The quoting page.
+   Its own stylesheet rather than additions to index.css, so the rebuild can
+   be deleted or renamed without unpicking shared rules. */
+
+.quote-loading { color: var(--muted); }
+
+.quote-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--mist, #F2F8FA);
+  border-left: 3px solid var(--teal, #2C819B);
+}
+
+.quote-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.quote-main {
+  flex: 999 1 540px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Never sticky and never full height, so it stacks under the form on a phone
+   rather than trapping the page. */
+.quote-side {
+  flex: 1 1 320px;
+  min-width: 280px;
+}
+
+.quote-card {
+  background: #fff;
+  border: 1px solid var(--line, #DCE7EC);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.quote-card h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--teal, #2C819B);
+}
+
+.quote-sub {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--muted, #5B6E7B);
+}
+
+.quote-card h2 + .quote-grid,
+.quote-card h2 + .quote-presets { margin-top: 16px; }
+
+.quote-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.quote-wide { grid-column: 1 / -1; }
+
+.quote-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .quote-grid, .quote-pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Presets are buttons rather than a dropdown: most of what gets sold is
+   custom, so these are a shortcut and the price beside each one is the point
+   of looking at them. */
+.quote-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.quote-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line, #DCE7EC);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.quote-preset:hover { border-color: var(--teal, #2C819B); }
+
+.quote-preset-on {
+  border-color: var(--teal, #2C819B);
+  background: var(--mist, #F2F8FA);
+}
+
+.quote-preset-name { font-weight: 600; font-size: 14px; }
+.quote-preset-price { font-size: 12.5px; color: var(--muted, #5B6E7B); }
+
+/* The totals panel */
+
+.quote-totals {
+  background: var(--navy, #1C3651);
+  color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.quote-totals-head {
+  margin: 0 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #BFD9E4;
+}
+
+.quote-totals label { color: #D7E7EE; }
+
+.quote-totals input,
+.quote-totals select {
+  background: #15293E;
+  border-color: #3C5A78;
+  color: #fff;
+}
+
+.quote-totals input::placeholder { color: #7D9BB0; }
+
+.quote-lines {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quote-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quote-line input { min-height: 40px; }
+.quote-line-amount { flex: 0 0 96px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.quote-line-remove {
+  flex: 0 0 auto;
+  width: 36px;
+  min-height: 40px;
+  border: 1px solid #3C5A78;
+  border-radius: 8px;
+  background: none;
+  color: #D7E7EE;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quote-line-remove:hover { background: #15293E; color: #fff; }
+
+.quote-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.quote-add .tpl-link { color: #9FD4E4; font-size: 13px; }
+.quote-add .tpl-link:hover { color: #fff; }
+.quote-add-sep { color: #7D9BB0; font-size: 12px; }
+
+.quote-sum {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #3C5A78;
+}
+
+.quote-sum strong {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Amber rather than red: a quote with an unpriced line is unfinished, not
+   wrong, and colouring it like an error teaches people to ignore errors. */
+.quote-warn {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #3A3016;
+  border-left: 3px solid #D9A227;
+  color: #F4E6C4;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.quote-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #9FC0D0;
+  line-height: 1.5;
+}
+
+.quote-hint-block {
+  margin-top: 10px;
+  color: var(--muted, #5B6E7B);
+}
+
+.quote-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.quote-actions button { width: 100%; min-height: 46px; }
