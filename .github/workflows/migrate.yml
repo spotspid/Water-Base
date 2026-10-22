@@ -1,0 +1,79 @@
+# Apply migrations where the token lives.
+#
+# Schema changes have been blocked three separate times by plumbing rather
+# than by the change: a connector that stopped accepting writes, an access
+# token that belonged to the wrong account for eight days, and a CLI that
+# wants a database password nobody has written down. The data health checks
+# and the v2 schema both sat written and unapplied for days.
+#
+# The edge functions solved this in September by deploying from CI, where the
+# token lives. Migrations do the same here.
+#
+# It runs only on a push that adds a migration file, applies the ones that are
+# not in supabase_migrations.schema_migrations yet, and stops at the first
+# failure rather than carrying on into migrations that assumed it worked.
+#
+# It needs the same two settings the deploy workflow uses, under Settings,
+# Secrets and variables, Actions:
+#
+#   SUPABASE_ACCESS_TOKEN  secret. From the account that OWNS this project,
+#                          and with an expiry long enough to be forgotten
+#                          about. The seven day one generated on 30 September
+#                          expired on 7 October and took the edge function
+#                          deploys down with it until 22 October.
+#   SUPABASE_PROJECT_REF   variable. vztoleozeqlloaadppnt
+
+name: Apply migrations
+
+on:
+  push:
+    branches:
+      - master
+      - feature/bom-autodeduct
+      - rebuild/v2-jobs
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/migrate.yml'
+  # So a failed run can be retried once the token is renewed, without having
+  # to push an empty commit to a migrations folder that has not changed.
+  workflow_dispatch:
+
+# One at a time. Two runs applying the same pending migration would race on
+# the history table and one of them would apply it twice.
+concurrency:
+  group: migrate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm ci. The script uses Node builtins only, and making a schema
+      # change wait on the frontend dependency tree is the fault this
+      # workflow's sibling already learned.
+
+      - name: Say what is pending
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/migrate.js --dry-run
+
+      - name: Apply them
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/migrate.js
+
+      # The migrations carry their own proof blocks, which raise rather than
+      # return, so a migration that applied but did not do what it claimed has
+      # already failed the step above. This checks the rule that no proof
+      # block can check from inside: that v2 still stands alone.
+      - name: Prove v2 can still be swapped in
+        run: node scripts/check-v2.js

@@ -98,9 +98,13 @@ check('the token is accepted by Supabase', Array.isArray(projects), `${projects?
 // same 403 as a token with the wrong role on the right one, so the error alone
 // cannot tell you which you have. This can.
 
-const mine = (projects || []).some(p => p.id === ref)
+// Array.isArray first, always. An object is truthy, so `projects || []` hands
+// .some and .map the object itself and throws. That exact slip killed the
+// deploy workflow for thirteen days in October.
+const visible = Array.isArray(projects) ? projects : []
+const mine = visible.some(p => p.id === ref)
 check(`the token can see ${ref}`, mine,
-  mine ? '' : `it can see: ${(projects || []).map(p => `${p.name} (${p.id})`).join(', ') || 'nothing'}`)
+  mine ? '' : `it can see: ${visible.map(p => `${p.name} (${p.id})`).join(', ') || 'nothing'}`)
 
 if (!mine) {
   console.log('')
