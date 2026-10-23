@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import wordmark from '../../assets/wordmark.png'
 import './Shell.css'
 
 // The frame every rebuilt page sits in.
@@ -36,24 +37,32 @@ export default function Shell({ title, actions, children }) {
   return (
     <div className="v2-shell">
       <header className="v2-top">
-        <button
-          type="button" className="v2-burger" aria-expanded={open}
-          aria-label={open ? 'Hide the menu' : 'Show the menu'}
-          onClick={() => setOpen(!open)}
-        >
-          <span aria-hidden="true">&#9776;</span>
-        </button>
+        <div className="v2-left">
+          <button
+            type="button" className="v2-burger" aria-expanded={open}
+            aria-label={open ? 'Hide the menu' : 'Show the menu'}
+            onClick={() => setOpen(!open)}
+          >
+            <span aria-hidden="true">&#9776;</span>
+          </button>
 
-        <span className="v2-brand">Water Base</span>
+          <Link to="/v2/jobs" className="v2-brand">
+            <img src={wordmark} alt="Water Base" width="150" height="19" />
+          </Link>
+        </div>
 
-        <label htmlFor="v2-search" className="v2-hidden">Search</label>
-        <input
-          id="v2-search" type="search" className="v2-search"
-          placeholder="Search customers, jobs, documents"
-        />
+        <div className="v2-search-wrap">
+          <label htmlFor="v2-search" className="v2-hidden">Search</label>
+          <input
+            id="v2-search" type="search" className="v2-search"
+            placeholder="Search customers, jobs, documents"
+          />
+        </div>
 
-        <Link to="/v2/quote" className="v2-create">New quote</Link>
-        <span className="v2-who" aria-hidden="true">MW</span>
+        <div className="v2-actions">
+          <Link to="/v2/quote" className="v2-create">New quote</Link>
+          <span className="v2-who" aria-hidden="true">MW</span>
+        </div>
       </header>
 
       <div className="v2-body">

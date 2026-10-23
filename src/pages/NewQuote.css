@@ -32,12 +32,26 @@
   min-width: 280px;
 }
 
-/* The price follows you down the page on a phone, and not on a desktop.
-   That is the way round it was asked for, and it is the right way round: on a
-   wide screen the panel is already beside the form and visible without
-   scrolling at all, so pinning it buys nothing. On a phone it is below
-   everything, which is the only place it can be, and that is exactly where it
-   cannot be seen while the fields above it are being filled in.
+/* The price follows you down the page.
+   The questions are long enough that the total leaves the screen while they are
+   still being answered, and the total is the one number somebody is watching
+   while they answer them. Offset below the top strip, which is sticky too, so
+   the two never overlap. */
+@media (min-width: 900px) {
+  .quote-side {
+    position: sticky;
+    top: 73px;
+    align-self: flex-start;
+    max-height: calc(100vh - 89px);
+    overflow-y: auto;
+  }
+}
+
+/* On a phone it follows you too, but from the other edge.
+
+   The panel is below everything there, which is the only place it can be, and
+   that is exactly where it cannot be seen while the fields above it are being
+   filled in.
 
    Pinned to the bottom rather than the top, because the fields being typed
    into are above it and a box that covers them is worse than one that is out

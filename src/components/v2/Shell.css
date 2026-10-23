@@ -10,40 +10,88 @@
   flex-direction: column;
 }
 
-/* The strip for things that belong to no page. */
+/* The strip for things that belong to no page.
+
+   Sticky, because the search and the create button are the two things somebody
+   reaches for from anywhere on a page, and a long job list is exactly where
+   they are furthest away.
+
+   Navy, so the top strip and the sidebar read as one frame rather than a white
+   bar sitting on a dark panel.
+
+   Three columns rather than a flex row, because the search has to be centred on
+   the window and a flex row centres it on whatever is left over: the Create
+   button is wider than the logo, so the box drifts left. The outer columns are
+   1fr each, which makes the middle one land on the true centre no matter what
+   either side holds. */
 
 .v2-top {
-  display: flex;
-  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 460px) 1fr;
   align-items: center;
   gap: 12px;
   padding: 10px 18px;
-  background: #fff;
-  border-bottom: 1px solid var(--line, #DCE7EC);
+  background: var(--navy, #1C3651);
+  border-bottom: 1px solid #2E4B66;
+}
+
+.v2-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .v2-brand {
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
+/* The wordmark is drawn in the dark ink it needs on a white card. On navy it
+   has to be white, and one image stays one image this way. */
+.v2-brand img {
+  display: block;
+  height: 19px;
+  width: auto;
+  filter: brightness(0) invert(1);
+}
+
+.v2-search-wrap { min-width: 0; }
+
 .v2-search {
-  flex: 1 1 220px;
-  max-width: 420px;
+  width: 100%;
   min-height: 40px;
   padding: 8px 12px;
   font: inherit;
   font-size: 13.5px;
-  border: 1px solid #C3D6DE;
+  border: 1px solid #3A5A78;
   border-radius: 8px;
-  background: #F7FBFC;
-  color: inherit;
+  background: #16293F;
+  color: #fff;
   box-sizing: border-box;
 }
 
+.v2-search::placeholder { color: #8BA7BC; }
+
+.v2-search:focus {
+  outline: none;
+  border-color: var(--teal, #2C819B);
+  background: #1A304A;
+}
+
+.v2-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
 .v2-create {
-  margin-left: auto;
   min-height: 40px;
   display: inline-flex;
   align-items: center;
@@ -54,6 +102,7 @@
   font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .v2-create:hover { background: var(--teal-deep, #1F6076); color: #fff; }
@@ -61,8 +110,10 @@
 .v2-who {
   width: 34px;
   height: 34px;
+  flex: 0 0 auto;
   border-radius: 999px;
-  background: var(--navy, #1C3651);
+  background: #16293F;
+  border: 1px solid #3A5A78;
   color: #fff;
   display: flex;
   align-items: center;
@@ -76,9 +127,11 @@
   display: none;
   width: 40px;
   height: 40px;
-  border: 1px solid var(--line, #DCE7EC);
+  flex: 0 0 auto;
+  border: 1px solid #3A5A78;
   border-radius: 8px;
-  background: #fff;
+  background: #16293F;
+  color: #fff;
   font: inherit;
   font-size: 17px;
   cursor: pointer;
@@ -181,7 +234,18 @@
 
 @media (max-width: 860px) {
   .v2-burger { display: block; }
-  .v2-create { margin-left: 0; }
+
+  /* Two rows on a phone: the strip across the top, the search under it full
+     width. Centred by being the only thing on its row. */
+  .v2-top {
+    grid-template-columns: 1fr auto;
+    row-gap: 10px;
+  }
+
+  .v2-search-wrap {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 
   .v2-side {
     flex: 1 1 100%;
