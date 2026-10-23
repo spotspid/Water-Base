@@ -34,6 +34,8 @@ on:
       # whatever that branch holds, and the check afterwards proves it.
       - master
       - feature/bom-autodeduct
+      # The rebuild branch deploys one function and only one: see below.
+      - rebuild/v2-jobs
     paths:
       - 'supabase/functions/**'
       - '.github/workflows/deploy-edge.yml'
@@ -66,16 +68,34 @@ jobs:
       # packages: a React dependency stopping a customer's quote from shipping.
       # The two halves deploy separately; their CI should not be joined either.
 
+      # The live branches deploy everything. The rebuild branch deploys only
+      # send-agreement-v2, which is its own function and serves the v2 schema
+      # alone.
+      #
+      # Not a style choice. deploy:edge with no argument deploys every function
+      # it finds, so a rebuild branch running it would push that branch's
+      # send-agreement, notify and webhook over the live ones. They happen to
+      # be identical today. "Happen to be" is not a guarantee, and the cost of
+      # being wrong is the live document pipeline.
       - name: Deploy every function and record what was sent
+        if: github.ref != 'refs/heads/rebuild/v2-jobs'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
         run: npm run deploy:edge
 
+      - name: Deploy only the rebuild's own function
+        if: github.ref == 'refs/heads/rebuild/v2-jobs'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: npm run deploy:edge send-agreement-v2
+
       # The proof, not the assumption. deploy:edge exiting zero means the CLI
       # printed no error; this asks Supabase what is actually live and compares
       # it to the files in this commit.
       - name: Prove the live copies are this commit
+        if: github.ref != 'refs/heads/rebuild/v2-jobs'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
