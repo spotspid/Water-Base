@@ -26,9 +26,6 @@ More pages will be added here as they are walked.
 
 ## Where this is going
 
-- [The rebuild](rebuild.md): the question asked of every change, which
-  settings belong to a dealer and which do not, what is already decided and
-  what is still open.
 - [Platform readiness](platform-readiness.md): what stands between one business
   running on Water Base and a hundred doing it. The open row level security,
   the six corrections that today need somebody to write SQL, and the order the
