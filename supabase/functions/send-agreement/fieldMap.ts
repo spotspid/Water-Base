@@ -315,8 +315,16 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
       value: ctx => text(ctx.job.customer_name) },
     { key: 'phone', required: false, names: ['phone'],
       value: ctx => text(ctx.job.phone) },
-    { key: 'install_address', required: true, names: ['install_address'],
-      value: ctx => text(ctx.job.address) },
+    // Required on the template and not required of the sender. An installer
+    // has to know where to drive, which is why this was demanded up front, but
+    // refusing to send the work order is the wrong way to insist: it leaves a
+    // booked job with no paperwork at all, and Jay then has no address AND no
+    // job sheet. Sent blank, with the line on the page for him to write on.
+    //
+    // Nothing changes for jobs in the live schema, where address has always
+    // been NOT NULL and is therefore never blank.
+    { key: 'install_address', required: false, lockBlank: true, names: ['install_address'],
+      value: ctx => text(addressOrNothing(ctx.job.address)) },
     { key: 'city', required: false, names: ['city'],
       value: ctx => text(ctx.job.city) },
     { key: 'scheduled_window', required: false, names: ['scheduled_window'],
@@ -358,11 +366,19 @@ const SUBCONTRACTOR_SERVICE: AgreementSpec = {
 
     // The old single box, kept as a fallback so a template that still has it
     // fills rather than breaking. additional_items is the name before that.
+    // Resolved parts when there are any, and the job's own typed list when
+    // there are not.
+    //
+    // A resolved list is better and still wins. But a typed list is enough for
+    // the person loading a van, and demanding a resolved one made a stock
+    // database a precondition of telling somebody what to bring. That is the
+    // coupling the rebuild exists to undo, and it is why a job with no parts
+    // list could not have a work order at all.
     { key: 'parts_list', required: false,
       names: ['parts_list', 'additional_items'],
-      value: ctx => (ctx.parts.length === 0
-        ? 'No parts list on this build sheet'
-        : partLines(ctx.parts)) },
+      value: ctx => (ctx.parts.length > 0
+        ? partLines(ctx.parts)
+        : text(ctx.job.parts_list) || 'No parts list on this build sheet') },
 
     // Always locked, with no exception.
     //
