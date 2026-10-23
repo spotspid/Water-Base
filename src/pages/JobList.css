@@ -1,0 +1,120 @@
+/* The job list. */
+
+.v2-sub {
+  font-size: 13.5px;
+  color: var(--muted, #5B6E7B);
+}
+
+.jl-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.jl-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line, #DCE7EC);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink, #16222E);
+  cursor: pointer;
+}
+
+.jl-filter:hover { border-color: var(--teal, #2C819B); }
+
+.jl-filter-on {
+  background: var(--navy, #1C3651);
+  border-color: var(--navy, #1C3651);
+  color: #fff;
+  font-weight: 600;
+}
+
+.jl-filter-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted, #5B6E7B);
+}
+
+.jl-filter-on .jl-filter-count { color: #BFD9E4; }
+
+.jl-table-wrap {
+  background: #fff;
+  border: 1px solid var(--line, #DCE7EC);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* The table scrolls inside its own box rather than pushing the page sideways. */
+.jl-table-wrap > * { overflow-x: auto; }
+
+.jl-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jl-table th,
+.jl-table td {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+
+.jl-table th {
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted, #5B6E7B);
+  border-bottom: 1px solid var(--line, #DCE7EC);
+  white-space: nowrap;
+}
+
+.jl-table td { border-bottom: 1px solid #EAF1F4; }
+.jl-table tr:last-child td { border-bottom: 0; }
+
+.jl-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.jl-name { display: block; font-weight: 600; }
+
+.jl-city {
+  display: block;
+  font-size: 12px;
+  color: var(--muted, #5B6E7B);
+  margin-top: 2px;
+}
+
+.jl-quiet { color: var(--muted, #5B6E7B); }
+
+/* The one thing on a row that is asking a question. Maroon, which is the
+   brand's own attention colour, and used on few enough rows to still mean
+   something. */
+.jl-flag {
+  font-weight: 600;
+  color: #8C2F2F;
+}
+
+.jl-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.jl-pill-quoted { background: #EAF1F4; color: #3A4D5A; }
+.jl-pill-sold { background: #DFF7FC; color: #14556B; }
+.jl-pill-scheduled { background: #E4EDF5; color: #24456A; }
+.jl-pill-installed { background: #DEF3E4; color: #1B5B32; }
+.jl-pill-cancelled { background: #F0EDED; color: #6B5B5B; }
+
+.jl-empty {
+  padding: 28px 2px;
+  color: var(--muted, #5B6E7B);
+}

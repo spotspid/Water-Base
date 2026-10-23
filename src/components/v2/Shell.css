@@ -1,0 +1,195 @@
+/* The rebuilt frame.
+   Scoped under v2- so nothing here can reach a live page, and so the whole
+   thing can be deleted in one go if the shape changes. */
+
+.v2-shell {
+  min-height: 100vh;
+  background: var(--mist, #F2F8FA);
+  color: var(--ink, #16222E);
+  display: flex;
+  flex-direction: column;
+}
+
+/* The strip for things that belong to no page. */
+
+.v2-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: #fff;
+  border-bottom: 1px solid var(--line, #DCE7EC);
+}
+
+.v2-brand {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.v2-search {
+  flex: 1 1 220px;
+  max-width: 420px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  border: 1px solid #C3D6DE;
+  border-radius: 8px;
+  background: #F7FBFC;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.v2-create {
+  margin-left: auto;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: var(--teal, #2C819B);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.v2-create:hover { background: var(--teal-deep, #1F6076); color: #fff; }
+
+.v2-who {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--navy, #1C3651);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Only on a phone, where the sidebar folds away. */
+.v2-burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line, #DCE7EC);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.v2-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.v2-body {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  align-items: stretch;
+}
+
+/* The sidebar. Never sticky and never 100vh: it stacks above the content on a
+   phone, and a pinned full height panel there covers the page. */
+.v2-side {
+  flex: 0 0 212px;
+  background: var(--navy, #1C3651);
+  color: #fff;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.v2-group { margin-bottom: 16px; }
+
+.v2-group-title {
+  padding: 0 16px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7D9BB0;
+}
+
+.v2-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  min-height: 42px;
+  box-sizing: border-box;
+  font-size: 14px;
+  color: #D7E7EE;
+  text-decoration: none;
+}
+
+.v2-nav:hover { background: #24456A; color: #fff; }
+
+.v2-nav-on {
+  background: var(--teal, #2C819B);
+  color: #fff;
+  font-weight: 600;
+}
+
+.v2-nav-on:hover { background: var(--teal, #2C819B); color: #fff; }
+
+.v2-nav-glyph {
+  width: 17px;
+  text-align: center;
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+.v2-side-foot {
+  margin: auto 16px 0;
+  padding-top: 14px;
+  border-top: 1px solid #2E4B66;
+  font-size: 12.5px;
+  color: #9FC0D0;
+}
+
+.v2-main {
+  flex: 999 1 540px;
+  min-width: 0;
+  padding: 22px 26px 56px;
+}
+
+.v2-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.v2-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 860px) {
+  .v2-burger { display: block; }
+  .v2-create { margin-left: 0; }
+
+  .v2-side {
+    flex: 1 1 100%;
+    display: none;
+    padding: 10px 0;
+  }
+
+  .v2-side-open { display: flex; }
+  .v2-side-foot { margin-top: 10px; }
+  .v2-main { padding: 18px 16px 48px; }
+}
