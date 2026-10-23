@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import wordmark from '../../assets/wordmark.png'
+import wordmark from '../../assets/wordmark-white.png'
 import './Shell.css'
 
 // The frame every rebuilt page sits in.

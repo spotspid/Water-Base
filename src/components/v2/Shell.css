@@ -51,13 +51,14 @@
   text-decoration: none;
 }
 
-/* The wordmark is drawn in the dark ink it needs on a white card. On navy it
-   has to be white, and one image stays one image this way. */
+/* Its own white copy of the wordmark rather than the navy one run through a
+   CSS filter. The filter approach renders nothing at all if the declaration is
+   dropped anywhere between here and the screen, and a logo that disappears
+   silently is worse than a second file. */
 .v2-brand img {
   display: block;
   height: 19px;
   width: auto;
-  filter: brightness(0) invert(1);
 }
 
 .v2-search-wrap { min-width: 0; }
@@ -152,8 +153,15 @@
   align-items: stretch;
 }
 
-/* The sidebar. Never sticky and never 100vh: it stacks above the content on a
-   phone, and a pinned full height panel there covers the page. */
+/* The sidebar. Static: it holds the way out of whatever page you are on, and
+   scrolling a long job list should not take the navigation with it.
+
+   Sticky rather than fixed, because fixed would come out of the flex row and
+   the main column would have to leave a 212px hole by hand. Sticky keeps it in
+   the layout and just stops it moving.
+
+   Desktop only. On a phone it stacks above the content, where a pinned full
+   height panel would cover the page. */
 .v2-side {
   flex: 0 0 212px;
   background: var(--navy, #1C3651);
@@ -161,6 +169,16 @@
   padding: 16px 0;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 861px) {
+  .v2-side {
+    position: sticky;
+    top: 61px;
+    align-self: flex-start;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+  }
 }
 
 .v2-group { margin-bottom: 16px; }
