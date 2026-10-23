@@ -2,8 +2,8 @@
   "note": "Written by npm run deploy:edge. What was last deployed, so check:deploy can tell whether the live copy is this code. Do not edit by hand.",
   "slug": "docuseal-webhook",
   "project": "vztoleozeqlloaadppnt",
-  "version": 18,
-  "deployed_at": 1790813301110,
+  "version": 20,
+  "deployed_at": 1792762353537,
   "files": {
     "index.ts": "f7923be521580a3ad8b00e18ee2d7bea0bf0aef9820e3c088711d5793d98bcb7"
   }
