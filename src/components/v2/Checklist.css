@@ -1,0 +1,133 @@
+/* The quote's questions. */
+
+.v2c { padding: 0; }
+
+.v2c-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 18px 4px 6px;
+}
+
+.v2c-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.v2c-arrow {
+  flex: 0 0 auto;
+  width: 14px;
+  color: var(--muted, #5B6E7B);
+  transition: transform 120ms ease;
+}
+
+.v2c-arrow-open { transform: rotate(90deg); }
+
+.v2c-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--teal, #2C819B);
+}
+
+.v2c-count { font-size: 13px; color: var(--muted, #5B6E7B); }
+.v2c-count-done { color: #1B5B32; }
+.v2c-bulk { flex: 0 0 auto; font-size: 13px; }
+
+.v2c-note {
+  margin: 0 18px 14px;
+  font-size: 13px;
+  color: var(--muted, #5B6E7B);
+}
+
+.v2c-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0 18px 18px;
+}
+
+@media (max-width: 720px) {
+  .v2c-items { grid-template-columns: minmax(0, 1fr); }
+}
+
+.v2c-item { min-width: 0; }
+
+.v2c-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3A4D5A;
+}
+
+/* The state lives in the tag, not in a coloured rule down the side of every
+   field. A column of those reads as a wall of warnings, and an unanswered
+   question is not a warning. */
+.v2c-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #1F6076;
+  background: #DFF7FC;
+}
+
+.v2c-tag-quiet {
+  color: var(--muted, #5B6E7B);
+  background: #EAF1F4;
+}
+
+.v2c-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.v2c-choice {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--line, #DCE7EC);
+  border-radius: 9px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink, #16222E);
+  cursor: pointer;
+}
+
+.v2c-choice:hover { border-color: var(--teal, #2C819B); }
+
+.v2c-choice-on {
+  border-color: var(--teal, #2C819B);
+  background: #EDF6F9;
+  font-weight: 600;
+}
+
+.v2c-item input,
+.v2c-item select {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid #C3D6DE;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+}
+
+.v2c-item-note { margin-top: 8px; }

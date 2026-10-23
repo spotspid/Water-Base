@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AppShell from '../components/AppShell'
+import Shell from '../components/v2/Shell'
 import QuoteTotals from '../components/QuoteTotals'
-import QuoteChecklistSection from '../components/QuoteChecklistSection'
+import ChecklistSection from '../components/v2/ChecklistSection'
 import {
-  QUOTE_CHECKLIST_SECTIONS, canSend, emptyForm, listWords, money, quoteLines,
-  whatIsMissing, whatSendingNeeds,
+  canSend, emptyForm, listWords, money, quoteLines, whatIsMissing, whatSendingNeeds,
 } from '../lib/quote'
-import { checklistFromForm, emptyChecklistForm } from '../lib/salesChecklist'
+import { SECTIONS, emptyChecklist, toStored } from '../lib/v2Checklist'
 import { loadQuoteSetup, saveQuote } from '../lib/quoteData'
 import './NewQuote.css'
 
@@ -36,11 +35,11 @@ const VALVES = ['Clack', 'Hankscraft']
 
 export default function NewQuote() {
   const [form, setForm] = useState(emptyForm)
-  const [checklist, setChecklist] = useState(emptyChecklistForm)
+  const [checklist, setChecklist] = useState(emptyChecklist)
   // Both open on a call, because on a call the questions are the job. Somebody
   // writing up a sale that already happened folds them away.
   const [openSections, setOpenSections] = useState(
-    () => Object.fromEntries(QUOTE_CHECKLIST_SECTIONS.map(s => [s.id, true])))
+    () => Object.fromEntries(SECTIONS.map(s => [s.id, true])))
   const [lines, setLines] = useState([])
   const [setup, setSetup] = useState({ org: null, presets: [], extras: [] })
   const [loading, setLoading] = useState(true)
@@ -125,7 +124,7 @@ export default function NewQuote() {
       .filter(line => line.label.trim() !== '' || line.price.trim() !== '')
       .map(line => ({ label: line.label.trim() || 'Line', price: Number(line.price.replace(/[$,]/g, '')) || 0 }))
 
-    const answers = checklistFromForm(checklist)
+    const answers = toStored(checklist)
 
     const { error: saveError, job } = await saveQuote(
       { ...form, people_in_home: checklist.people_in_home, bathrooms: checklist.bathrooms },
@@ -137,7 +136,7 @@ export default function NewQuote() {
 
     setNotice(`Quote saved for ${job.customer_name}.`)
     setForm(emptyForm())
-    setChecklist(emptyChecklistForm())
+    setChecklist(emptyChecklist())
     setLines([])
   }
 
@@ -145,7 +144,7 @@ export default function NewQuote() {
   const needed = whatSendingNeeds(form)
 
   return (
-    <AppShell title="New quote">
+    <Shell title="New quote">
       {loading && <p className="quote-loading">Loading...</p>}
 
       {error && <div className="form-error" role="alert"><p>{error}</p></div>}
@@ -214,14 +213,10 @@ export default function NewQuote() {
                 </div>
               </section>
 
-              {QUOTE_CHECKLIST_SECTIONS.map(section => (
-                <QuoteChecklistSection
+              {SECTIONS.map(section => (
+                <ChecklistSection
                   key={section.id}
-                  title={section.title}
-                  note={section.note}
-                  keys={section.keys}
-                  bulk={section.bulk}
-                  bulkLabel={section.bulkLabel}
+                  section={section}
                   value={checklist}
                   onChange={setChecklist}
                   open={openSections[section.id]}
@@ -334,6 +329,6 @@ export default function NewQuote() {
           </div>
         </form>
       )}
-    </AppShell>
+    </Shell>
   )
 }
