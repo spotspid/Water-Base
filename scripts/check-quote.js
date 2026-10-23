@@ -1,4 +1,7 @@
-import { quoteLines, whatIsMissing, canSend, money, QUOTE_CHECKLIST_SECTIONS } from '../src/lib/quote.js'
+import {
+  quoteLines, whatIsMissing, canSend, money, listWords, whatSendingNeeds,
+  QUOTE_CHECKLIST_SECTIONS,
+} from '../src/lib/quote.js'
 import { CHECKLIST_ITEMS } from '../src/lib/salesChecklist.js'
 
 // The quoting page's arithmetic, checked without a browser.
@@ -32,11 +35,37 @@ check('and without one it says so in words somebody can act on',
 check('a blank address does not stop a quote being saved',
   whatIsMissing({ customer_name: 'Warren', address: '' }) === '')
 
-// Sending is a higher bar than saving, and the difference is deliberate: the
-// quote goes out by email, so there has to be one.
-check('sending needs an email', canSend({ customer_name: 'Warren', customer_email: 'w@x.com' }))
-check('and refuses without one', !canSend({ customer_name: 'Warren', customer_email: '' }))
-check('and refuses something that is not one', !canSend({ customer_name: 'Warren', customer_email: 'warren' }))
+// Sending is a higher bar than saving, and the difference is deliberate. The
+// quote goes out by email, so there has to be one, and the document itself
+// refuses without a phone, a system and a price: check:documents proves each
+// of those blocks, which is why the page asks for them here rather than
+// letting DocuSeal say no after the fact.
+const SENDABLE = {
+  customer_name: 'Warren',
+  customer_email: 'w@x.com',
+  phone: '(248) 496-8292',
+  system_template: 'Flagship Bundle',
+  sale_price: '3499',
+}
+
+check('a quote with everything the document needs can be sent', canSend(SENDABLE))
+check('and refuses without an email', !canSend({ ...SENDABLE, customer_email: '' }))
+check('and refuses something that is not an email', !canSend({ ...SENDABLE, customer_email: 'warren' }))
+check('and refuses without a phone', !canSend({ ...SENDABLE, phone: '' }))
+check('and refuses without a system', !canSend({ ...SENDABLE, system_template: '' }))
+check('and refuses without a price', !canSend({ ...SENDABLE, sale_price: '' }))
+
+// What it says is missing, in the order somebody would fix it.
+check('it names what is missing rather than just refusing',
+  whatSendingNeeds({ ...SENDABLE, phone: '', sale_price: '' }).join(' + ') === 'a phone number + a price',
+  whatSendingNeeds({ ...SENDABLE, phone: '', sale_price: '' }).join(' + '))
+check('and says nothing when nothing is missing',
+  whatSendingNeeds(SENDABLE).length === 0)
+check('two missing things read as a sentence',
+  listWords(['an email address', 'a price']) === 'an email address and a price',
+  listWords(['an email address', 'a price']))
+check('three read as a sentence too',
+  listWords(['a', 'b', 'c']) === 'a, b and c', listWords(['a', 'b', 'c']))
 
 // --- the total ---------------------------------------------------------------
 
