@@ -224,15 +224,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Amber rather than red: a quote with an unpriced line is unfinished, not
-   wrong, and colouring it like an error teaches people to ignore errors. */
+/* An unfinished quote is not an error, so this is not red. It is not amber
+   either: amber is not a Water Base colour. Sky on the navy panel, which is
+   the quiet end of the brand and still clearly a note rather than a label. */
 .quote-warn {
   margin: 12px 0 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #3A3016;
-  border-left: 3px solid #D9A227;
-  color: #F4E6C4;
+  background: #15293E;
+  color: #BFD9E4;
   font-size: 12.5px;
   line-height: 1.5;
 }
@@ -258,3 +258,117 @@
 }
 
 .quote-actions button { width: 100%; min-height: 46px; }
+
+/* The checklist, in brand colours and without the rules down the side.
+
+   The shared styles mark an unanswered question with an amber left bar and an
+   amber fill. Amber is not a Water Base colour, and a column of coloured rules
+   down the left of every field is the look this rebuild is meant to get away
+   from: it reads as a wall of warnings rather than a list of questions, and an
+   unanswered question is not a warning.
+
+   Scoped to this page rather than changed at the root, because the live New
+   job form uses the same classes and is not being touched. */
+
+.quote-form .field-unanswered,
+.quote-form .field-notsure {
+  border-left: 0;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.quote-form .field-unanswered input:not([type="checkbox"]),
+.quote-form .field-unanswered select {
+  border-color: var(--line, #DCE7EC);
+  background: #fff;
+}
+
+.quote-form .field-notsure input:not([type="checkbox"]),
+.quote-form .field-notsure select {
+  border-style: solid;
+  border-color: var(--line, #DCE7EC);
+  background: var(--mist, #F2F8FA);
+  color: var(--muted, #5B6E7B);
+}
+
+/* The tag carries the state instead, quietly. Sky for a question still to
+   ask, plain grey once somebody has said they do not know. */
+.quote-form .unanswered-tag {
+  color: #1F6076;
+  background: #DFF7FC;
+}
+
+.quote-form .notsure-tag {
+  color: var(--muted, #5B6E7B);
+  background: #EAF1F4;
+}
+
+.quote-form .checklist-count {
+  color: var(--muted, #5B6E7B);
+}
+
+/* The section header, which is also the control that folds it. */
+
+.quote-check { padding: 0; }
+
+.quote-check-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 20px 6px 8px;
+}
+
+.quote-check-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 12px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.quote-check-arrow {
+  flex: 0 0 auto;
+  width: 16px;
+  color: var(--muted, #5B6E7B);
+  transition: transform 120ms ease;
+}
+
+.quote-check-arrow-open { transform: rotate(90deg); }
+
+.quote-check-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--teal, #2C819B);
+}
+
+.quote-check-count {
+  font-size: 13px;
+  color: var(--muted, #5B6E7B);
+}
+
+.quote-check-done { color: #1B5B32; }
+
+.quote-check-skip {
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+
+/* The fields inside sit in the card, so the shared section padding comes off. */
+.quote-check .form-section {
+  border: 0;
+  background: none;
+  padding: 0 20px 18px;
+  margin: 0;
+}
+
+.quote-check .form-section h2 { display: none; }

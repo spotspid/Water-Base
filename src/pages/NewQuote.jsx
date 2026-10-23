@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AppShell from '../components/AppShell'
 import QuoteTotals from '../components/QuoteTotals'
-import SalesChecklistFields from '../components/SalesChecklistFields'
+import QuoteChecklistSection from '../components/QuoteChecklistSection'
 import { canSend, emptyForm, money, quoteLines, whatIsMissing } from '../lib/quote'
 import {
   SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm,
@@ -36,6 +36,9 @@ const VALVES = ['Clack', 'Hankscraft']
 export default function NewQuote() {
   const [form, setForm] = useState(emptyForm)
   const [checklist, setChecklist] = useState(emptyChecklistForm)
+  // Both open on a call, because on a call the questions are the job. Somebody
+  // writing up a sale that already happened folds them away.
+  const [openSections, setOpenSections] = useState({ sizing: true, site: true })
   const [lines, setLines] = useState([])
   const [setup, setSetup] = useState({ org: null, presets: [], extras: [] })
   const [loading, setLoading] = useState(true)
@@ -208,27 +211,25 @@ export default function NewQuote() {
                 </div>
               </section>
 
-              <section className="quote-card">
-                <SalesChecklistFields
-                  value={checklist}
-                  onChange={setChecklist}
-                  keys={SIZING_KEYS}
-                  showJobFields={false}
-                  title="Sizing"
-                  disabled={busy}
-                />
-              </section>
+              <QuoteChecklistSection
+                title="Sizing"
+                keys={SIZING_KEYS}
+                value={checklist}
+                onChange={setChecklist}
+                open={openSections.sizing}
+                onToggle={next => setOpenSections(o => ({ ...o, sizing: next }))}
+                disabled={busy}
+              />
 
-              <section className="quote-card">
-                <SalesChecklistFields
-                  value={checklist}
-                  onChange={setChecklist}
-                  keys={SITE_KEYS}
-                  showJobFields={false}
-                  title="The site"
-                  disabled={busy}
-                />
-              </section>
+              <QuoteChecklistSection
+                title="The site"
+                keys={SITE_KEYS}
+                value={checklist}
+                onChange={setChecklist}
+                open={openSections.site}
+                onToggle={next => setOpenSections(o => ({ ...o, site: next }))}
+                disabled={busy}
+              />
 
               <section className="quote-card">
                 <h2>The system</h2>
