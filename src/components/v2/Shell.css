@@ -221,6 +221,13 @@
   opacity: 0.85;
 }
 
+.v2-build {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #6E90A6;
+}
+
 .v2-side-foot {
   margin: auto 16px 0;
   padding-top: 14px;

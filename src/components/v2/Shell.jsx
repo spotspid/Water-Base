@@ -83,7 +83,10 @@ export default function Shell({ title, actions, children }) {
             </div>
           ))}
 
-          <p className="v2-side-foot">Michigan Water Pros</p>
+          <p className="v2-side-foot">
+            Michigan Water Pros
+            <span className="v2-build">Build {__BUILT__}</span>
+          </p>
         </nav>
 
         <main className="v2-main">
