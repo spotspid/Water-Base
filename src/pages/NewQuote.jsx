@@ -3,7 +3,8 @@ import AppShell from '../components/AppShell'
 import QuoteTotals from '../components/QuoteTotals'
 import QuoteChecklistSection from '../components/QuoteChecklistSection'
 import {
-  QUOTE_CHECKLIST_SECTIONS, canSend, emptyForm, money, quoteLines, whatIsMissing,
+  QUOTE_CHECKLIST_SECTIONS, canSend, emptyForm, listWords, money, quoteLines,
+  whatIsMissing, whatSendingNeeds,
 } from '../lib/quote'
 import { checklistFromForm, emptyChecklistForm } from '../lib/salesChecklist'
 import { loadQuoteSetup, saveQuote } from '../lib/quoteData'
@@ -71,8 +72,8 @@ export default function NewQuote() {
   function pickPreset(preset) {
     setForm(f => ({
       ...f,
-      system_name: preset.name,
-      system_description: preset.description || '',
+      system_template: preset.name,
+      system_long_name: preset.description || '',
       parts_list: preset.parts_list || '',
       sale_price: preset.price == null ? '' : String(preset.price),
     }))
@@ -93,8 +94,8 @@ export default function NewQuote() {
   // The total, worked out from what is typed rather than from what was picked.
   const totals = useMemo(() => {
     const preset = form.sale_price.trim() === ''
-      ? { id: 'system', name: form.system_name || 'System', price: null }
-      : { id: 'system', name: form.system_name || 'System', price: Number(form.sale_price.replace(/[$,]/g, '')) }
+      ? { id: 'system', name: form.system_template || 'System', price: null }
+      : { id: 'system', name: form.system_template || 'System', price: Number(form.sale_price.replace(/[$,]/g, '')) }
 
     const extras = lines.map((line, index) => ({
       id: line.key || index,
@@ -109,7 +110,7 @@ export default function NewQuote() {
       ...result,
       incomplete: result.incomplete || extras.some(extra => extra.price == null),
     }
-  }, [form.sale_price, form.system_name, lines])
+  }, [form.sale_price, form.system_template, lines])
 
   async function handleSave(e) {
     e.preventDefault()
@@ -141,6 +142,7 @@ export default function NewQuote() {
   }
 
   const sendable = canSend(form)
+  const needed = whatSendingNeeds(form)
 
   return (
     <AppShell title="New quote">
@@ -236,7 +238,7 @@ export default function NewQuote() {
                   {setup.presets.map(preset => (
                     <button
                       key={preset.id} type="button" disabled={busy}
-                      className={form.system_name === preset.name ? 'quote-preset quote-preset-on' : 'quote-preset'}
+                      className={form.system_template === preset.name ? 'quote-preset quote-preset-on' : 'quote-preset'}
                       onClick={() => pickPreset(preset)}
                     >
                       <span className="quote-preset-name">{preset.name}</span>
@@ -248,9 +250,9 @@ export default function NewQuote() {
                 </div>
 
                 <div className="field">
-                  <label htmlFor="system_description">Description on the quote</label>
-                  <textarea id="system_description" name="system_description" rows="2"
-                    value={form.system_description} onChange={change} disabled={busy}
+                  <label htmlFor="system_long_name">Description on the quote</label>
+                  <textarea id="system_long_name" name="system_long_name" rows="2"
+                    value={form.system_long_name} onChange={change} disabled={busy}
                     placeholder="Whole home single tank mixed bed system for filtration and softening" />
                 </div>
 
@@ -317,14 +319,14 @@ export default function NewQuote() {
                   {busy ? 'Saving...' : 'Save quote'}
                 </button>
                 <button type="button" className="btn-cancel" disabled={busy || !sendable}
-                  title={sendable ? undefined : 'Add an email address first.'}>
+                  title={sendable ? undefined : `Add ${listWords(needed)} first.`}>
                   Save and send
                 </button>
               </div>
 
               {!sendable && (
                 <p className="quote-hint quote-hint-block">
-                  Add an email address to send this.
+                  To send this, add {listWords(needed)}.
                 </p>
               )}
             </aside>

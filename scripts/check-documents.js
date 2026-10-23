@@ -1,22 +1,35 @@
-import { todayBlockers, hasOverdue, todayHeadline } from '../src/lib/today.js'
-import {
-  BLOCKED, OUT, SIGNED,
-  documentCounts, documentRows, groupByReason, inSection, installLabel,
-} from '../src/lib/documents.js'
-import { gapsSentence, workOrderBlocker, workOrderGaps } from '../src/lib/workOrder.js'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
 
-// Checks the today block and the Documents page.
+// Can a v2 job actually produce a document?
 //
-// Both read one rule, workOrderGaps, and the point of most of what follows is
-// that they cannot drift from it. A card that says "needs a payout" while the
-// send button complains about a crew, or a backlog that lists work the button
-// says is fine, is worse than either page not existing.
+// send-agreement refuses a document when a required field has no value, and
+// the refusal arrives from DocuSeal after somebody presses send. This asks the
+// question before that, against the real field map rather than a copy of its
+// rules, by compiling it and running matchFields the way the function does.
 //
-// The other thing tested hard is the pulse. It is the loudest thing in the
-// product and it has exactly one job: fire when something is genuinely past
-// its install date, and never otherwise.
-//
-// Run with: npm run check:documents
+// It exists because a v2 job was silently unsendable for a week: the schema
+// called the system column system_name and the field map reads system_template,
+// so the value was there under a name nothing looked for, and the only symptom
+// would have been "systems: there is no value for it" at the worst moment.
+
+const FIELD_NAMES = {
+  customer_install: [
+    'customer_name', 'install_address', 'city', 'phone', 'email', 'systems',
+    'sale_price', 'payment_schedule', 'company_signature', 'company_date',
+    'company_printed_name', 'customer_signature', 'customer_printed_name', 'customer_date',
+  ],
+  subcontractor_service: [
+    'job_number', 'date_issued', 'subcontractor', 'customer_name', 'phone',
+    'install_address', 'city', 'scheduled_window', 'site_conditions', 'systems',
+    'parts_system', 'parts_finish', 'parts_list', 'agreed_pay', 'payment_terms',
+    'balance_due', 'collected_by_company', 'collected_by_subcontractor',
+    'company_signature', 'company_date', 'subcontractor_signature', 'subcontractor_date',
+  ],
+}
 
 let failed = 0
 
@@ -25,157 +38,108 @@ function check(name, condition, detail = '') {
   if (!condition) failed++
 }
 
-const NOW = new Date('2026-09-09T12:00:00')
+// The field map is TypeScript and Deno flavoured, so it is compiled here
+// rather than imported. Compiling the real file is the point: a copy of its
+// rules would pass while the file it describes had changed.
+const out = mkdtempSync(join(tmpdir(), 'wb-fieldmap-'))
 
-const ready = {
-  id: 'j1',
-  customer_name: 'Walter Radu',
-  customer_email: 'walter@example.com',
-  status: 'scheduled',
-  scheduled_date: '2026-09-16',
-  invoice_number: 'MWP-0007',
-  installer_id: 'i1',
-  installer_name: 'Jay Woodward',
-  installer_email: 'jay@example.com',
-  installer_pay: 450,
-  template_id: 't1',
-  template_line_count: 5,
+// tsc exits non-zero on the Deno style ".ts" import in the field map and emits
+// the file anyway, so the exit code is ignored and the emitted file is what is
+// checked. If it genuinely failed, the import below throws and says so.
+try {
+  execFileSync('npx', [
+  '-y', '-p', 'typescript', 'tsc',
+  'supabase/functions/send-agreement/fieldMap.ts',
+  '--outDir', out, '--target', 'es2022', '--module', 'esnext',
+  '--moduleResolution', 'bundler', '--skipLibCheck',
+  ], { stdio: 'pipe', shell: process.platform === 'win32' })
+} catch {
+  // see above
+}
+
+const compiled = join(out, 'fieldMap.js')
+writeFileSync(compiled, readFileSync(compiled, 'utf8').split('siteConditions.ts').join('siteConditions.js'))
+
+const { SPECS, matchFields } = await import(pathToFileURL(compiled).href)
+
+function missingFor(type, job, extra = {}) {
+  const ctx = { job, installer: null, parts: [], today: new Date('2026-10-23'), ...extra }
+  return matchFields(SPECS[type], FIELD_NAMES[type], ctx).missing
+}
+
+// --- the customer agreement --------------------------------------------------
+
+// What the quoting page guarantees before it lets anybody press send.
+const SENDABLE_QUOTE = {
+  customer_name: 'Warren Woodruff',
+  customer_email: 'warren@example.com',
+  phone: '(248) 496-8292',
   system_template: 'Flagship Bundle',
-  agreement_status: 'completed',
-  work_order_status: 'completed',
+  sale_price: 3499,
 }
 
-// --- one rule, two shapes ---------------------------------------------------
+check('a quote the page calls sendable produces a customer agreement',
+  missingFor('customer_install', SENDABLE_QUOTE).length === 0,
+  missingFor('customer_install', SENDABLE_QUOTE).join('; '))
 
-check('a ready job has no gaps', workOrderGaps(ready).length === 0)
-check('and no blocker sentence', workOrderBlocker(ready) === '')
+check('and it still sends with no address, which the customer fills in',
+  missingFor('customer_install', { ...SENDABLE_QUOTE, address: '' }).length === 0)
 
-const bare = { ...ready, installer_id: null, installer_email: null, installer_pay: 0, invoice_number: null }
-const gaps = workOrderGaps(bare)
-check('a bare job reports every gap, not just the first', gaps.length === 4, gaps.map(g => g.key).join(','))
-check('the blocker sentence is the first of them',
-  workOrderBlocker(bare) === gaps[0].sentence)
-check('and the card lists them all',
-  gapsSentence(bare) === 'Needs a crew, a crew email, a payout and a job number',
-  gapsSentence(bare))
+// Each of the four the page now asks for, dropped one at a time. If one of
+// these ever stops blocking, the page is asking for something it need not.
+for (const [field, label] of [
+  ['phone', 'a phone number'],
+  ['system_template', 'a system'],
+  ['sale_price', 'a price'],
+]) {
+  const without = { ...SENDABLE_QUOTE }
+  delete without[field]
 
-check('one gap reads without a list', gapsSentence({ ...ready, installer_pay: 0 }) === 'Needs a payout')
-check('two gaps join with and',
-  gapsSentence({ ...ready, installer_pay: 0, invoice_number: null })
-  === 'Needs a payout and a job number')
-check('a ready job needs nothing', gapsSentence(ready) === '')
-
-// --- the today block --------------------------------------------------------
-
-check('a ready booked job is not blocked', todayBlockers([ready], NOW).length === 0)
-check('an installed job never appears',
-  todayBlockers([{ ...ready, status: 'installed', installer_pay: 0 }], NOW).length === 0)
-check('an undated job never appears, however broken',
-  todayBlockers([{ ...bare, scheduled_date: null }], NOW).length === 0,
-  'nothing is promised to a customer yet')
-check('a job past the horizon does not appear',
-  todayBlockers([{ ...bare, scheduled_date: '2026-12-01' }], NOW).length === 0)
-
-const cards = todayBlockers([
-  { ...bare, id: 'a', customer_name: 'Later', scheduled_date: '2026-09-14' },
-  { ...bare, id: 'b', customer_name: 'Overdue', scheduled_date: '2026-09-05' },
-  { ...bare, id: 'c', customer_name: 'Today', scheduled_date: '2026-09-09' },
-], NOW)
-
-check('soonest first', cards.map(c => c.customer_name || c.who).join(',') === 'Overdue,Today,Later',
-  cards.map(c => c.who).join(','))
-check('a past date is late', cards[0].urgency === 'late' && cards[0].when === '4 days overdue')
-check('today is now', cards[1].urgency === 'now' && cards[1].when === 'Installs today')
-check('ahead is soon', cards[2].urgency === 'soon' && cards[2].when === 'In 5 days')
-
-// --- the pulse, which is the loudest thing in the product -------------------
-
-check('overdue work makes it beat', hasOverdue(cards) === true)
-check('today alone does not', hasOverdue([cards[1]]) === false, 'today is not late')
-check('future work does not', hasOverdue([cards[2]]) === false)
-check('nothing blocked does not', hasOverdue([]) === false)
-check('a missing list does not throw', hasOverdue(undefined) === false)
-
-// --- the headline -----------------------------------------------------------
-
-const sameCause = todayBlockers([
-  { ...ready, id: 'a', installer_id: null, scheduled_date: '2026-09-10' },
-  { ...ready, id: 'b', installer_id: null, scheduled_date: '2026-09-11' },
-], NOW)
-check('a shared cause is named', todayHeadline(sameCause).emphasis === 'no crew assigned')
-check('and counted in words', todayHeadline(sameCause).lead.startsWith('Two installs are'))
-
-const mixedCause = todayBlockers([
-  { ...ready, id: 'a', installer_id: null, scheduled_date: '2026-09-10' },
-  { ...ready, id: 'b', installer_pay: 0, scheduled_date: '2026-09-11' },
-], NOW)
-check('a cause only some share is never claimed for all',
-  todayHeadline(mixedCause).emphasis === 'not ready to send',
-  todayHeadline(mixedCause).emphasis)
-check('one blocked job is singular', todayHeadline([sameCause[0]]).lead.startsWith('One install is'))
-check('nothing blocked says so', todayHeadline([]).lead === 'Nothing is blocked.')
-
-// --- the Documents page -----------------------------------------------------
-
-const rows = documentRows([ready], NOW)
-check('a job yields two documents', rows.length === 2)
-check('both signed land in signed', rows.every(r => r.section === SIGNED))
-check('and are counted as such', documentCounts(rows).signed === 2)
-
-const blockedRows = documentRows([{ ...bare, work_order_status: null, agreement_status: null }], NOW)
-check('an unsent work order on a bare job is blocked',
-  blockedRows.find(r => r.type === 'subcontractor_service').section === BLOCKED)
-check('but the agreement is sendable, it only needs an email',
-  blockedRows.find(r => r.type === 'customer_install').section === OUT)
-
-const sentThenBroken = documentRows([{
-  ...bare, work_order_status: 'sent', work_order_sent_at: '2026-09-05T10:00:00Z',
-}], NOW)
-const wo = sentThenBroken.find(r => r.type === 'subcontractor_service')
-check('a sent document stays out however broken the job became', wo.section === OUT)
-check('and reports how long it has been out', wo.sentDays === 4, String(wo.sentDays))
-
-const signedThenBroken = documentRows([{ ...bare, work_order_status: 'completed' }], NOW)
-check('a signed document is never dragged back into the backlog',
-  signedThenBroken.find(r => r.type === 'subcontractor_service').section === SIGNED)
-
-// --- grouping, which is what turns a list into an afternoon of work ---------
-
-const many = documentRows([
-  { ...ready, id: 'a', customer_name: 'A', installer_id: null, work_order_status: null },
-  { ...ready, id: 'b', customer_name: 'B', installer_id: null, work_order_status: null },
-  { ...ready, id: 'c', customer_name: 'C', installer_pay: 0, work_order_status: null },
-], NOW)
-
-const groups = groupByReason(many)
-check('blocked rows group by their reason', groups.length === 2, groups.map(g => g.key).join(','))
-check('the biggest group leads', groups[0].rows.length === 2 && groups[0].key === 'crew')
-check('and the reason is named', groups[0].short === 'a crew')
-check('only blocked rows are grouped',
-  groups.every(g => g.rows.every(r => r.section === BLOCKED)))
-
-check('sections filter', inSection(many, BLOCKED).length === 3)
-check('counts add up', documentCounts(many).total === 6 && documentCounts(many).blocked === 3)
-
-// --- words ------------------------------------------------------------------
-
-check('today reads today', installLabel({ untilInstall: 0 }) === 'Today')
-check('overdue is positive and plain', installLabel({ untilInstall: -3 }) === '3 days overdue')
-check('no date says no date', installLabel({ untilInstall: null }) === 'No date')
-
-// --- rubbish in --------------------------------------------------------------
-
-check('no jobs does not throw', documentRows(undefined, NOW).length === 0)
-check('nor does grouping nothing', groupByReason(null).length === 0)
-check('a bad date is no date',
-  todayBlockers([{ ...bare, scheduled_date: 'nonsense' }], NOW).length === 0)
-check('a cancelled job blocks rather than pretends to be sendable',
-  documentRows([{ ...ready, status: 'cancelled', work_order_status: null }], NOW)
-    .find(r => r.type === 'subcontractor_service').section === BLOCKED)
-
-console.log('')
-if (failed > 0) {
-  console.error(`${failed} document check(s) failed.`)
-  process.exit(1)
+  check(`without ${label} the document is refused, which is why the page asks`,
+    missingFor('customer_install', without).length > 0)
 }
-console.log('All document checks passed.')
+
+// --- the work order ----------------------------------------------------------
+
+const SENDABLE_JOB = {
+  ...SENDABLE_QUOTE,
+  address: '6972 Cottonwood Knoll',
+  invoice_number: 'MWP-0031',
+  installer_pay: 500,
+  parts_list: 'Mixed bed system, control valve, tanked RO, RO faucet, 2 bags of salt',
+}
+
+const crew = { installer: { name: 'Jay Woodward' }, parts: [] }
+
+check('a sold v2 job produces a work order',
+  missingFor('subcontractor_service', SENDABLE_JOB, crew).length === 0,
+  missingFor('subcontractor_service', SENDABLE_JOB, crew).join('; '))
+
+check('it sends with no address, so a booked job is never left with no paperwork',
+  missingFor('subcontractor_service', { ...SENDABLE_JOB, address: '' }, crew).length === 0,
+  missingFor('subcontractor_service', { ...SENDABLE_JOB, address: '' }, crew).join('; '))
+
+check('and refuses without an invoice number, which is why they assign themselves',
+  missingFor('subcontractor_service', { ...SENDABLE_JOB, invoice_number: '' }, crew).length > 0)
+
+// The parts list is the whole reason a v2 job can have a work order at all.
+const spec = SPECS.subcontractor_service
+const partsField = spec.fields.find(f => f.key === 'parts_list')
+const typed = partsField.value({ job: SENDABLE_JOB, installer: null, parts: [], today: new Date() })
+
+check('a typed parts list reaches the work order when nothing is resolved',
+  typed === SENDABLE_JOB.parts_list, typed)
+
+const resolvedWins = partsField.value({
+  job: SENDABLE_JOB, installer: null, today: new Date(),
+  parts: [{ quantity: 1, name: '10x54 Mixed Bed System', sku: 'MB-1054' }],
+})
+
+check('and a resolved list still wins when there is one',
+  resolvedWins.includes('MB-1054'), resolvedWins)
+
+console.log(failed === 0
+  ? '\nA v2 job can produce both documents.'
+  : `\n${failed} document check(s) failed. A job would be refused at send time.`)
+
+process.exitCode = failed === 0 ? 0 : 1

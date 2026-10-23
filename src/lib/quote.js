@@ -15,9 +15,41 @@ export function whatIsMissing(form) {
   return ''
 }
 
-// An email is needed to send, which is different from being needed to save.
+/**
+ * What the document will refuse on, checked before the send rather than after.
+ *
+ * send-agreement will not build a customer agreement without a phone number, a
+ * system or a price: they are required fields on the template and a blank one
+ * stops the whole document. Finding that out from a DocuSeal error, after
+ * pressing send, is a worse way to learn it than being told here.
+ *
+ * Saving has none of these rules. A quote is often a name and a phone number,
+ * and the two bars are deliberately different.
+ */
+export function whatSendingNeeds(form) {
+  const missing = []
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form?.customer_email ?? '').trim())) {
+    missing.push('an email address')
+  }
+
+  if (!String(form?.phone ?? '').trim()) missing.push('a phone number')
+  if (!String(form?.system_template ?? '').trim()) missing.push('a system')
+  if (String(form?.sale_price ?? '').trim() === '') missing.push('a price')
+
+  return missing
+}
+
 export function canSend(form) {
-  return !whatIsMissing(form) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form?.customer_email ?? '').trim())
+  return !whatIsMissing(form) && whatSendingNeeds(form).length === 0
+}
+
+// "an email address and a phone number", or "an email address, a phone number
+// and a price". Written out rather than listed, because it goes in a sentence.
+export function listWords(items) {
+  if (items.length === 0) return ''
+  if (items.length === 1) return items[0]
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
 export function money(value) {
@@ -79,8 +111,8 @@ export function emptyForm() {
     water_problems: '',
     people_in_home: '',
     bathrooms: '',
-    system_name: '',
-    system_description: '',
+    system_template: '',
+    system_long_name: '',
     parts_list: '',
     faucet_finish: '',
     ro_type: '',
