@@ -32,19 +32,26 @@
   min-width: 280px;
 }
 
-/* The price follows you down the page.
-   The figure somebody is about to say out loud should not be the thing they
-   have to scroll back up to check. Only above 900px, where the panel sits
-   beside the form: once it stacks underneath on a phone, sticking it would
-   pin a tall box over the fields being typed into. */
-@media (min-width: 900px) {
+/* The price follows you down the page on a phone, and not on a desktop.
+   That is the way round it was asked for, and it is the right way round: on a
+   wide screen the panel is already beside the form and visible without
+   scrolling at all, so pinning it buys nothing. On a phone it is below
+   everything, which is the only place it can be, and that is exactly where it
+   cannot be seen while the fields above it are being filled in.
+
+   Pinned to the bottom rather than the top, because the fields being typed
+   into are above it and a box that covers them is worse than one that is out
+   of sight. Capped at half the screen and scrollable inside itself, so the
+   form keeps the other half. */
+@media (max-width: 899px) {
   .quote-side {
     position: sticky;
-    top: 20px;
-    /* Taller than the window on a short laptop screen, so it scrolls within
-       itself rather than hiding the Save button off the bottom. */
-    max-height: calc(100vh - 40px);
+    bottom: 0;
+    max-height: 50vh;
     overflow-y: auto;
+    /* It is floating over the form now, so it needs an edge to say so. */
+    box-shadow: 0 -8px 24px rgba(22, 34, 46, 0.18);
+    border-radius: 12px;
   }
 }
 
