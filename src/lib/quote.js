@@ -92,3 +92,49 @@ export function emptyForm() {
     notes: '',
   }
 }
+
+/**
+ * The checklist, grouped by what kind of answer the question wants.
+ *
+ * The live form splits it into Sizing and Site, which is the order somebody
+ * walks the house. That is a fine order and a useless grouping for acting on,
+ * because Site holds four questions you answer by looking and three you
+ * answer by measuring, and no single button can serve both.
+ *
+ * Grouped by the answer instead:
+ *
+ *   sizing    two numbers that decide which system to quote at all
+ *   checks    four things you look at and say yes or no to, so one button can
+ *             clear all of them honestly: you did look, and it was fine
+ *   plumbing  four things you have to find out, where the only honest bulk
+ *             answer is that nobody knows yet
+ *
+ * Each group gets the one action that is true for it. A blanket yes on a
+ * measurement would be invention; a blanket not sure on a receptacle you are
+ * standing in front of is just lazy.
+ */
+export const QUOTE_CHECKLIST_SECTIONS = [
+  {
+    id: 'sizing',
+    title: 'Sizing',
+    note: 'Decides which system to quote.',
+    keys: ['people_in_home', 'bathrooms'],
+    bulk: null,
+  },
+  {
+    id: 'checks',
+    title: 'Quick checks',
+    note: 'Things you can answer by looking.',
+    keys: ['space_confirmed', 'receptacle_within_6ft', 'irrigation_lines', 'removing_old_equipment'],
+    bulk: 'yes',
+    bulkLabel: 'All clear',
+  },
+  {
+    id: 'plumbing',
+    title: 'Plumbing',
+    note: 'What the installer needs to plan the job.',
+    keys: ['shutoff_location', 'drain_distance_ft', 'main_line_size', 'main_line_material'],
+    bulk: 'not_sure',
+    bulkLabel: 'Not sure yet on the rest',
+  },
+]

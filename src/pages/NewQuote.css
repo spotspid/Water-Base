@@ -372,3 +372,9 @@
 }
 
 .quote-check .form-section h2 { display: none; }
+
+.quote-check-note {
+  margin: 0 20px 12px;
+  font-size: 13px;
+  color: var(--muted, #5B6E7B);
+}

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import SalesChecklistFields from './SalesChecklistFields'
-import { CHECKLIST_ITEMS, NOT_SURE, isAnswered, supportsNotSure } from '../lib/salesChecklist'
+import { CHECKLIST_ITEMS, NOT_SURE, YES, isAnswered, supportsNotSure } from '../lib/salesChecklist'
 
 /**
  * One collapsible half of the checklist.
@@ -9,16 +9,15 @@ import { CHECKLIST_ITEMS, NOT_SURE, isAnswered, supportsNotSure } from '../lib/s
  * stays open. When the sale already happened on the phone and somebody is
  * filling the record in afterwards, the whole block is noise, so it folds.
  *
- * The shortcut says "Not sure yet on the rest" rather than "mark all done",
- * which is what it was asked to say. Done would be a lie: nobody answered
- * those questions, and writing them in as answered loses the difference
- * between a thing that was asked and a thing that was skipped. Not sure yet
- * already means asked and nobody knew, it already clears the gaps on a quote,
- * and it already turns back into a gap once the job is sold, which is exactly
- * when somebody has to go and find out.
+ * Each section gets the one bulk action that is true for it, which is why
+ * they are grouped by the kind of answer rather than by where you are
+ * standing. All clear says yes to four things you answered by looking, and
+ * that is a real answer. Not sure yet says nobody knows, which is the only
+ * honest blanket answer to a measurement. A blanket yes on a drain distance
+ * would be inventing a number, so no section offers one.
  */
 export default function QuoteChecklistSection({
-  title, keys, value, onChange, open, onToggle, disabled,
+  title, note, keys, bulk, bulkLabel, value, onChange, open, onToggle, disabled,
 }) {
   const items = useMemo(() => CHECKLIST_ITEMS.filter(i => keys.includes(i.key)), [keys])
 
@@ -26,12 +25,14 @@ export default function QuoteChecklistSection({
   const left = items.length - answered
   const id = `checklist-${title.toLowerCase().replace(/[^a-z]+/g, '-')}`
 
-  function markRestNotSure() {
+  function fillRest() {
     const next = { ...value }
 
     for (const item of items) {
       if (isAnswered(value, item.key)) continue
-      if (supportsNotSure(item)) next[item.key] = NOT_SURE
+
+      if (bulk === 'yes') next[item.key] = YES
+      else if (supportsNotSure(item)) next[item.key] = NOT_SURE
     }
 
     onChange(next)
@@ -54,17 +55,18 @@ export default function QuoteChecklistSection({
           </span>
         </button>
 
-        {open && left > 0 && (
+        {open && left > 0 && bulk && (
           <button
             type="button" className="tpl-link quote-check-skip"
-            onClick={markRestNotSure} disabled={disabled}
+            onClick={fillRest} disabled={disabled}
           >
-            Not sure yet on the rest
+            {bulkLabel}
           </button>
         )}
       </div>
 
       <div id={id} hidden={!open}>
+        {note && <p className="quote-check-note">{note}</p>}
         <SalesChecklistFields
           value={value}
           onChange={onChange}

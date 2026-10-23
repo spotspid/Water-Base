@@ -1,4 +1,5 @@
-import { quoteLines, whatIsMissing, canSend, money } from '../src/lib/quote.js'
+import { quoteLines, whatIsMissing, canSend, money, QUOTE_CHECKLIST_SECTIONS } from '../src/lib/quote.js'
+import { CHECKLIST_ITEMS } from '../src/lib/salesChecklist.js'
 
 // The quoting page's arithmetic, checked without a browser.
 //
@@ -66,6 +67,34 @@ check('a fully priced quote is never marked incomplete', quoteLines(FLAGSHIP, [R
 check('money reads as money', money(3549) === '$3,549.00', money(3549))
 check('and a blank stays blank rather than becoming zero', money(null) === '', `"${money(null)}"`)
 check('and so does something that is not a number', money('abc') === '')
+
+// --- the checklist groups ----------------------------------------------------
+//
+// Every question belongs to exactly one section. A question in none of them is
+// invisible on the page; a question in two is answered twice and the second
+// answer wins silently.
+
+const grouped = QUOTE_CHECKLIST_SECTIONS.flatMap(s => s.keys)
+const allKeys = CHECKLIST_ITEMS.map(i => i.key)
+
+check('every checklist question is on the page',
+  allKeys.every(key => grouped.includes(key)),
+  allKeys.filter(key => !grouped.includes(key)).join(', '))
+check('and none of them is in two sections',
+  grouped.length === new Set(grouped).size)
+check('and no section lists a question that does not exist',
+  grouped.every(key => allKeys.includes(key)),
+  grouped.filter(key => !allKeys.includes(key)).join(', '))
+
+// The bulk action has to be true for the kind of question it covers. A
+// blanket yes on a measurement would be inventing an answer.
+const YESNO = ['yesno', 'yesnounknown']
+
+for (const section of QUOTE_CHECKLIST_SECTIONS.filter(s => s.bulk === 'yes')) {
+  const kinds = section.keys.map(key => CHECKLIST_ITEMS.find(i => i.key === key).kind)
+  check(`${section.title} only clears questions that answer yes or no`,
+    kinds.every(kind => YESNO.includes(kind)), kinds.join(', '))
+}
 
 console.log(failed === 0
   ? '\nAll quote checks passed.'

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import AppShell from '../components/AppShell'
 import QuoteTotals from '../components/QuoteTotals'
 import QuoteChecklistSection from '../components/QuoteChecklistSection'
-import { canSend, emptyForm, money, quoteLines, whatIsMissing } from '../lib/quote'
 import {
-  SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm,
-} from '../lib/salesChecklist'
+  QUOTE_CHECKLIST_SECTIONS, canSend, emptyForm, money, quoteLines, whatIsMissing,
+} from '../lib/quote'
+import { checklistFromForm, emptyChecklistForm } from '../lib/salesChecklist'
 import { loadQuoteSetup, saveQuote } from '../lib/quoteData'
 import './NewQuote.css'
 
@@ -38,7 +38,8 @@ export default function NewQuote() {
   const [checklist, setChecklist] = useState(emptyChecklistForm)
   // Both open on a call, because on a call the questions are the job. Somebody
   // writing up a sale that already happened folds them away.
-  const [openSections, setOpenSections] = useState({ sizing: true, site: true })
+  const [openSections, setOpenSections] = useState(
+    () => Object.fromEntries(QUOTE_CHECKLIST_SECTIONS.map(s => [s.id, true])))
   const [lines, setLines] = useState([])
   const [setup, setSetup] = useState({ org: null, presets: [], extras: [] })
   const [loading, setLoading] = useState(true)
@@ -211,25 +212,21 @@ export default function NewQuote() {
                 </div>
               </section>
 
-              <QuoteChecklistSection
-                title="Sizing"
-                keys={SIZING_KEYS}
-                value={checklist}
-                onChange={setChecklist}
-                open={openSections.sizing}
-                onToggle={next => setOpenSections(o => ({ ...o, sizing: next }))}
-                disabled={busy}
-              />
-
-              <QuoteChecklistSection
-                title="The site"
-                keys={SITE_KEYS}
-                value={checklist}
-                onChange={setChecklist}
-                open={openSections.site}
-                onToggle={next => setOpenSections(o => ({ ...o, site: next }))}
-                disabled={busy}
-              />
+              {QUOTE_CHECKLIST_SECTIONS.map(section => (
+                <QuoteChecklistSection
+                  key={section.id}
+                  title={section.title}
+                  note={section.note}
+                  keys={section.keys}
+                  bulk={section.bulk}
+                  bulkLabel={section.bulkLabel}
+                  value={checklist}
+                  onChange={setChecklist}
+                  open={openSections[section.id]}
+                  onToggle={next => setOpenSections(o => ({ ...o, [section.id]: next }))}
+                  disabled={busy}
+                />
+              ))}
 
               <section className="quote-card">
                 <h2>The system</h2>
