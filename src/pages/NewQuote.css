@@ -27,11 +27,25 @@
   gap: 18px;
 }
 
-/* Never sticky and never full height, so it stacks under the form on a phone
-   rather than trapping the page. */
 .quote-side {
   flex: 1 1 320px;
   min-width: 280px;
+}
+
+/* The price follows you down the page.
+   The figure somebody is about to say out loud should not be the thing they
+   have to scroll back up to check. Only above 900px, where the panel sits
+   beside the form: once it stacks underneath on a phone, sticking it would
+   pin a tall box over the fields being typed into. */
+@media (min-width: 900px) {
+  .quote-side {
+    position: sticky;
+    top: 20px;
+    /* Taller than the window on a short laptop screen, so it scrolls within
+       itself rather than hiding the Save button off the bottom. */
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
 }
 
 .quote-card {
