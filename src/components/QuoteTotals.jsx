@@ -1,9 +1,11 @@
 // The panel that holds the number somebody is about to say out loud.
 //
-// Lines are typed, not picked. Most of what Michigan Water Pros sells is
-// custom, so a fixed list of extras at fixed prices would be a form to fight
-// rather than a form to fill: the catalogue below is a shortcut that fills in
-// a line, and every figure stays editable afterwards.
+// Lines are typed, not picked. Most of what gets sold here is custom, so a
+// fixed list at fixed prices would be a form to fight rather than fill. The
+// shortcuts fill a line in; every figure stays editable.
+//
+// Copy rule for this page: a label is a noun, and a hint only exists to stop
+// somebody making a mistake. Nothing explains how the thing works.
 export default function QuoteTotals({
   lines, total, incomplete, price, onPriceChange,
   onAddLine, onChangeLine, onRemoveLine, catalogue, deposit, onDepositChange, busy,
@@ -19,7 +21,7 @@ export default function QuoteTotals({
           value={price} onChange={onPriceChange} disabled={busy}
           placeholder="Type the price"
         />
-        <span className="quote-hint">A preset fills this in. Type over it for anything custom.</span>
+        <span className="quote-hint">Pick a system above to fill this in, or type it.</span>
       </div>
 
       {lines.length > 0 && (
@@ -30,7 +32,7 @@ export default function QuoteTotals({
                 type="text" aria-label={`Line ${index + 1} description`}
                 value={line.label} disabled={busy}
                 onChange={e => onChangeLine(index, { label: e.target.value })}
-                placeholder="What is it"
+                placeholder="Description"
               />
               <input
                 type="text" inputMode="decimal" aria-label={`Line ${index + 1} amount`}
@@ -71,24 +73,22 @@ export default function QuoteTotals({
 
       <div className="quote-sum">
         <span>Total</span>
-        <strong>{total === '' ? 'Not priced yet' : total}</strong>
+        <strong>{total === '' ? 'No price yet' : total}</strong>
       </div>
 
       {incomplete && (
         <p className="quote-warn" role="status">
-          Something on this quote has no price, so the figure above is only what is known.
-          It is not the price of the job.
+          A line still needs a price, so this is not the full total yet.
         </p>
       )}
 
       <div className="field">
-        <label htmlFor="quote-deposit">Deposit <span className="optional">(optional)</span></label>
+        <label htmlFor="quote-deposit">Deposit taken <span className="optional">(optional)</span></label>
         <input
           id="quote-deposit" name="deposit_amount" type="text" inputMode="decimal"
           value={deposit} onChange={onDepositChange} disabled={busy}
-          placeholder="Leave blank if none is agreed"
+          placeholder="Leave blank if there is none"
         />
-        <span className="quote-hint">Blank means nothing was agreed, which is not the same as zero.</span>
       </div>
     </div>
   )

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AppShell from '../components/AppShell'
 import QuoteTotals from '../components/QuoteTotals'
+import SalesChecklistFields from '../components/SalesChecklistFields'
 import { canSend, emptyForm, money, quoteLines, whatIsMissing } from '../lib/quote'
+import {
+  SITE_KEYS, SIZING_KEYS, checklistFromForm, emptyChecklistForm,
+} from '../lib/salesChecklist'
 import { loadQuoteSetup, saveQuote } from '../lib/quoteData'
 import './NewQuote.css'
 
@@ -31,6 +35,7 @@ const VALVES = ['Clack', 'Hankscraft']
 
 export default function NewQuote() {
   const [form, setForm] = useState(emptyForm)
+  const [checklist, setChecklist] = useState(emptyChecklistForm)
   const [lines, setLines] = useState([])
   const [setup, setSetup] = useState({ org: null, presets: [], extras: [] })
   const [loading, setLoading] = useState(true)
@@ -115,14 +120,19 @@ export default function NewQuote() {
       .filter(line => line.label.trim() !== '' || line.price.trim() !== '')
       .map(line => ({ label: line.label.trim() || 'Line', price: Number(line.price.replace(/[$,]/g, '')) || 0 }))
 
-    const { error: saveError, job } = await saveQuote(form, setup.org?.id, chosen)
+    const answers = checklistFromForm(checklist)
+
+    const { error: saveError, job } = await saveQuote(
+      { ...form, people_in_home: checklist.people_in_home, bathrooms: checklist.bathrooms },
+      setup.org?.id, chosen, answers)
 
     setBusy(false)
 
     if (saveError) { setError(saveError); return }
 
-    setNotice(`Saved as a quote for ${job.customer_name}.`)
+    setNotice(`Quote saved for ${job.customer_name}.`)
     setForm(emptyForm())
+    setChecklist(emptyChecklistForm())
     setLines([])
   }
 
@@ -130,7 +140,7 @@ export default function NewQuote() {
 
   return (
     <AppShell title="New quote">
-      {loading && <p className="quote-loading">Loading the presets...</p>}
+      {loading && <p className="quote-loading">Loading...</p>}
 
       {error && <div className="form-error" role="alert"><p>{error}</p></div>}
       {notice && <p className="quote-notice" role="status">{notice}</p>}
@@ -156,7 +166,7 @@ export default function NewQuote() {
                   </div>
                   <div className="field">
                     <label htmlFor="customer_email">
-                      Email <span className="optional">(needed to send it)</span>
+                      Email <span className="optional">(needed to send)</span>
                     </label>
                     <input id="customer_email" name="customer_email" type="email"
                       value={form.customer_email} onChange={change} disabled={busy} />
@@ -168,18 +178,18 @@ export default function NewQuote() {
                   </div>
                   <div className="field quote-wide">
                     <label htmlFor="address">
-                      Address <span className="optional">(optional, the customer fills it in when they sign)</span>
+                      Address <span className="optional">(optional)</span>
                     </label>
                     <input id="address" name="address" type="text"
                       value={form.address} onChange={change} disabled={busy}
-                      placeholder="Leave blank if they have not given it yet" />
+                      placeholder="They can fill this in when they sign" />
                   </div>
                 </div>
               </section>
 
               <section className="quote-card">
                 <h2>The water</h2>
-                <p className="quote-sub">What they told you on the call. This prints on the quote as the reason for the system.</p>
+                <p className="quote-sub">What they told you on the call.</p>
                 <div className="quote-grid">
                   <div className="field">
                     <label htmlFor="water_source">Supply</label>
@@ -189,20 +199,8 @@ export default function NewQuote() {
                       {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-                  <div className="field quote-pair">
-                    <div className="field">
-                      <label htmlFor="people_in_home">People</label>
-                      <input id="people_in_home" name="people_in_home" type="number" min="1"
-                        value={form.people_in_home} onChange={change} disabled={busy} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="bathrooms">Bathrooms</label>
-                      <input id="bathrooms" name="bathrooms" type="number" min="1"
-                        value={form.bathrooms} onChange={change} disabled={busy} />
-                    </div>
-                  </div>
                   <div className="field quote-wide">
-                    <label htmlFor="water_problems">What is wrong with it</label>
+                    <label htmlFor="water_problems">What is wrong with the water</label>
                     <textarea id="water_problems" name="water_problems" rows="2"
                       value={form.water_problems} onChange={change} disabled={busy}
                       placeholder="Hard water, iron staining, smell" />
@@ -211,8 +209,30 @@ export default function NewQuote() {
               </section>
 
               <section className="quote-card">
+                <SalesChecklistFields
+                  value={checklist}
+                  onChange={setChecklist}
+                  keys={SIZING_KEYS}
+                  showJobFields={false}
+                  title="Sizing"
+                  disabled={busy}
+                />
+              </section>
+
+              <section className="quote-card">
+                <SalesChecklistFields
+                  value={checklist}
+                  onChange={setChecklist}
+                  keys={SITE_KEYS}
+                  showJobFields={false}
+                  title="The site"
+                  disabled={busy}
+                />
+              </section>
+
+              <section className="quote-card">
                 <h2>The system</h2>
-                <p className="quote-sub">A preset fills in the description, the parts and a price. Change any of them.</p>
+                <p className="quote-sub">Pick one to fill in the details, then change whatever you need.</p>
 
                 <div className="quote-presets">
                   {setup.presets.map(preset => (
@@ -230,14 +250,14 @@ export default function NewQuote() {
                 </div>
 
                 <div className="field">
-                  <label htmlFor="system_description">How it reads on the quote</label>
+                  <label htmlFor="system_description">Description on the quote</label>
                   <textarea id="system_description" name="system_description" rows="2"
                     value={form.system_description} onChange={change} disabled={busy}
                     placeholder="Whole home single tank mixed bed system for filtration and softening" />
                 </div>
 
                 <div className="field">
-                  <label htmlFor="parts_list">What the installer brings</label>
+                  <label htmlFor="parts_list">Parts list</label>
                   <textarea id="parts_list" name="parts_list" rows="2"
                     value={form.parts_list} onChange={change} disabled={busy}
                     placeholder="10x54 mixed bed system, control valve, tanked RO unit, RO faucet, 2 bags of salt" />
@@ -245,7 +265,7 @@ export default function NewQuote() {
 
                 <div className="quote-grid">
                   <div className="field">
-                    <label htmlFor="ro_type">Drinking water</label>
+                    <label htmlFor="ro_type">RO type</label>
                     <select id="ro_type" name="ro_type" value={form.ro_type} onChange={change} disabled={busy}>
                       <option value="">Not chosen</option>
                       {RO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -267,7 +287,7 @@ export default function NewQuote() {
                   </div>
                   <div className="field quote-wide">
                     <label htmlFor="site_conditions">
-                      Anything the installer needs to know <span className="optional">(optional)</span>
+                      Notes for the installer <span className="optional">(optional)</span>
                     </label>
                     <textarea id="site_conditions" name="site_conditions" rows="2"
                       value={form.site_conditions} onChange={change} disabled={busy}
@@ -299,14 +319,14 @@ export default function NewQuote() {
                   {busy ? 'Saving...' : 'Save quote'}
                 </button>
                 <button type="button" className="btn-cancel" disabled={busy || !sendable}
-                  title={sendable ? undefined : 'An email address is needed to send a quote.'}>
+                  title={sendable ? undefined : 'Add an email address first.'}>
                   Save and send
                 </button>
               </div>
 
               {!sendable && (
                 <p className="quote-hint quote-hint-block">
-                  It can be saved without an email. Sending needs one.
+                  Add an email address to send this.
                 </p>
               )}
             </aside>

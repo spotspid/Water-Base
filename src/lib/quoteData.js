@@ -25,7 +25,7 @@ function numberOrNull(value) {
  * part way leaves a job with no extras rather than extras with no job, which
  * is the direction that can be corrected by opening the quote again.
  */
-export async function saveQuote(form, orgId, chosenExtras) {
+export async function saveQuote(form, orgId, chosenExtras, checklist) {
   const missing = whatIsMissing(form)
   if (missing) return { error: missing }
 
@@ -54,6 +54,7 @@ export async function saveQuote(form, orgId, chosenExtras) {
     collected_by: form.collected_by || null,
     site_conditions: form.site_conditions.trim() || null,
     notes: form.notes.trim() || null,
+    sales_checklist: checklist || {},
   }
 
   const { data: job, error } = await supabaseV2
