@@ -4,6 +4,7 @@ import {
   workOrderLabel, workOrderReady, workOrderTone,
 } from '../lib/agreements'
 import { workOrderChecklist } from '../lib/workOrder'
+import WorkOrderFix from './WorkOrderFix'
 import { balanceState } from '../lib/depositState'
 import { formatCurrency, formatDateTime } from '../lib/inventory'
 import { formatLongDate } from '../lib/schedule'
@@ -165,11 +166,15 @@ export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
               <li key={item.key} className={item.done ? 'agr-check-on' : 'agr-check-off'}>
                 <span className="agr-check-mark" aria-hidden="true">{item.done ? '✓' : '•'}</span>
                 <span className="agr-check-label">{item.label}</span>
-                <span className="agr-check-value">
-                  {item.done
-                    ? (item.key === 'date' && item.value ? formatLongDate(item.value) : item.value)
-                    : item.fix}
-                </span>
+                {item.done ? (
+                  <span className="agr-check-value">
+                    {item.key === 'date' && item.value ? formatLongDate(item.value) : item.value}
+                  </span>
+                ) : (
+                  /* The two that are a short answer rather than an errand get
+                     a box here. Everything else names where its own box is. */
+                  <WorkOrderFix item={item} job={job} onChanged={onChanged} />
+                )}
               </li>
             ))}
           </ul>

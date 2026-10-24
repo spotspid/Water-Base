@@ -245,8 +245,12 @@ check('a sold job still demands a real one',
 check('spaces are not an address either',
   validateNewJob({ ...baseJob, status: 'sold', address: '   ', payment_type: 'Cash',
     faucet_finish: 'Chrome', ro_type: 'Tank Style' }) === 'Address is required.')
-check('a blank quote stores the placeholder, not an empty string',
-  addressForSave({ ...baseJob, status: 'quoted', address: '' }) === ADDRESS_TBC,
+// The placeholder is no longer written. A quote saves with the address box
+// empty, and the customer fills it in on the agreement, which is what
+// docuseal-webhook writes back. ADDRESS_TBC survives only to recognise the
+// jobs saved while that was not yet possible.
+check('a blank quote stores nothing rather than a placeholder',
+  addressForSave({ ...baseJob, status: 'quoted', address: '' }) === '',
   addressForSave({ ...baseJob, status: 'quoted', address: '' }))
 check('a typed address is stored as typed, trimmed',
   addressForSave({ status: 'quoted', address: '  9598 Mercedes Ave  ' }) === '9598 Mercedes Ave')
