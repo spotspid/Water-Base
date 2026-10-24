@@ -11,6 +11,7 @@ import {
 } from '../supabase/functions/send-agreement/fieldMap.ts'
 import {
   agreedPay, workOrderBlocker, workOrderChecklist, workOrderNextStep,
+  workOrderAdvice, workOrderGaps,
 } from '../src/lib/workOrder.js'
 
 // Checks what the notifier says and when it says it.
@@ -761,21 +762,34 @@ check('and the fix points at the roster rather than the crew box',
   workOrderChecklist({ ...readyJob, installer_email: null, installer_name: 'Jay Woodward' })
     .find(i => i.key === 'crew').fix.includes('Settings'))
 
-// The install time. A date is a day to keep free; the installer also has to
-// know when to be there, and the document has a field for it that the panel
-// never used to ask about.
+// The install time. Worth having, and not worth refusing a send over: the
+// template's scheduled_window box is optional, so a job with a date and no
+// window sends and prints the day. It blocked for one morning and cost David
+// an afternoon, which is the whole reason the advisory list exists.
 const noWindow = { ...readyJob, time_window: null }
 
-check('a date with no install time is not ready to send',
-  workOrderBlocker(noWindow) !== '', workOrderBlocker(noWindow))
-check('and the refusal names the time rather than the date',
-  /install time/i.test(workOrderBlocker(noWindow)), workOrderBlocker(noWindow))
-check('and offers All Day, so there is always a true answer',
-  /all day/i.test(workOrderBlocker(noWindow)))
+check('a date with no install time still sends',
+  workOrderBlocker(noWindow) === '', workOrderBlocker(noWindow))
+check('and the time is not in the gaps the button reads',
+  !workOrderGaps(noWindow).some(g => g.key === 'time'),
+  workOrderGaps(noWindow).map(g => g.key).join(', '))
+check('and nothing names it as the next move',
+  workOrderNextStep(noWindow) === '', workOrderNextStep(noWindow))
+check('it is still advised, because the hour is worth telling him',
+  workOrderAdvice(noWindow).some(a => a.key === 'time'))
+check('and the advice says it sends either way',
+  /sends either way/i.test(workOrderAdvice(noWindow)[0].sentence),
+  workOrderAdvice(noWindow)[0].sentence)
+check('a job with a window is advised nothing',
+  workOrderAdvice(readyJob).length === 0)
 check('the time it has is ticked',
   workOrderChecklist(readyJob).find(i => i.key === 'time').done)
 check('and the one it has not is not',
   !workOrderChecklist(noWindow).find(i => i.key === 'time').done)
+check('the unticked time line is marked as not blocking',
+  workOrderChecklist(noWindow).find(i => i.key === 'time').blocking === false)
+check('every other line on the list does block',
+  workOrderChecklist(noWindow).filter(i => i.key !== 'time').every(i => i.blocking === true))
 check('the window shows on the list, so it can be read back before sending',
   workOrderChecklist(readyJob).find(i => i.key === 'time').value === '8:00 AM - 10:00 AM',
   workOrderChecklist(readyJob).find(i => i.key === 'time').value)

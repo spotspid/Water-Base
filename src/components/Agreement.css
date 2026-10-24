@@ -260,6 +260,21 @@
 .agr-check-on .agr-check-label { color: var(--body-text); }
 .agr-check-off .agr-check-label { color: var(--ink); font-weight: 600; }
 
+/* An unticked line that is not in the way. Said on the line rather than only
+   in the heading, because the heading scrolls out of view and a bullet with
+   no tick reads as a problem on its own. */
+.agr-check-opt {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
 .agr-check-value { color: var(--muted); }
 .agr-check-off .agr-check-value { color: var(--maroon); }
 

@@ -47,23 +47,6 @@ const GAPS = [
     sentence: 'This job has no date yet, so there is nothing to schedule a crew around.',
   },
   {
-    // The date alone is not an appointment. A work order reading "October 27"
-    // tells the installer which day to keep free and nothing about when to be
-    // there, so he rings to ask and the customer hears from nobody. The
-    // document has a field for the window; the panel never asked for one, so
-    // whatever happened to be on the job went out, which for a job scheduled
-    // from the calendar is nothing.
-    //
-    // Blocking rather than advisory, and safe to block on, because All Day is
-    // one of the choices. There is always a true answer to give.
-    key: 'time',
-    short: 'an install time',
-    test: job => !String(job?.time_window || '').trim(),
-    sentence: 'This job has a date but no install time, so the work order would tell the '
-      + 'installer which day to keep free and not when to be there. Set the time window on '
-      + 'the schedule, or choose All Day.',
-  },
-  {
     // The document has an install_address box and the field map treats it as
     // required, so a job without one is refused after everything else has
     // passed. The refusal reads "the DocuSeal template does not have the
@@ -171,6 +154,34 @@ const GAPS = [
   },
 ]
 
+/**
+ * Worth having and not worth refusing a send over.
+ *
+ * The install time was in GAPS above for one morning, on the reasoning that a
+ * work order reading "October 27" tells an installer which day to keep free
+ * and nothing about when to be there. True, and still not a reason to hold the
+ * document: the template's scheduled_window box is optional, so the send that
+ * was being refused would have gone out and printed the day.
+ *
+ * It cost David a whole afternoon. He had the crew, the pay, the parts and a
+ * signed customer agreement, and the one thing between him and sending was a
+ * field the document does not require. A rule that stops real work to collect
+ * something nice to have is a rule that gets worked around, which here meant
+ * not sending at all.
+ *
+ * So it stays on the checklist, with its own picker, and the button no longer
+ * waits for it.
+ */
+const ADVISORIES = [
+  {
+    key: 'time',
+    short: 'an install time',
+    test: job => !String(job?.time_window || '').trim(),
+    sentence: 'No install time, so the work order names the day and not the hour. Worth '
+      + 'setting, and it sends either way.',
+  },
+]
+
 function sentenceOf(gap, job) {
   return typeof gap.sentence === 'function' ? gap.sentence(job) : gap.sentence
 }
@@ -202,35 +213,57 @@ export function workOrderBlocker(job) {
 }
 
 /**
+ * What is worth filling in and is not holding the send up.
+ *
+ * Separate from workOrderGaps on purpose. Anything that reads gaps is
+ * deciding whether a document can go out, and this list must never reach
+ * those: the dashboard would call a sendable job blocked, and the button
+ * would go dead over a field the template does not ask for.
+ */
+export function workOrderAdvice(job) {
+  return ADVISORIES.filter(gap => gap.test(job)).map(gap => ({
+    key: gap.key,
+    short: gap.short,
+    sentence: sentenceOf(gap, job),
+  }))
+}
+
+/**
  * Everything the send needs, done or not, in the order it gets done.
  *
  * workOrderGaps says what is wrong. This says what the job is, which is the
  * difference between a panel somebody has to decode and a panel somebody can
  * work: four lines, each either ticked or carrying the one move that ticks it.
  *
- *   label  what is needed, as a thing rather than a complaint
- *   value  what the job holds, when it holds it
- *   fix    where to do something about it, when it does not
+ *   label     what is needed, as a thing rather than a complaint
+ *   value     what the job holds, when it holds it
+ *   fix       where to do something about it, when it does not
+ *   blocking  whether the send waits for it
  *
- * The checks are the same GAPS the send is refused by, so a ticked list and a
- * dead button cannot happen.
+ * Every blocking line is one of the same GAPS the send is refused by, so a
+ * ticked list and a dead button cannot happen. The one line that is not
+ * blocking says so on its face, so a list with a tick missing and a live
+ * button cannot look like a bug either.
  */
 export function workOrderChecklist(job) {
   const missing = new Set(workOrderGaps(job).map(gap => gap.key))
   const has = key => !missing.has(key)
+  const advised = new Set(workOrderAdvice(job).map(gap => gap.key))
 
   return [
     {
       key: 'date',
       label: 'A date on the calendar',
       done: has('date'),
+      blocking: true,
       value: job?.scheduled_date || '',
       fix: 'Give it a date on the schedule',
     },
     {
       key: 'time',
       label: 'An install time',
-      done: has('time'),
+      done: !advised.has('time'),
+      blocking: false,
       value: job?.time_window || '',
       fix: 'Set the time window on the schedule, or choose All Day',
     },
@@ -238,6 +271,7 @@ export function workOrderChecklist(job) {
       key: 'address',
       label: 'An address to drive to',
       done: has('address'),
+      blocking: true,
       value: job?.address || '',
       fix: 'Add it in Edit at the top',
     },
@@ -245,6 +279,7 @@ export function workOrderChecklist(job) {
       key: 'crew',
       label: 'An installer with an email address',
       done: has('crew') && has('crew_email'),
+      blocking: true,
       value: has('crew') ? (job?.installer_name || '') : '',
       fix: has('crew')
         ? `${job?.installer_name || 'That installer'} has no email on the roster. Add one in Settings`
@@ -254,6 +289,7 @@ export function workOrderChecklist(job) {
       key: 'picks',
       label: 'Choices its parts depend on',
       done: has('picks'),
+      blocking: true,
       value: '',
       fix: 'Set the faucet finish, RO type and valve type in Edit at the top',
     },
@@ -261,6 +297,7 @@ export function workOrderChecklist(job) {
       key: 'payout',
       label: 'The installer pay',
       done: has('payout'),
+      blocking: true,
       value: has('payout') ? String(job?.installer_pay ?? '') : '',
       fix: 'Type it under Crew and pay above',
     },
@@ -268,6 +305,7 @@ export function workOrderChecklist(job) {
       key: 'job_number',
       label: 'A job number',
       done: has('job_number'),
+      blocking: true,
       value: job?.invoice_number || '',
       fix: 'Add one from Edit at the top',
     },
@@ -275,6 +313,7 @@ export function workOrderChecklist(job) {
       key: 'parts',
       label: 'Parts to put on it',
       done: has('sheet') && has('sheet_parts'),
+      blocking: true,
       value: '',
       fix: 'Give the job a build sheet with parts on it, or list its own parts below',
     },
@@ -289,7 +328,7 @@ export function workOrderChecklist(job) {
  * paragraph beside it is one they scroll past.
  */
 export function workOrderNextStep(job) {
-  const outstanding = workOrderChecklist(job).filter(item => !item.done)
+  const outstanding = workOrderChecklist(job).filter(item => !item.done && item.blocking)
   if (outstanding.length === 0) return ''
   return outstanding[0].fix
 }

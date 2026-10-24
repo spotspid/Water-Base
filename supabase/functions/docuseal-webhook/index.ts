@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { signedAddress } from './addressField.ts'
 
 // docuseal-webhook
 //
@@ -328,9 +329,6 @@ async function handleEvent(
 // others' files. A job holding it has no address.
 const ADDRESS_TBC = 'to be confirmed at a later time'
 
-// What the address box is called on the templates. DocuSeal returns the label
-// as it appears on the document, so this is matched loosely.
-const ADDRESS_FIELDS = ['address', 'install address', 'installation address', 'service address']
 
 function valuesOf(data: Record<string, unknown>, submission: Record<string, unknown>): Array<Record<string, unknown>> {
   // On form.completed the signer is the event's data. Falling back to the
@@ -377,10 +375,9 @@ async function absorbSignedAddress(
     const jobId = String(agreement.job_id || '')
     if (!jobId) return
 
-    const entry = valuesOf(data, submission)
-      .find(v => ADDRESS_FIELDS.includes(String(v.field ?? '').trim().toLowerCase()))
-
-    const signed = String(entry?.value ?? '').trim()
+    // The names are compared in addressField.ts, loosely, because the box on
+    // the template is called install_address and the list here read spaces.
+    const signed = signedAddress(valuesOf(data, submission))
     if (!signed) return
 
     const { data: job, error } = await supabase

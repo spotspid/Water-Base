@@ -2,6 +2,9 @@ import {
   documentTitle, isContractorDocument, isTestDocument, nameKey, scanGaps, scheduledFromTitle,
   signerOf, titleName,
 } from '../src/lib/docusealScan.js'
+import {
+  isAddressField, normaliseFieldName, signedAddress,
+} from '../supabase/functions/docuseal-webhook/addressField.ts'
 
 // Holds the DocuSeal gap scan to the shapes the API actually returns, taken
 // from a real account listing on 2026-09-26.
@@ -120,6 +123,43 @@ const twice = scanGaps({
 })
 check('a document listed live and archived is reported once',
   twice.missingJobs.length === 1, twice.missingJobs.length)
+
+// The address box on a signed agreement.
+//
+// send-agreement builds it as install_address, because that is its name on
+// the template. The webhook used to compare that against a list written with
+// spaces, using an exact match, so every address a customer typed was thrown
+// away without a word. Jim Finney signed on 2026-10-23 and his job still had
+// no address the next afternoon, which is what stopped the work order going
+// to Jay.
+check('the name send-agreement actually uses is recognised',
+  isAddressField('install_address'))
+check('as is the label a person would type on the document',
+  isAddressField('Install Address'))
+check('and a label with a colon and a required star',
+  isAddressField('Install Address:*'))
+check('and the hyphenated spelling',
+  isAddressField('install-address'))
+check('and the plain one',
+  isAddressField('address') && isAddressField('Street Address'))
+check('a box that is not an address is left alone',
+  !isAddressField('customer_name') && !isAddressField('email')
+  && !isAddressField('city') && !isAddressField('address_confirmed'))
+check('names normalise to one spelling',
+  normaliseFieldName('  Install__Address: ') === 'install address',
+  normaliseFieldName('  Install__Address: '))
+check('the typed address comes off the values list',
+  signedAddress([{ field: 'customer_name', value: 'Jim Finney' },
+    { field: 'install_address', value: '12345 Test Street' }]) === '12345 Test Street')
+check('a blank box answers nothing, so a good address is never overwritten',
+  signedAddress([{ field: 'install_address', value: '   ' }]) === '')
+check('a document with no address box answers nothing',
+  signedAddress([{ field: 'city', value: 'Ray' }]) === '')
+check('a values list that is not a list answers nothing',
+  signedAddress(null) === '' && signedAddress(undefined) === '')
+check('the first filled address box wins',
+  signedAddress([{ field: 'street address', value: '' },
+    { field: 'install_address', value: '8 Elm' }]) === '8 Elm')
 
 console.log(failed === 0
   ? '\nAll DocuSeal scan checks passed.\n'

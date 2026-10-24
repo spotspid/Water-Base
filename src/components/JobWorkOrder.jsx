@@ -29,7 +29,12 @@ export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
   // reported two ways by two panels and the reason nobody could tell what to
   // press.
   const checklist = workOrderChecklist(job)
-  const outstanding = checklist.filter(item => !item.done)
+  // Two different counts, and the difference is the whole point. unfinished
+  // decides whether the list is worth showing; outstanding decides whether
+  // the button waits. The install time is on the list and not in the way, so
+  // a line without a tick no longer means a button that cannot be pressed.
+  const unfinished = checklist.filter(item => !item.done)
+  const outstanding = unfinished.filter(item => item.blocking)
   const ready = workOrderReady(job)
   const out = isWorkOrderOut(job)
   const signed = job.work_order_status === 'completed'
@@ -156,16 +161,21 @@ export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
         </p>
       )}
 
-      {!signed && outstanding.length > 0 && (
+      {!signed && unfinished.length > 0 && (
         <div className="agr-check">
           <p className="agr-check-head">
-            To send this{outstanding.length > 1 ? `, ${outstanding.length} things are missing` : ''}:
+            {outstanding.length === 0
+              ? 'Ready to send. This one is optional:'
+              : `To send this${outstanding.length > 1 ? `, ${outstanding.length} things are missing` : ''}:`}
           </p>
           <ul className="agr-check-list">
             {checklist.map(item => (
               <li key={item.key} className={item.done ? 'agr-check-on' : 'agr-check-off'}>
                 <span className="agr-check-mark" aria-hidden="true">{item.done ? '✓' : '•'}</span>
-                <span className="agr-check-label">{item.label}</span>
+                <span className="agr-check-label">
+                  {item.label}
+                  {!item.done && !item.blocking && <span className="agr-check-opt">optional</span>}
+                </span>
                 {item.done ? (
                   <span className="agr-check-value">
                     {item.key === 'date' && item.value ? formatLongDate(item.value) : item.value}
