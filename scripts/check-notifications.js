@@ -672,6 +672,7 @@ for (const amount of [450, 0, null]) {
 // disagree the button offers a send the server then refuses.
 const sendable = {
   scheduled_date: '2026-09-08', time_window: '8:00 AM - 10:00 AM',
+  address: '4120 Maple Ridge Dr',
   installer_id: 'i1', installer_email: 'a@example.com',
   template_id: 't1', template_line_count: 5, installer_pay: 450,
   // job_number is required on the DocuSeal template and maps to this. Without
@@ -718,6 +719,7 @@ check('no sheet at all still reports the sheet, not the empty sheet',
 
 const aprilsJob = {
   scheduled_date: '2026-09-28',
+  address: '4120 Maple Ridge Dr',
   time_window: '8:00 AM - 10:00 AM',
   // the choices its parts list depends on, all made
   faucet_finish: 'Chrome',
@@ -732,7 +734,7 @@ const aprilsJob = {
 }
 
 const list = workOrderChecklist(aprilsJob)
-check('every requirement is listed, done or not', list.length === 7, String(list.length))
+check('every requirement is listed, done or not', list.length === 8, String(list.length))
 check('the date it has is ticked', list.find(i => i.key === 'date').done)
 check('the job number it has is ticked', list.find(i => i.key === 'job_number').done)
 check('the crew it has not is not', !list.find(i => i.key === 'crew').done)
@@ -812,6 +814,24 @@ check('and a job that never reported a count is unaffected',
 // button cannot offer a send that comes back 422.
 check('the list shows the choices as outstanding',
   !workOrderChecklist(finney).find(i => i.key === 'picks').done)
+
+// The address. The document requires it and refuses without one, after
+// everything else has passed, with a message about the DocuSeal template that
+// sends you looking in the wrong place.
+const noAddress = { ...readyJob, address: '' }
+
+check('a job with no address cannot send a work order',
+  workOrderBlocker(noAddress) !== '')
+check('and the refusal is about the job, not about DocuSeal',
+  !/docuseal/i.test(workOrderBlocker(noAddress)), workOrderBlocker(noAddress))
+check('and says why an installer needs one',
+  /where to go/.test(workOrderBlocker(noAddress)))
+check('whitespace is not an address',
+  workOrderBlocker({ ...readyJob, address: '   ' }) !== '')
+check('the list shows it outstanding',
+  !workOrderChecklist(noAddress).find(i => i.key === 'address').done)
+check('and shows the address when there is one',
+  workOrderChecklist(readyJob).find(i => i.key === 'address').value === '4120 Maple Ridge Dr')
 
 // The list and the refusal are the same rule, so a ticked list with a dead
 // button, or the reverse, cannot happen.

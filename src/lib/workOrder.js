@@ -64,6 +64,22 @@ const GAPS = [
       + 'the schedule, or choose All Day.',
   },
   {
+    // The document has an install_address box and the field map treats it as
+    // required, so a job without one is refused after everything else has
+    // passed. The refusal reads "the DocuSeal template does not have the
+    // fields this agreement needs", which sends you hunting in DocuSeal for a
+    // field that is already there. Said here instead, before the click, about
+    // the job where the fix actually is.
+    //
+    // A quote does not need an address. A work order does: it is the sheet
+    // somebody drives to a house with.
+    key: 'address',
+    short: 'an address',
+    test: job => !String(job?.address || '').trim(),
+    sentence: 'This job has no street address, so the work order would not tell the installer '
+      + 'where to go, and the document will not send without one. Add it in Edit at the top.',
+  },
+  {
     key: 'crew',
     short: 'a crew',
     test: job => !job?.installer_id,
@@ -217,6 +233,13 @@ export function workOrderChecklist(job) {
       done: has('time'),
       value: job?.time_window || '',
       fix: 'Set the time window on the schedule, or choose All Day',
+    },
+    {
+      key: 'address',
+      label: 'An address to drive to',
+      done: has('address'),
+      value: job?.address || '',
+      fix: 'Add it in Edit at the top',
     },
     {
       key: 'crew',

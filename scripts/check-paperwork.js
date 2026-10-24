@@ -35,8 +35,9 @@ const base = {
   status: 'scheduled',
   created_at: daysAgo(10),
   scheduled_date: '2026-09-16',
-  // the installer has to know when, not just which day
+  // the installer has to know when, not just which day, and where to drive
   time_window: '8:00 AM - 10:00 AM',
+  address: '4120 Maple Ridge Dr',
   installer_id: 'i1',
   installer_name: 'Jay Woodward',
   installer_email: 'jay@example.com',
