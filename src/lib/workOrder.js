@@ -94,6 +94,46 @@ const GAPS = [
       + 'the work order would tell the installer to bring nothing. Put its parts on the sheet first.',
   },
   {
+    // The gap the panel used to let you walk straight into. A line on the parts
+    // list that depends on a choice nobody made resolves to nothing, and the
+    // edge function refuses the send rather than print a sheet with the wrong
+    // parts on it. This list did not know that, so it offered a send, the
+    // server returned 422, and the operator saw a button that appeared to do
+    // nothing. Same rule, said before the click instead of after it.
+    //
+    // The labels are written out here rather than imported, because this file
+    // imports nothing so the repo check can run it. They match readiness.js.
+    key: 'picks',
+    short: 'the choices its parts need',
+    test: job => (Number(job?.unresolved_lines) || 0) > 0,
+    sentence: job => {
+      const blank = [
+        ['faucet_finish', 'Faucet finish', 'faucet finish'],
+        ['ro_type', 'RO type', 'RO type'],
+        ['valve_type', 'Valve type', 'valve type'],
+      ].filter(([field]) => !String(job?.[field] || '').trim())
+
+      const lines = Number(job?.unresolved_lines) || 0
+      const count = `${lines} ${lines === 1 ? 'line' : 'lines'} on its parts list`
+
+      if (blank.length === 0) {
+        return `${count} ${lines === 1 ? 'matches' : 'match'} no stock item, so the work order `
+          + 'would list the wrong parts. Check its parts list.'
+      }
+
+      const names = blank.length === 1
+        ? blank[0][1]
+        : `${blank[0][1]}, ${blank.slice(1, -1).map(b => b[2]).join(', ')}`
+            .replace(/, $/, '')
+          + ` and ${blank[blank.length - 1][2]}`
+
+      return `${names} ${blank.length === 1 ? 'is' : 'are'} not set on this job, which leaves `
+        + `${count} matching no stock item. The work order would list the wrong parts, so it `
+        + `will not send until ${blank.length === 1 ? 'it is' : 'they are'} set. `
+        + `Set ${blank.length === 1 ? 'it' : 'them'} in Edit at the top.`
+    },
+  },
+  {
     // The one gap that is about the document rather than the logistics. A
     // signed work order with no pay on it is worse than no work order: it is
     // an agreement to work for an amount nobody wrote down.
@@ -186,6 +226,13 @@ export function workOrderChecklist(job) {
       fix: has('crew')
         ? `${job?.installer_name || 'That installer'} has no email on the roster. Add one in Settings`
         : 'Pick one under Crew and pay above',
+    },
+    {
+      key: 'picks',
+      label: 'Choices its parts depend on',
+      done: has('picks'),
+      value: '',
+      fix: 'Set the faucet finish, RO type and valve type in Edit at the top',
     },
     {
       key: 'payout',

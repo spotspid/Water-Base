@@ -719,6 +719,10 @@ check('no sheet at all still reports the sheet, not the empty sheet',
 const aprilsJob = {
   scheduled_date: '2026-09-28',
   time_window: '8:00 AM - 10:00 AM',
+  // the choices its parts list depends on, all made
+  faucet_finish: 'Chrome',
+  ro_type: 'Tank Style',
+  valve_type: 'Clack',
   installer_id: null,
   installer_email: null,
   installer_pay: null,
@@ -728,7 +732,7 @@ const aprilsJob = {
 }
 
 const list = workOrderChecklist(aprilsJob)
-check('every requirement is listed, done or not', list.length === 6, String(list.length))
+check('every requirement is listed, done or not', list.length === 7, String(list.length))
 check('the date it has is ticked', list.find(i => i.key === 'date').done)
 check('the job number it has is ticked', list.find(i => i.key === 'job_number').done)
 check('the crew it has not is not', !list.find(i => i.key === 'crew').done)
@@ -775,6 +779,39 @@ check('the window shows on the list, so it can be read back before sending',
   workOrderChecklist(readyJob).find(i => i.key === 'time').value)
 check('a blank window is not a time',
   !workOrderChecklist({ ...readyJob, time_window: '   ' }).find(i => i.key === 'time').done)
+
+// The choices a parts list depends on. Finney's exact shape: everything else
+// in place, two lines that match nothing, and the panel used to offer a send
+// the server then refused with a 422 nobody had been warned about.
+const finney = { ...readyJob, unresolved_lines: 2, faucet_finish: null, valve_type: null }
+
+check('a job whose parts do not resolve cannot be sent',
+  workOrderBlocker(finney) !== '')
+check('and the refusal names both missing choices',
+  /faucet finish/i.test(workOrderBlocker(finney))
+  && /valve type/i.test(workOrderBlocker(finney)),
+  workOrderBlocker(finney))
+check('and does not name the one that is set',
+  !/RO type/i.test(workOrderBlocker(finney)), workOrderBlocker(finney))
+check('and says how many lines are affected',
+  workOrderBlocker(finney).includes('2 line'), workOrderBlocker(finney))
+check('and says where to fix it',
+  /Edit at the top/.test(workOrderBlocker(finney)))
+check('one missing choice reads as one',
+  / is not set/.test(workOrderBlocker({ ...readyJob, unresolved_lines: 1, valve_type: null })),
+  workOrderBlocker({ ...readyJob, unresolved_lines: 1, valve_type: null }))
+check('unresolved lines with every choice made points at the parts list instead',
+  /Check its parts list/.test(workOrderBlocker({ ...readyJob, unresolved_lines: 1 })),
+  workOrderBlocker({ ...readyJob, unresolved_lines: 1 }))
+check('a job whose lines all resolve is unaffected',
+  workOrderBlocker({ ...readyJob, unresolved_lines: 0 }) === '')
+check('and a job that never reported a count is unaffected',
+  workOrderBlocker(readyJob) === '')
+
+// This is the whole point: the browser and the edge function agree, so the
+// button cannot offer a send that comes back 422.
+check('the list shows the choices as outstanding',
+  !workOrderChecklist(finney).find(i => i.key === 'picks').done)
 
 // The list and the refusal are the same rule, so a ticked list with a dead
 // button, or the reverse, cannot happen.
