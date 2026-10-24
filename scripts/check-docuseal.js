@@ -5,6 +5,8 @@ import {
 import {
   isAddressField, normaliseFieldName, signedAddress,
 } from '../supabase/functions/docuseal-webhook/addressField.ts'
+import { signedAddress as sweepSignedAddress }
+  from '../supabase/functions/signed-addresses/addressField.ts'
 
 // Holds the DocuSeal gap scan to the shapes the API actually returns, taken
 // from a real account listing on 2026-09-26.
@@ -160,6 +162,19 @@ check('a values list that is not a list answers nothing',
 check('the first filled address box wins',
   signedAddress([{ field: 'street address', value: '' },
     { field: 'install_address', value: '8 Elm' }]) === '8 Elm')
+
+// The sweep carries its own copy, because each function deploys alone and
+// cannot import from another. Copies drift, so they are compared here.
+const addressCases = [
+  [{ field: 'install_address', value: '12345 Test Street' }],
+  [{ field: 'Install Address:*', value: '8 Elm' }],
+  [{ field: 'city', value: 'Ray' }],
+  [{ field: 'install-address', value: '  ' }],
+  [],
+]
+check('the sweep reads an address exactly as the webhook does',
+  addressCases.every(c => signedAddress(c) === sweepSignedAddress(c)),
+  addressCases.map(c => `${signedAddress(c)}|${sweepSignedAddress(c)}`).join(' '))
 
 console.log(failed === 0
   ? '\nAll DocuSeal scan checks passed.\n'

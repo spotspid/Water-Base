@@ -29,7 +29,8 @@ const API = 'https://api.supabase.com'
 // Every function, not just the one that burned us. ghl-sync, notify and
 // docuseal-webhook can go stale the same way and nobody would see it, because
 // nothing they do is visible on a page.
-const FUNCTIONS = ['send-agreement', 'ghl-sync', 'notify', 'docuseal-webhook']
+const FUNCTIONS = ['send-agreement', 'ghl-sync', 'notify', 'docuseal-webhook',
+  'signed-addresses']
 
 let failed = 0
 function check(name, condition, detail = '') {
