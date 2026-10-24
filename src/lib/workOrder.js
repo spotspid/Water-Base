@@ -47,6 +47,23 @@ const GAPS = [
     sentence: 'This job has no date yet, so there is nothing to schedule a crew around.',
   },
   {
+    // The date alone is not an appointment. A work order reading "October 27"
+    // tells the installer which day to keep free and nothing about when to be
+    // there, so he rings to ask and the customer hears from nobody. The
+    // document has a field for the window; the panel never asked for one, so
+    // whatever happened to be on the job went out, which for a job scheduled
+    // from the calendar is nothing.
+    //
+    // Blocking rather than advisory, and safe to block on, because All Day is
+    // one of the choices. There is always a true answer to give.
+    key: 'time',
+    short: 'an install time',
+    test: job => !String(job?.time_window || '').trim(),
+    sentence: 'This job has a date but no install time, so the work order would tell the '
+      + 'installer which day to keep free and not when to be there. Set the time window on '
+      + 'the schedule, or choose All Day.',
+  },
+  {
     key: 'crew',
     short: 'a crew',
     test: job => !job?.installer_id,
@@ -153,6 +170,13 @@ export function workOrderChecklist(job) {
       done: has('date'),
       value: job?.scheduled_date || '',
       fix: 'Give it a date on the schedule',
+    },
+    {
+      key: 'time',
+      label: 'An install time',
+      done: has('time'),
+      value: job?.time_window || '',
+      fix: 'Set the time window on the schedule, or choose All Day',
     },
     {
       key: 'crew',

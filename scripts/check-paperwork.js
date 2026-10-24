@@ -35,6 +35,8 @@ const base = {
   status: 'scheduled',
   created_at: daysAgo(10),
   scheduled_date: '2026-09-16',
+  // the installer has to know when, not just which day
+  time_window: '8:00 AM - 10:00 AM',
   installer_id: 'i1',
   installer_name: 'Jay Woodward',
   installer_email: 'jay@example.com',

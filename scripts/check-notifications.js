@@ -671,7 +671,8 @@ for (const amount of [450, 0, null]) {
 // The browser's copy of a rule the edge function also enforces. If these two
 // disagree the button offers a send the server then refuses.
 const sendable = {
-  scheduled_date: '2026-09-08', installer_id: 'i1', installer_email: 'a@example.com',
+  scheduled_date: '2026-09-08', time_window: '8:00 AM - 10:00 AM',
+  installer_id: 'i1', installer_email: 'a@example.com',
   template_id: 't1', template_line_count: 5, installer_pay: 450,
   // job_number is required on the DocuSeal template and maps to this. Without
   // it the send returns 422, so the button had been claiming ready when it
@@ -717,6 +718,7 @@ check('no sheet at all still reports the sheet, not the empty sheet',
 
 const aprilsJob = {
   scheduled_date: '2026-09-28',
+  time_window: '8:00 AM - 10:00 AM',
   installer_id: null,
   installer_email: null,
   installer_pay: null,
@@ -726,7 +728,7 @@ const aprilsJob = {
 }
 
 const list = workOrderChecklist(aprilsJob)
-check('every requirement is listed, done or not', list.length === 5, String(list.length))
+check('every requirement is listed, done or not', list.length === 6, String(list.length))
 check('the date it has is ticked', list.find(i => i.key === 'date').done)
 check('the job number it has is ticked', list.find(i => i.key === 'job_number').done)
 check('the crew it has not is not', !list.find(i => i.key === 'crew').done)
@@ -752,6 +754,27 @@ check('an installer with no email is not a ticked crew',
 check('and the fix points at the roster rather than the crew box',
   workOrderChecklist({ ...readyJob, installer_email: null, installer_name: 'Jay Woodward' })
     .find(i => i.key === 'crew').fix.includes('Settings'))
+
+// The install time. A date is a day to keep free; the installer also has to
+// know when to be there, and the document has a field for it that the panel
+// never used to ask about.
+const noWindow = { ...readyJob, time_window: null }
+
+check('a date with no install time is not ready to send',
+  workOrderBlocker(noWindow) !== '', workOrderBlocker(noWindow))
+check('and the refusal names the time rather than the date',
+  /install time/i.test(workOrderBlocker(noWindow)), workOrderBlocker(noWindow))
+check('and offers All Day, so there is always a true answer',
+  /all day/i.test(workOrderBlocker(noWindow)))
+check('the time it has is ticked',
+  workOrderChecklist(readyJob).find(i => i.key === 'time').done)
+check('and the one it has not is not',
+  !workOrderChecklist(noWindow).find(i => i.key === 'time').done)
+check('the window shows on the list, so it can be read back before sending',
+  workOrderChecklist(readyJob).find(i => i.key === 'time').value === '8:00 AM - 10:00 AM',
+  workOrderChecklist(readyJob).find(i => i.key === 'time').value)
+check('a blank window is not a time',
+  !workOrderChecklist({ ...readyJob, time_window: '   ' }).find(i => i.key === 'time').done)
 
 // The list and the refusal are the same rule, so a ticked list with a dead
 // button, or the reverse, cannot happen.

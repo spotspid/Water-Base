@@ -128,10 +128,13 @@ export default function JobWorkOrder({ job, onChanged, crewUnsaved = false }) {
         {out && ' The copy already sent shows the balance as it was that day.'}
       </p>
 
-      {/* the offer. Appears the moment a scheduled job has a crew. */}
+      {/* the offer. Appears the moment a scheduled job has a crew. Says the
+          time back, because the whole point of the document is that the
+          installer knows when to turn up. */}
       {ready && !confirming && (
         <p className="agr-offer">
-          {crew} is assigned and this job has a date. Send the work order?
+          {crew} is assigned and this job is set for {formatLongDate(job.scheduled_date)}
+          {job.time_window ? `, ${job.time_window}` : ''}. Send the work order?
         </p>
       )}
 
