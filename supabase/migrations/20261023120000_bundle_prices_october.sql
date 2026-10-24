@@ -11,8 +11,10 @@
 -- proof below checks exactly that, because a price change that quietly
 -- restated last month's revenue would be far worse than one that did nothing.
 --
--- Applied to both schemas. v2 keeps its own presets and may not read public,
--- so the figures are written twice on purpose rather than shared.
+-- Public only. This file briefly also wrote the same two figures into a second
+-- schema belonging to a rebuild that has been removed; those statements would
+-- fail on any fresh run now, and the prices they set were never read by
+-- anything a customer or an installer sees.
 
 do $$
 declare
@@ -48,10 +50,6 @@ begin
   raise notice 'build sheet prices updated, and no job moved';
 end $$;
 
--- The same two in the rebuild.
-update v2.system_presets set price = 3499.00 where name = 'Flagship Bundle';
-update v2.system_presets set price = 4200.00 where name = 'Well Water Bundle';
-
 do $$
 declare
   v_flag numeric;
@@ -71,12 +69,5 @@ begin
     raise exception 'RO Only should still be 1200 and reads %.', v_ro;
   end if;
 
-  select price into v_flag from v2.system_presets where name = 'Flagship Bundle';
-  select price into v_well from v2.system_presets where name = 'Well Water Bundle';
-
-  if v_flag <> 3499.00 or v_well <> 4200.00 then
-    raise exception 'The rebuild prices read % and %.', v_flag, v_well;
-  end if;
-
-  raise notice 'both schemas agree: flagship 3499, well 4200';
+  raise notice 'flagship 3499, well 4200, and nothing else moved';
 end $$;
