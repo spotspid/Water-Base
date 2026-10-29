@@ -97,10 +97,20 @@ function money(value: unknown): string {
 }
 
 // "Flagship Bundle, $2,999" with either half allowed to be missing
+// The money on these lines is what the customer is paying for the job. On a
+// work order that is easy to read as the opposite, because a work order is the
+// document an installer signs and the number beside it looks like his. It said
+// "RO Only, $799.00" under the news that Jay had signed one, and the first
+// reading in the room was that we were paying him eight hundred pounds.
+//
+// So the number is labelled. Nobody reads "job amount" as a payout.
 function subtitle(job: JobFacts): string {
-  return [String(job.system_template || '').trim(), money(job.sale_price)]
-    .filter(Boolean)
-    .join(', ')
+  const amount = money(job.sale_price)
+
+  return [
+    String(job.system_template || '').trim(),
+    amount ? `job amount ${amount}` : '',
+  ].filter(Boolean).join(', ')
 }
 
 // "1 day" / "3 days", and the two cases a count of zero has to cover

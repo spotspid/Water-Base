@@ -111,6 +111,7 @@ check('a customer view is paperwork, not a sale', viewed.channel === 'documents'
 // The work order is chased in scheduling by the morning sweep, so its outcome
 // belongs there too rather than splitting one conversation across two rooms.
 const woSigned = buildSigned(JOB, AG, 'subcontractor_service')
+const bareWo = buildSigned({ id: 'j9', customer_name: 'No Price' }, AG, 'subcontractor_service')
 const woDeclined = buildDeclined(JOB, AG, 'subcontractor_service')
 const woViewed = buildViewed(JOB, AG, 'subcontractor_service', 1, '2026-08-25')
 
@@ -119,6 +120,22 @@ check('a work order decline is operations', woDeclined.channel === 'scheduling')
 check('a work order view is operations', woViewed.channel === 'scheduling')
 check('and it lands in the same channel the nag chases it from',
   woSigned.channel === nag.channel)
+
+// The number beside a signed work order is what the customer pays, and the
+// document is the one an installer signs, so an unlabelled amount reads as a
+// payout. It did, out loud, in the channel.
+check('a signed work order says whose money the number is',
+  woSigned.message.includes('job amount $2,999.00'), woSigned.message)
+check('and never shows a bare amount next to the system',
+  !/Flagship Bundle, \$/.test(woSigned.message), woSigned.message)
+check('and still says which document came back',
+  woSigned.message.includes('The work order came back signed'))
+check('the customer agreement is labelled the same way, for one habit',
+  signed.message.includes('job amount $2,999.00'), signed.message)
+check('a declined work order labels it too',
+  woDeclined.message.includes('job amount $2,999.00'), woDeclined.message)
+check('a job with no price says nothing about money rather than job amount blank',
+  !bareWo.message.includes('job amount'), bareWo.message)
 
 check('routing follows the document type',
   channelForDocument('customer_install') === 'new_sale'
