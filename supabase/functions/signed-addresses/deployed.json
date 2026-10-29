@@ -2,8 +2,8 @@
   "note": "Written by npm run deploy:edge. What was last deployed, so check:deploy can tell whether the live copy is this code. Do not edit by hand.",
   "slug": "signed-addresses",
   "project": "vztoleozeqlloaadppnt",
-  "version": 1,
-  "deployed_at": 1792870101185,
+  "version": 2,
+  "deployed_at": 1793289835654,
   "files": {
     "addressField.ts": "c77d7121d884fc40378aea463d15aaf91f7b8492fd987d9ed24539936526d42e",
     "index.ts": "e9b96f03024fca6f11b11d68e08eb7b7af3d0ac9a48c20021f7fc04e68af36cd"
