@@ -96,12 +96,14 @@ function money(value: unknown): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
-// "Flagship Bundle, $2,999" with either half allowed to be missing
+// "Flagship Bundle, job amount $2,999.00", with either half allowed to be
+// missing.
+//
 // The money on these lines is what the customer is paying for the job. On a
 // work order that is easy to read as the opposite, because a work order is the
 // document an installer signs and the number beside it looks like his. It said
 // "RO Only, $799.00" under the news that Jay had signed one, and the first
-// reading in the room was that we were paying him eight hundred pounds.
+// reading in the room was that we were paying him eight hundred dollars.
 //
 // So the number is labelled. Nobody reads "job amount" as a payout.
 function subtitle(job: JobFacts): string {
