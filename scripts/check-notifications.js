@@ -42,6 +42,7 @@ const JOB = {
   customer_name: 'Walter Radu',
   system_template: 'Flagship Bundle',
   sale_price: 2999,
+  payout_amount: 450,
 }
 const AG = '11111111-2222-3333-4444-555555555555'
 
@@ -126,6 +127,19 @@ check('and it lands in the same channel the nag chases it from',
 // payout. It did, out loud, in the channel.
 check('a signed work order says whose money the number is',
   woSigned.message.includes('job amount $2,999.00'), woSigned.message)
+check('and carries the work order amount beside it',
+  woSigned.message.includes('work order amount $450.00'), woSigned.message)
+check('both figures, each named, in one line',
+  woSigned.message.includes('Flagship Bundle, job amount $2,999.00, work order amount $450.00'),
+  woSigned.message)
+check('a work order with no pay recorded shows the job amount alone',
+  !buildSigned({ ...JOB, payout_amount: null }, AG, 'subcontractor_service')
+    .message.includes('work order amount'))
+check('a customer agreement says nothing about the payout',
+  !signed.message.includes('work order amount'), signed.message)
+check('a declined work order carries both too',
+  woDeclined.message.includes('job amount $2,999.00')
+  && woDeclined.message.includes('work order amount $450.00'), woDeclined.message)
 check('and never shows a bare amount next to the system',
   !/Flagship Bundle, \$/.test(woSigned.message), woSigned.message)
 check('and still says which document came back',

@@ -36,6 +36,11 @@ export type JobFacts = {
   customer_name?: string | null
   system_template?: string | null
   sale_price?: number | string | null
+  // What the installer is paid, which is the figure a work order is actually
+  // about. payout_amount is the column on the jobs table; the job_margin view
+  // serves the same number as installer_pay, and reading this function's rows
+  // from the table means using the table's name for it.
+  payout_amount?: number | string | null
   city?: string | null
 }
 
@@ -96,22 +101,32 @@ function money(value: unknown): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
-// "Flagship Bundle, job amount $2,999.00", with either half allowed to be
-// missing.
-//
-// The money on these lines is what the customer is paying for the job. On a
-// work order that is easy to read as the opposite, because a work order is the
-// document an installer signs and the number beside it looks like his. It said
-// "RO Only, $799.00" under the news that Jay had signed one, and the first
-// reading in the room was that we were paying him eight hundred dollars.
-//
-// So the number is labelled. Nobody reads "job amount" as a payout.
-function subtitle(job: JobFacts): string {
+/**
+ * The system and the money, with any part allowed to be missing.
+ *
+ * "Flagship Bundle, job amount $2,999.00" on a customer document.
+ * "RO Only, job amount $799.00, work order amount $250.00" on a work order.
+ *
+ * One unlabelled number used to sit here, and it was the job amount. Under the
+ * news that an installer had signed a work order it read as his: the message
+ * said "RO Only, $799.00" and the room's first reading was that we were paying
+ * Jay eight hundred dollars for an RO.
+ *
+ * So both figures appear on a work order, each named. The question that line
+ * has to answer is what the job is worth and what the crew gets, and showing
+ * one of them without saying which invites the reader to guess.
+ *
+ * A customer document says nothing about the payout, because what the crew is
+ * paid is none of that document's business.
+ */
+function subtitle(job: JobFacts, agreementType?: string): string {
   const amount = money(job.sale_price)
+  const pay = agreementType === 'subcontractor_service' ? money(job.payout_amount) : ''
 
   return [
     String(job.system_template || '').trim(),
     amount ? `job amount ${amount}` : '',
+    pay ? `work order amount ${pay}` : '',
   ].filter(Boolean).join(', ')
 }
 
@@ -168,7 +183,7 @@ export function buildSigned(
   job: JobFacts, agreementId: string, agreementType: string, appUrl?: string,
 ): Built {
   const doc = documentLabel(agreementType)
-  const detail = subtitle(job)
+  const detail = subtitle(job, agreementType)
 
   return {
     channel: channelForDocument(agreementType),
@@ -190,7 +205,7 @@ export function buildDeclined(
   job: JobFacts, agreementId: string, agreementType: string, appUrl?: string,
 ): Built {
   const doc = documentLabel(agreementType)
-  const detail = subtitle(job)
+  const detail = subtitle(job, agreementType)
   const who = agreementType === 'subcontractor_service' ? 'The installer' : 'The customer'
 
   return {

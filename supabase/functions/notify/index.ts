@@ -284,7 +284,7 @@ async function handleAgreement(
 
   const { data: job, error: jobError } = await supabase
     .from('jobs')
-    .select('id, customer_name, system_template, sale_price, city')
+    .select('id, customer_name, system_template, sale_price, payout_amount, city')
     .eq('id', agreement.job_id)
     .maybeSingle()
 
