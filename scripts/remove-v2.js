@@ -126,16 +126,38 @@ async function restStillWorks(when) {
     return
   }
 
-  const res = await fetch(
-    `https://${ref}.supabase.co/rest/v1/settings_options?select=list_key&limit=1`,
-    { headers: { apikey: anon.api_key, Authorization: `Bearer ${anon.api_key}` } },
-  )
+  // Changing the schema list makes PostgREST rebuild its schema cache, and
+  // while it does it answers 503 PGRST002, "Could not query the database for
+  // the schema cache. Retrying." That is the reload working, not the API being
+  // down, and the first real run of this script treated it as a failure and
+  // stopped: the check meant to prove the API was fine was the only thing that
+  // said it was not. So it waits, which is what the message asks for.
+  const deadline = Date.now() + 90_000
+  let last = ''
 
-  if (!res.ok) {
-    die(`The REST API answered ${res.status} ${when}. ${(await res.text()).slice(0, 300)}`)
+  while (Date.now() < deadline) {
+    const res = await fetch(
+      `https://${ref}.supabase.co/rest/v1/settings_options?select=list_key&limit=1`,
+      { headers: { apikey: anon.api_key, Authorization: `Bearer ${anon.api_key}` } },
+    )
+
+    if (res.ok) {
+      console.log(`   REST API answers ${res.status} ${when}`)
+      return
+    }
+
+    last = `${res.status} ${(await res.text()).slice(0, 200)}`
+
+    // Anything that is not the cache reloading is a real failure, now.
+    if (!(res.status === 503 || res.status === 504)) {
+      die(`The REST API answered ${last} ${when}.`)
+    }
+
+    console.log(`   still reloading its schema cache (${res.status}), waiting`)
+    await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
-  console.log(`   REST API answers ${res.status} ${when}`)
+  die(`The REST API never came back ${when}. Last answer: ${last}`)
 }
 
 // --- 2. the schema ---------------------------------------------------------
