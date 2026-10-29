@@ -216,8 +216,16 @@ async function deleteFunction() {
     return
   }
 
+  // Everything that is not the one being deleted has to come back. Taken from
+  // what is actually deployed rather than from a list written here, because a
+  // hardcoded list goes stale the moment somebody ships a function: the first
+  // dry run of this script found signed-addresses, which had been deployed
+  // that week and was nowhere in the four names this used to check.
+  const survivors = slugs.filter(s => s !== 'send-agreement-v2')
+
   if (DRY) {
-    console.log('   would delete send-agreement-v2 and leave the other four alone')
+    console.log(`   would delete send-agreement-v2 and leave ${survivors.length} others: `
+      + survivors.join(', '))
     return
   }
 
@@ -229,13 +237,13 @@ async function deleteFunction() {
 
   if (left.includes('send-agreement-v2')) die('It is still deployed.')
 
-  // The four that must survive. A delete that took the wrong function with it
-  // would take the live document pipeline down.
-  for (const needed of ['send-agreement', 'notify', 'docuseal-webhook', 'ghl-sync']) {
+  // A delete that took another function with it would take the live document
+  // pipeline down, so every one that was there before must still be there.
+  for (const needed of survivors) {
     if (!left.includes(needed)) die(`${needed} is missing. It must still be deployed.`)
   }
 
-  console.log(`   deleted, and the live four remain: ${left.join(', ')}`)
+  console.log(`   deleted, and all ${survivors.length} others remain: ${left.join(', ')}`)
 }
 
 // ---------------------------------------------------------------------------
