@@ -1,0 +1,43 @@
+# Takes the v2 partition off the project. One job, run by hand.
+#
+# A schema change, an API setting and an edge function deletion all need the
+# access token, and the token lives here rather than on anybody's laptop. The
+# connector a human would otherwise use is read only, which is what made this
+# a workflow instead of three clicks.
+#
+# Dispatch only. Nothing about this should happen because somebody pushed.
+#
+# Run it with dry_run true first and read what it says it will do.
+
+name: Remove the v2 partition
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Say what would change without changing it'
+        type: boolean
+        default: true
+
+concurrency:
+  group: remove-v2
+  cancel-in-progress: false
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm ci. Node builtins only, like its two siblings.
+
+      - name: Remove it
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+        run: node scripts/remove-v2.js ${{ inputs.dry_run && '--dry-run' || '' }}

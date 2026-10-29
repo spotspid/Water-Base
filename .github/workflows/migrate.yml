@@ -30,7 +30,6 @@ on:
     branches:
       - master
       - feature/bom-autodeduct
-      - rebuild/v2-jobs
     paths:
       - 'supabase/migrations/**'
       - '.github/workflows/migrate.yml'
@@ -71,9 +70,11 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
         run: node scripts/migrate.js
 
-      # The migrations carry their own proof blocks, which raise rather than
-      # return, so a migration that applied but did not do what it claimed has
-      # already failed the step above. This checks the rule that no proof
-      # block can check from inside: that v2 still stands alone.
-      - name: Prove v2 can still be swapped in
-        run: node scripts/check-v2.js
+      # There was a step here proving the v2 schema still stood alone. The
+      # rebuild it belonged to is not going ahead and its check script was
+      # deleted with the rest of it, so from 24 October this workflow failed
+      # on a missing module after having already applied the migrations
+      # successfully: a red run that meant nothing and hid the green one under
+      # it. The migrations carry their own proof blocks, which raise rather
+      # than return, so a migration that applied without doing what it claimed
+      # has already failed the step above.
