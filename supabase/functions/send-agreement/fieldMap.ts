@@ -10,6 +10,7 @@
 // this list and a near miss there should be an error rather than a guess.
 
 import { workOrderSiteConditions } from './siteConditions.ts'
+import { depositDuePhrase } from './quote.ts'
 
 export type Part = { sku: string; name: string; quantity: number; category?: string }
 
@@ -177,7 +178,7 @@ function paymentSchedule(ctx: Context): string {
   }
 
   const balance = Math.round((price - deposit) * 100) / 100
-  return `A deposit of ${money(deposit)} is due at signing. `
+  return `A deposit of ${money(deposit)} is due ${depositDuePhrase(ctx.job.deposit_due)}. `
     + `The balance of ${money(balance)} is due upon installation completion.`
 }
 

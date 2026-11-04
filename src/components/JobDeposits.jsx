@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchDeposits, removeDeposit } from '../lib/deposits'
 import { balanceState, depositTerm, isRefund, paidShare } from '../lib/depositState'
+import { depositDuePhrase } from '../lib/constants'
 import { formatCurrency } from '../lib/inventory'
 import { formatLongDate } from '../lib/schedule'
 import CollectedBy from './CollectedBy'
@@ -44,7 +45,7 @@ export default function JobDeposits({ job, onChanged }) {
     : term.none
       ? 'No deposit agreed. The whole price is due on completion.'
       : term.outstanding > 0
-        ? `Deposit of ${formatCurrency(term.amount)} agreed, ${formatCurrency(term.outstanding)} of it not yet received.`
+        ? `Deposit of ${formatCurrency(term.amount)} agreed, due ${depositDuePhrase(job.deposit_due)}, ${formatCurrency(term.outstanding)} of it not yet received.`
         : `Deposit of ${formatCurrency(term.amount)} agreed and received.`
 
   async function drop(id) {

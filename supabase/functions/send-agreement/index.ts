@@ -206,7 +206,7 @@ Deno.serve(async req => {
     .select('id, customer_name, customer_email, phone, address, city, system_template, '
       + 'template_id, sale_price, invoice_number, faucet_finish, ro_type, install_date, '
       + 'scheduled_date, time_window, installer_id, installer_pay, status, site_conditions, '
-      + 'deposits_taken, balance_due, collected_by, valve_type, deposit_amount')
+      + 'deposits_taken, balance_due, collected_by, valve_type, deposit_amount, deposit_due')
     .eq('id', jobId)
     .maybeSingle()
 
@@ -379,6 +379,7 @@ Deno.serve(async req => {
       systemName: String(job.system_long_name || job.system_template || 'water system'),
       salePrice: Number(job.sale_price) || 0,
       depositAmount: job.deposit_amount == null ? null : Number(job.deposit_amount),
+      depositDue: job.deposit_due == null ? null : String(job.deposit_due),
       lines: includedLines((sheet || []) as Array<Record<string, unknown>>),
     })
   }

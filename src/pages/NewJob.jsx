@@ -30,6 +30,7 @@ const EMPTY_FORM = {
   system_template: '',
   sale_price: '',
   deposit_amount: '',
+  deposit_due: 'signing',
   payment_type: '',
   faucet_finish: '',
   // Tank Style rather than blank. Every job on a sheet with an RO line is
@@ -170,6 +171,7 @@ export default function NewJob() {
       template_id: selectedTemplate?.id || null,
       sale_price: Number(form.sale_price),
       deposit_amount: Number(form.deposit_amount),
+      deposit_due: form.deposit_due || 'signing',
       payment_type: form.payment_type || null,
       faucet_finish: form.faucet_finish || null,
       ro_type: form.ro_type || null,

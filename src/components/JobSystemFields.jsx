@@ -3,6 +3,7 @@ import { suggestedDeposit } from '../lib/depositState'
 import { formatCurrency } from '../lib/inventory'
 import JobPartsPreview from './JobPartsPreview'
 import { NO_RO, faucetChoices } from '../lib/roPicks'
+import { DEPOSIT_DUE_OPTIONS } from '../lib/constants'
 
 // What is being sold and what it costs, plus the live parts preview for the
 // chosen template. Split out of NewJob so that page stays about the form's
@@ -105,7 +106,7 @@ export default function JobSystemFields({
           <input id="deposit_amount" name="deposit_amount" type="number" min="0" step="0.01"
             value={form.deposit_amount} onChange={onChange} disabled={disabled} />
           <span className="field-hint">
-            Due at signing, and printed on the customer agreement. Enter 0 for no deposit.
+            Printed on the quote and the customer agreement. Enter 0 for no deposit.
             {suggestion && !alreadySuggested && (
               <>
                 {' '}
@@ -115,6 +116,16 @@ export default function JobSystemFields({
                 </button>
               </>
             )}
+          </span>
+        </div>
+        <div className="field">
+          <label htmlFor="deposit_due">Deposit due</label>
+          <select id="deposit_due" name="deposit_due"
+            value={form.deposit_due || 'signing'} onChange={onChange} disabled={disabled}>
+            {DEPOSIT_DUE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <span className="field-hint">
+            When the customer pays the deposit. Printed on the quote and the agreement.
           </span>
         </div>
         <div className="field">

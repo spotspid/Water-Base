@@ -75,3 +75,17 @@ export const QUOTED_STATUS = 'quoted'
 // consumed. This mirrors the branch in sync_job_reservations.
 export const RESERVING_STATUSES = ['sold', 'scheduled']
 
+
+// When the agreed deposit is due. A check constraint on jobs.deposit_due holds
+// the same four keys, and the quote and the customer agreement each print a
+// sentence per key (send-agreement), so adding one is a code change.
+export const DEPOSIT_DUE_OPTIONS = [
+  { value: 'signing', label: 'Upon signing', phrase: 'at signing' },
+  { value: '1_week', label: '1 week before install', phrase: '1 week before installation' },
+  { value: '72_hours', label: '72 hours before install', phrase: '72 hours before installation' },
+  { value: '24_hours', label: '24 hours before install', phrase: '24 hours before installation' },
+]
+
+export function depositDuePhrase(value) {
+  return (DEPOSIT_DUE_OPTIONS.find(o => o.value === value) || DEPOSIT_DUE_OPTIONS[0]).phrase
+}

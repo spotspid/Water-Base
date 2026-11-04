@@ -8,6 +8,20 @@
 //
 // Pure, so scripts/check-quote.js can read what a customer would read.
 
+// When the deposit is due, as the agreement says it. jobs.deposit_due holds one
+// of these keys (a check constraint), and anything else reads as signing,
+// which is what every agreement said before there was a choice.
+export const DEPOSIT_DUE_PHRASE: Record<string, string> = {
+  signing: 'at signing',
+  '1_week': '1 week before installation',
+  '72_hours': '72 hours before installation',
+  '24_hours': '24 hours before installation',
+}
+
+export function depositDuePhrase(key: unknown): string {
+  return DEPOSIT_DUE_PHRASE[String(key ?? '')] ?? DEPOSIT_DUE_PHRASE.signing
+}
+
 export type QuoteLine = { name: string; quantity: number }
 
 export type QuoteInput = {
@@ -15,6 +29,7 @@ export type QuoteInput = {
   systemName: string
   salePrice: number
   depositAmount: number | null
+  depositDue?: string | null
   lines: QuoteLine[]
 }
 
@@ -36,8 +51,8 @@ export function includedLines(rows: Array<{ item_name?: unknown; quantity?: unkn
 export function quoteMessage(q: QuoteInput): { subject: string; body: string } {
   const first = q.customerName.trim().split(/\s+/)[0] || 'there'
   const deposit = q.depositAmount != null && q.depositAmount > 0
-    ? `Deposit due at signing: ${money(q.depositAmount)}`
-    : 'No deposit is due at signing.'
+    ? `Deposit due ${depositDuePhrase(q.depositDue)}: ${money(q.depositAmount)}`
+    : 'No deposit is due.'
 
   const included = q.lines.length
     ? q.lines.map(l => `- ${l.quantity > 1 ? `${l.quantity} x ` : ''}${l.name}`).join('\n')

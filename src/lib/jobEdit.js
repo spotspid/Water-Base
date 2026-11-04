@@ -18,7 +18,7 @@ import { roPickProblem } from './roPicks'
 
 export const EDITABLE_FIELDS = [
   'customer_name', 'phone', 'customer_email', 'address', 'city', 'water_source',
-  'system_template', 'system_description', 'sale_price', 'deposit_amount', 'payment_type',
+  'system_template', 'system_description', 'sale_price', 'deposit_amount', 'deposit_due', 'payment_type',
   'faucet_finish', 'ro_type', 'valve_type', 'carbon_type', 'invoice_number',
   'site_conditions', 'notes',
 ]
@@ -59,6 +59,7 @@ export function formFromJob(job) {
     // Blank means no term was ever recorded, and stays blank until somebody
     // sets one. Zero is a term: no deposit.
     deposit_amount: job.deposit_amount == null ? '' : String(job.deposit_amount),
+    deposit_due: job.deposit_due || 'signing',
     payment_type: job.payment_type || '',
     faucet_finish: job.faucet_finish || '',
     ro_type: job.ro_type || '',
@@ -191,6 +192,7 @@ export async function saveJobDetails(job, form, templateId) {
       // null keeps an unrecorded term unrecorded; the database refuses null
       // on a job that already has one, so this cannot blank a real deposit
       p_deposit_amount: filled(form.deposit_amount) ? Number(form.deposit_amount) : null,
+      p_deposit_due: form.deposit_due || null,
     }),
     'The job could not be saved.',
   )
