@@ -145,7 +145,7 @@ async function main() {
     console.log(`\ndeploying ${slug}...`)
     // -y so npx installs the CLI without asking. Without it CI hangs on a
     // prompt nobody is there to answer.
-    execSync(`npx -y supabase functions deploy ${slug} --project-ref ${ref}`, { stdio: 'inherit' })
+    execSync(`npx -y supabase functions deploy ${slug} --project-ref ${ref} --yes`, { stdio: 'inherit' })
 
     const live = await (await fetch(`${API}/v1/projects/${ref}/functions/${slug}`, {
       headers: { Authorization: `Bearer ${token}` },
