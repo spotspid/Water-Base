@@ -37,6 +37,11 @@ on:
     paths:
       - 'supabase/functions/**'
       - '.github/workflows/deploy-edge.yml'
+      # The script is the deploy. A fix to it that does not redeploy leaves the
+      # failure it fixed standing until somebody next touches a function.
+      - 'scripts/deploy-edge.js'
+  # So a failed deploy can be retried without an empty commit.
+  workflow_dispatch:
 
 # One at a time. Two deploys of the same function racing would leave the
 # recorded version describing whichever finished second.
