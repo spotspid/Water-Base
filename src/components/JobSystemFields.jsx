@@ -73,6 +73,28 @@ export default function JobSystemFields({
             ))}
           </select>
         </div>
+        {/* What the customer is buying, in words, when no build sheet says it.
+            The Custom sheet has no long label at all, so three jobs went out
+            on agreements describing the purchase as "Custom". It prints on the
+            agreement and the work order, and left blank the build sheet's own
+            sentence is used instead. */}
+        <div className="field field-sheet">
+          <label htmlFor="system_description">
+            What they are buying <span className="optional">(optional)</span>
+          </label>
+          <textarea id="system_description" name="system_description" rows="2" maxLength="500"
+            value={form.system_description} onChange={onChange} disabled={disabled}
+            placeholder={selectedTemplate?.long_label?.trim()
+              || 'Two under sink RO units, and replacing the PEX run to the kitchen'} />
+          <span className="field-hint">
+            {form.system_description?.trim()
+              ? 'This is what the agreement and the work order will say.'
+              : selectedTemplate?.long_label?.trim()
+                ? 'Blank uses the build sheet’s own description, shown above in grey.'
+                : 'This build sheet has no description of its own, so the documents '
+                  + 'would only say its name. Worth typing.'}
+          </span>
+        </div>
         <div className="field">
           <label htmlFor="sale_price">Sale price ($)</label>
           <input id="sale_price" name="sale_price" type="number" min="0" step="0.01" required

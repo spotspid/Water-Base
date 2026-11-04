@@ -18,8 +18,9 @@ import { roPickProblem } from './roPicks'
 
 export const EDITABLE_FIELDS = [
   'customer_name', 'phone', 'customer_email', 'address', 'city', 'water_source',
-  'system_template', 'sale_price', 'deposit_amount', 'payment_type', 'faucet_finish',
-  'ro_type', 'valve_type', 'carbon_type', 'invoice_number', 'site_conditions', 'notes',
+  'system_template', 'system_description', 'sale_price', 'deposit_amount', 'payment_type',
+  'faucet_finish', 'ro_type', 'valve_type', 'carbon_type', 'invoice_number',
+  'site_conditions', 'notes',
 ]
 
 // What an installed job will not let go of, and why. Shown before anybody
@@ -50,6 +51,10 @@ export function formFromJob(job) {
     city: job.city || '',
     water_source: job.water_source || 'city',
     system_template: job.system_template || '',
+    // Only a typed one belongs in the box. A composed one is what the box
+    // being empty means, and prefilling it would turn every save of a bundle
+    // into a typed description that then stops following the build sheet.
+    system_description: job.system_long_name_typed ? (job.system_long_name || '') : '',
     sale_price: job.sale_price == null ? '' : String(job.sale_price),
     // Blank means no term was ever recorded, and stays blank until somebody
     // sets one. Zero is a term: no deposit.
@@ -179,6 +184,7 @@ export async function saveJobDetails(job, form, templateId) {
       p_ro_type: form.ro_type || null,
       p_valve_type: form.valve_type || null,
       p_carbon_type: form.carbon_type || null,
+      p_system_description: form.system_description.trim() || null,
       p_invoice_number: form.invoice_number.trim(),
       p_site_conditions: form.site_conditions.trim() || null,
       p_notes: form.notes.trim() || null,

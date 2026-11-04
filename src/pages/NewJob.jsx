@@ -40,6 +40,8 @@ const EMPTY_FORM = {
   ro_type: 'Tank Style',
   valve_type: '',
   carbon_type: '',
+  // What they are buying, in words, when the build sheet does not say it.
+  system_description: '',
   // Quoted by default. Sold stays in the list for a sale closed on the phone.
   status: 'quoted',
   scheduled_date: '',
@@ -185,6 +187,16 @@ export default function NewJob() {
       invoice_number: form.invoice_number.trim(),
       site_conditions: form.site_conditions.trim() || null,
       notes: form.notes.trim() || null,
+    }
+
+    // What they are buying, in words. Set together with the flag that tells
+    // the composing trigger to leave it alone; left out entirely when the box
+    // is empty, so the build sheet's own sentence is composed as before.
+    const typedDescription = form.system_description.trim()
+
+    if (typedDescription) {
+      payload.system_long_name = typedDescription
+      payload.system_long_name_typed = true
     }
 
     // Left out when nothing was answered, which stores the column default of

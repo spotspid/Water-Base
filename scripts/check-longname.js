@@ -129,5 +129,69 @@ check('the short name is never assigned to by any of it',
   !/\bsystem_template\s*(:?=)[^=]/.test(sql),
   (sql.match(/.*\bsystem_template\s*(:?=)[^=].*/) || [''])[0].trim())
 
+/* ---------------------------------------------------------------------------
+   A typed description, which the Custom sheet made necessary
+--------------------------------------------------------------------------- */
+
+// The Custom sheet has no long label, so three signed agreements described
+// their purchase as the word "Custom": April Y. Stone at $2,899, Prudhvi
+// Yalavarthi at $3,949 and Donna Burgess at $2,000. The documents already
+// prefer the long name, so the fix was to let somebody type one.
+
+const typed = readFileSync(
+  new URL('../supabase/migrations/20261104120000_a_job_can_say_what_it_is.sql', import.meta.url),
+  'utf8',
+)
+
+check('a typed description is left alone by the composing trigger',
+  /if new\.system_long_name_typed then\s*\n\s*return new;/.test(typed))
+check('and the trigger wakes on the flag, so clearing one recomposes',
+  /before insert or update of template_id, ro_type, system_long_name_typed/.test(typed))
+check('the save takes a description', /p_system_description text/.test(typed))
+check('and writes it into the column the documents already read',
+  /system_long_name = case when v_desc is not null then v_desc else system_long_name end/.test(typed))
+check('and marks whose it is',
+  /system_long_name_typed = \(v_desc is not null\)/.test(typed))
+check('the three stale overloads are dropped, so a save cannot pick the wrong one',
+  (typed.match(/drop function if exists public\.update_job_details/g) || []).length === 3)
+check('and the proof insists exactly one is left',
+  /There are % versions of update_job_details/.test(typed))
+check('clearing the description is allowed, unlike the fields that cannot be emptied',
+  !/v_cleared \|\| 'the description'/.test(typed))
+check('it is capped, because it prints in a box', /length\(v_desc\) > 500/.test(typed))
+
+// The documents are the point: a typed sentence has to reach both of them.
+const typedJob = {
+  system_template: 'Custom',
+  system_long_name: 'Two under sink RO units, and replacing the PEX run to the kitchen',
+  ro_type: 'Tank Style',
+  faucet_finish: 'Chrome',
+}
+const TYPED = 'Two under sink RO units, and replacing the PEX run to the kitchen'
+
+check('a typed description is what the customer agreement says',
+  systemsOf('customer_install', typedJob).startsWith(TYPED),
+  systemsOf('customer_install', typedJob))
+check('and what the work order says',
+  systemsOf('subcontractor_service', typedJob).startsWith(TYPED),
+  systemsOf('subcontractor_service', typedJob))
+check('and the RO type is not repeated after a sentence that already covers it',
+  !systemsOf('customer_install', typedJob).includes('Tank Style'),
+  systemsOf('customer_install', typedJob))
+check('a Custom job with no description prints only its name, which is the bug',
+  systemsOf('customer_install', { system_template: 'Custom', system_long_name: null }) === 'Custom',
+  systemsOf('customer_install', { system_template: 'Custom', system_long_name: null }))
+
+// The form must not prefill a composed description, or every save of a bundle
+// would turn its generated sentence into a typed one and stop it following the
+// build sheet.
+const jobEdit = readFileSync(new URL('../src/lib/jobEdit.js', import.meta.url), 'utf8')
+
+check('the form only prefills a description somebody typed',
+  /system_description: job\.system_long_name_typed \? \(job\.system_long_name \|\| ''\) : ''/
+    .test(jobEdit))
+check('and the save sends it',
+  /p_system_description: form\.system_description\.trim\(\) \|\| null/.test(jobEdit))
+
 console.log(failed === 0 ? '\nAll long name checks passed.' : `\n${failed} long name check(s) failed.`)
 process.exit(failed === 0 ? 0 : 1)
